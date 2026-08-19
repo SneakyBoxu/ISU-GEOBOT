@@ -51,7 +51,16 @@ Open **http://localhost:5173**
 1. [ ] Create a project at [supabase.com](https://supabase.com) (free tier is fine).
        Region: Singapore or Tokyo for lowest latency from Isabela.
 2. [ ] **Database → Extensions** → enable **`vector`**.
-3. [ ] **SQL Editor** → run these files **in order**, one at a time:
+3. [ ] Apply the schema. Two ways; the script is the safer one because the
+       order matters and it refuses to drop a schema that already holds data:
+
+       ```bash
+       python db/apply.py                    # dry run, changes nothing
+       python db/apply.py --initial --run    # first install
+       python db/apply.py --run              # later: migrations only
+       ```
+
+       Or paste them into the **SQL Editor** yourself, **in this order**:
        - [ ] `db/schema.sql`
        - [ ] `db/functions.sql`
        - [ ] `db/policies.sql`
@@ -59,7 +68,17 @@ Open **http://localhost:5173**
        - [ ] `db/migrations/003_campus_locations.sql` — the 28 real campus
              locations. Safe to re-run: it matches on `slug` and updates rather
              than duplicating.
-4. [ ] Run the security check:
+4. [ ] Check what is still missing before switching off demo mode:
+
+       ```bash
+       npm run preflight --prefix server
+       ```
+
+       It reports, separately, what blocks the **map** and what blocks the
+       **assistant** — the map needs only a database, and there is no reason to
+       wait for a language model to see real locations on it.
+
+5. [ ] Run the security check:
        ```sql
        select * from geobot.rls_audit();
        ```
@@ -110,6 +129,15 @@ Optional, to see the real database working before real data arrives:
 ---
 
 ## Phase 4 — Switch off demo mode
+
+> **The demonstration logins stop working here.** `admin@demo.local / demo` and
+> the other three are recognised only by a server running `DEMO_MODE=true`. The
+> moment you set it to `false`, every portal authenticates against Supabase, and
+> until Phase 5 provisions real accounts there is nobody who can sign in. That
+> is not a fault — it is the point — but it surprises people who expected the
+> map to go live and the portals to keep working. The public map and the
+> assistant are unaffected; only the four portals need accounts.
+
 
 1. [ ] Edit `server/.env`:
        ```

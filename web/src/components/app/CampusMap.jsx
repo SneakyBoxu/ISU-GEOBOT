@@ -6,6 +6,7 @@ import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../lib/constants.js';
 import { usePrefersReducedMotion } from '../../hooks/useMotion.js';
 import { useTheme } from '../../lib/theme.jsx';
 import { TYPE_LETTER, categoryColor } from './markerGlyph.js';
+import { teardropIcon } from './pinIcon.js';
 import LocationCard from './LocationCard.jsx';
 
 /**
@@ -60,52 +61,6 @@ const BASEMAPS = {
 
 const CTRL = 'grid h-7 w-8 place-items-center text-fg-muted transition-colors duration-state hover:bg-bg-sunken hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus';
 
-function markerIcon(type, active, index = 0) {
-  const w = active ? 34 : 28;
-  const h = Math.round(w * 1.28);
-  const letter = TYPE_LETTER[type] ?? '·';
-  const ink = categoryColor(type);
-  // Markers arrive staggered, like pins being placed on a board. The delay is
-  // capped so a large campus does not take four seconds to finish appearing.
-  const delay = Math.min(index * 45, 700);
-  const id = `pin-${type}-${active ? 'a' : 'r'}`;
-
-  return L.divIcon({
-    className: '',
-    iconSize: [w, h],
-    // The tip, not the centre: a teardrop points AT its coordinate, and
-    // anchoring it centrally would place every building half a pin north of
-    // where it actually is.
-    iconAnchor: [w / 2, h],
-    popupAnchor: [0, -h + 2],
-    html: `
-      <span class="drop-in" style="
-        display:block;width:${w}px;height:${h}px;
-        animation-delay:${delay}ms;
-        filter:drop-shadow(0 3px 4px rgb(0 0 0 / .34)) drop-shadow(0 1px 1px rgb(0 0 0 / .22));
-      ">
-        <svg width="${w}" height="${h}" viewBox="0 0 28 36" fill="none"
-             xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#fff" stop-opacity=".26"/>
-              <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <path d="M14 35.2c0-.1 11.6-12.6 11.6-21.2A11.6 11.6 0 1 0 2.4 14c0 8.6 11.6 21.1 11.6 21.2Z"
-                fill="${ink}"/>
-          <path d="M14 35.2c0-.1 11.6-12.6 11.6-21.2A11.6 11.6 0 1 0 2.4 14c0 8.6 11.6 21.1 11.6 21.2Z"
-                fill="url(#${id})"/>
-          <path d="M14 35.2c0-.1 11.6-12.6 11.6-21.2A11.6 11.6 0 1 0 2.4 14c0 8.6 11.6 21.1 11.6 21.2Z"
-                fill="none" stroke="rgb(0 0 0 / .18)" stroke-width="1"/>
-          <circle cx="14" cy="13.4" r="6.4" fill="rgb(var(--pin-disc))"/>
-          <text x="14" y="13.4" text-anchor="middle" dominant-baseline="central"
-                fill="rgb(var(--pin-disc-ink))"
-                style="font:600 9px/1 Inter,system-ui,sans-serif;letter-spacing:.02em">${letter}</text>
-        </svg>
-      </span>`,
-  });
-}
 
 /**
  * Clicking the map background clears the selection.
@@ -326,7 +281,7 @@ export default function CampusMap({
             <Marker
               key={poi.id}
               position={[poi.lat, poi.lng]}
-              icon={markerIcon(poi.type, poi.id === focusId, i)}
+              icon={teardropIcon({ type: poi.type, active: poi.id === focusId, index: i })}
               ref={(m) => { if (m) markerRefs.current.set(poi.id, m); else markerRefs.current.delete(poi.id); }}
               eventHandlers={{ click: () => onSelect?.(poi.id) }}
             >

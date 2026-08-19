@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { DEMO_AUTH, signIn } from '../../lib/supabase.js';
+import { useEffect, useState } from 'react';
+import { DEMO_AUTH, demoAuthMode, signIn } from '../../lib/supabase.js';
 import Nav from './Nav.jsx';
 import DemoBanner from './DemoBanner.jsx';
 import { Alert, Button, Field, Input, PasswordInput } from '../ui/index.js';
@@ -22,6 +22,11 @@ export default function PortalLogin({ icon: Icon, title, description, onSession 
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  // Starts from the synchronous guess so the panel does not flash, then takes
+  // the server's answer. Showing demonstration credentials on a deployment that
+  // does not accept them is the confusing half of the bug this replaced.
+  const [demoAuth, setDemoAuth] = useState(DEMO_AUTH);
+  useEffect(() => { demoAuthMode().then(setDemoAuth); }, []);
 
   async function submit(e) {
     e.preventDefault();
@@ -78,7 +83,7 @@ export default function PortalLogin({ icon: Icon, title, description, onSession 
             </Button>
           </form>
 
-          {DEMO_AUTH ? (
+          {demoAuth ? (
             <div className="mt-7 border border-warning/35 bg-warning-subtle px-4 py-3.5">
               <p className="text-label font-semibold uppercase tracking-[0.08em] text-warning">
                 Demonstration accounts

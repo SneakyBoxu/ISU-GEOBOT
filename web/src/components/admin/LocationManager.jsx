@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, MapPin, Plus, RefreshCw, Save, Search, Settings2 } from 'lucide-react';
+import { Building2, List, Map as MapIcon, MapPin, Plus, RefreshCw, Save, Search, Settings2 } from 'lucide-react';
 import { api } from '../../lib/api.js';
 import { currentSession, signOut } from '../../lib/supabase.js';
 import PortalShell, { SignOutButton } from '../patterns/PortalShell.jsx';
 import PortalLogin from '../shared/PortalLogin.jsx';
-import MapPicker from './MapPicker.jsx';
+import EditorMap from './EditorMap.jsx';
 import { ICON_CHOICES } from '../app/markerGlyph.js';
 import {
   Alert, Button, EmptyState, Field, Input, Select, SkeletonRows, Textarea,
@@ -54,6 +54,10 @@ export default function LocationManager() {
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
   const [query, setQuery] = useState('');
+  // The right pane is a MAP first and a list second. Placing a building is a
+  // question about where it sits relative to the others, and a text list of
+  // twenty-eight coordinates cannot answer it.
+  const [view, setView] = useState('map');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
@@ -247,10 +251,19 @@ export default function LocationManager() {
                 )}
               </Field>
             </div>
-            <MapPicker
-              lat={Number(form.lat)} lng={Number(form.lng)}
-              onPick={(a, b) => { set('lat', a.toFixed(6)); set('lng', b.toFixed(6)); }}
-            />
+            <p className="field-hint">
+              {form.lat && form.lng
+                ? 'Set. Drag the pin on the map to adjust, and check it against a landmark before saving.'
+                : 'Not set yet.'}{' '}
+              <button
+                type="button"
+                onClick={() => setView('map')}
+                className="rounded underline decoration-line-strong underline-offset-4 transition-colors duration-state hover:text-fg"
+              >
+                Place it on the map
+              </button>{' '}
+              &mdash; every other location is shown there for reference.
+            </p>
           </Fieldset>
 
           <Fieldset legend="Description">
@@ -335,18 +348,50 @@ export default function LocationManager() {
           )}
         </form>
 
-        <section>
+        <section className="flex min-h-0 flex-col lg:sticky lg:top-6 lg:h-[calc(100dvh-8rem)]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-            <h2 className="font-serif text-h3 text-fg">
-              On the map <span className="text-fg-subtle" data-numeric>({pois.length})</span>
-            </h2>
-            <div className="relative w-full max-w-xs">
+            <div className="flex items-center gap-3">
+              <h2 className="font-serif text-h3 text-fg">
+                On the map <span className="text-fg-subtle" data-numeric>({pois.length})</span>
+              </h2>
+              <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="View">
+                {[['map', 'Map', MapIcon], ['list', 'List', List]].map(([key, label, Glyph]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setView(key)}
+                    aria-pressed={view === key}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-label transition-colors duration-state ${
+                      view === key ? 'bg-fg text-bg' : 'text-fg-muted hover:text-fg'
+                    }`}
+                  >
+                    <Glyph className="h-3.5 w-3.5" aria-hidden />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={`relative w-full max-w-xs ${view === 'map' ? 'hidden' : ''}`}>
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" aria-hidden />
               <Input value={query} onChange={(e) => setQuery(e.target.value)}
                      placeholder="Filter locations" aria-label="Filter locations" className="pl-8" />
             </div>
           </div>
 
+          {view === 'map' && (
+            <div className="min-h-0 flex-1 pt-3">
+              <EditorMap
+                pois={pois}
+                editingId={editingId}
+                lat={form.lat}
+                lng={form.lng}
+                name={form.name}
+                onPick={(a, b) => { set('lat', a.toFixed(6)); set('lng', b.toFixed(6)); }}
+              />
+            </div>
+          )}
+
+          <div className={`min-h-0 flex-1 overflow-y-auto ${view === 'list' ? '' : 'hidden'}`}>
           {loading && pois.length === 0 && <SkeletonRows rows={6} />}
 
           {shown.length > 0 && (
@@ -384,6 +429,7 @@ export default function LocationManager() {
                 : 'Try a different name.'}
             </EmptyState>
           )}
+          </div>
         </section>
       </div>
     </PortalShell>

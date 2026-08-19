@@ -29,10 +29,52 @@ const DEMO_ACCOUNTS = {
   'admin@demo.local': { access_token: 'demo-admin-token', role: 'admin' },
 };
 
+/**
+ * WHICH AUTHENTICATION IS IN FORCE — and why the server decides, not this file.
+ *
+ * This used to be `!supabase`: demo auth if no Supabase client was configured.
+ * That is the client answering a question only the server can answer, and when
+ * the two disagreed every portal broke in the same baffling way — a login that
+ * appears to succeed, a list that loads nothing, and "invalid demo session" on
+ * save. It happened for real: `web/.env` carried a VITE_SUPABASE_URL while the
+ * API ran with DEMO_MODE=true, so the browser obtained a Supabase JWT and sent
+ * it to a server that only recognises demo tokens.
+ *
+ * The server already publishes the answer at /api/health. Asking it removes the
+ * disagreement entirely: a Supabase client may exist and go unused, which is
+ * the correct outcome when the API it would authenticate against is not
+ * checking Supabase tokens.
+ */
+let modePromise = null;
+
+async function usingDemoAuth() {
+  if (!supabase) return true;           // nothing else is possible
+  if (!modePromise) {
+    modePromise = fetch(`${import.meta.env.VITE_API_BASE ?? '/api'}/health`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h) => Boolean(h?.demoMode))
+      // If health is unreachable the portals are unusable either way; fall back
+      // to the configured client rather than inventing a demo session.
+      .catch(() => false);
+  }
+  return modePromise;
+}
+
+/**
+ * Synchronous best guess, for first paint only.
+ *
+ * The login screen uses this to decide whether to show the demonstration
+ * accounts. It can be wrong for one frame; `demoAuthMode()` is the authority
+ * and the screen corrects itself as soon as it resolves.
+ */
 export const DEMO_AUTH = !supabase;
 
+export async function demoAuthMode() {
+  return usingDemoAuth();
+}
+
 export async function signIn(email, password) {
-  if (!supabase) {
+  if (await usingDemoAuth()) {
     const account = DEMO_ACCOUNTS[email.trim().toLowerCase()];
     if (!account || password !== 'demo') {
       throw new Error('Use one of the demonstration accounts shown below.');
@@ -47,7 +89,7 @@ export async function signIn(email, password) {
 }
 
 export async function currentSession() {
-  if (!supabase) {
+  if (await usingDemoAuth()) {
     const raw = sessionStorage.getItem('geobot.demoSession');
     return raw ? JSON.parse(raw) : null;
   }
@@ -56,9 +98,8 @@ export async function currentSession() {
 }
 
 export async function signOut() {
-  if (!supabase) {
-    sessionStorage.removeItem('geobot.demoSession');
-    return;
-  }
-  await supabase.auth.signOut();
+  // Clear both regardless of mode: a stale demo session left behind after a
+  // config change is the other half of the bug described above.
+  sessionStorage.removeItem('geobot.demoSession');
+  if (supabase) await supabase.auth.signOut();
 }
