@@ -95,8 +95,12 @@ export const demoMl = {
  */
 export async function demoGenerate(messages) {
   const prompt = messages.at(-1)?.content ?? '';
+  // Everything between the system prompt and the fused turn is conversation
+  // history. A real model would simply attend to it; the stub has to be told.
+  const history = messages.slice(1, -1);
 
-  const query = (prompt.match(/USER QUERY:\n([\s\S]*)$/) ?? [])[1]?.trim() ?? '';
+  const rawQuery = (prompt.match(/USER QUERY:\n([\s\S]*)$/) ?? [])[1]?.trim() ?? '';
+  const { query, resolved } = resolveDeixis(rawQuery, history);
   const availability = (prompt.match(/AVAILABILITY \([^)]*\):\n([\s\S]*?)\n\n/) ?? [])[1] ?? null;
   const contextBlock = (prompt.match(/RETRIEVED CONTEXT[^:]*:\n([\s\S]*?)(?:\n\nAVAILABILITY|\n\nUSER QUERY)/) ?? [])[1] ?? '';
 
@@ -128,7 +132,30 @@ export async function demoGenerate(messages) {
     );
   }
 
+  // "How do I get to the library" is a navigation question and was not being
+  // treated as one, because the old list only recognised the word "where".
+  // Route-shaped phrasings are how people ask once they already know the name.
+  const navigational = /\b(where|location|locate|find|show|get to|getting to|way to|route|directions?|take me|walk to|how do i get|nasaan|saan|papunta)\b/i
+    .test(query);
+  // When a pronoun was resolved from history, THAT is the place being asked
+  // about. "How do I get there from the Oval" names two locations and means the
+  // first one; scoring the whole sentence would pick the Oval, which is where
+  // the user already is.
+  const tag = navigational ? locationTag(prompt, resolved ?? query) : '';
+
   if (noContext) {
+    // Naming a place and describing it are different capabilities. The lexical
+    // stub retrieves weakly, so it often has nothing to say about a building it
+    // can nonetheless identify — and pointing at it on the map is still the
+    // right answer to "where is it". The real pipeline reaches this branch far
+    // less often; the branch exists so the demo does not look broken when it
+    // does.
+    if (tag) {
+      return (
+        'I can show you where that is on the campus map. I do not have a '
+        + 'document describing it in more detail yet.' + tag
+      );
+    }
     return (
       'I do not have information about that in the documents available to me. ' +
       'Try asking about a campus building, an administrative office, or an ' +
@@ -139,10 +166,93 @@ export async function demoGenerate(messages) {
   return `${firstSentences(passages[0], 3)}${
     passages[1] ? ` ${firstSentences(passages[1], 1)}` : ''
   }${
-    /where|location|find|nasaan|saan/i.test(query)
-      ? ' You can see the exact position highlighted on the campus map.'
-      : ''
-  }`;
+    navigational ? ' You can see the exact position highlighted on the campus map.' : ''
+  }${tag}`;
+}
+
+/**
+ * The stub's stand-in for a model resolving "there".
+ *
+ * "How do I get there from the Oval?" carries no noun. A language model handles
+ * this by attending to the previous turns; a template engine cannot, so the
+ * stub does the one thing that makes the demo honest: it rewrites the deictic
+ * word with whatever place the last assistant turn actually named, then answers
+ * that question normally.
+ *
+ * It is a stand-in, not an implementation of coreference. It resolves one word
+ * against one prior turn, and it is only ever reached in DEMO_MODE — with a
+ * Groq key the real model sees the same history and does this properly.
+ */
+const DEIXIS = /\b(there|it|that place|the same place)\b/i;
+
+function resolveDeixis(query, history) {
+  if (!DEIXIS.test(query)) return { query, resolved: null };
+
+  // The most recent assistant turn that named a campus place. Titles are the
+  // capitalised runs the place-cards are written with.
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    if (history[i].role !== 'assistant') continue;
+    const named = String(history[i].content ?? '')
+      .match(/\b((?:[A-Z][A-Za-z'’-]+\s+){1,4}(?:Building|Center|Centre|Library|Hall|Office|Park|Plaza|Gate|Oval|Gymnasium|School|College|Station|Dormitory|Canteen|Infirmary|Amphitheater))\b/);
+    if (named) return { query: query.replace(DEIXIS, named[1]), resolved: named[1] };
+  }
+  return { query, resolved: null };
+}
+
+/**
+ * The stub's stand-in for the real model choosing a [LOCATION: id].
+ *
+ * Lexical, like the rest of demo mode: it reads the CAMPUS LOCATIONS block out
+ * of the prompt it was given and matches the query against the names in it. It
+ * cannot emit an id that was not in the prompt — but the server validates the
+ * id regardless, because in production the thing choosing it is a language
+ * model and no prompt instruction is a guarantee.
+ *
+ * A name matches on either of two grounds, because campus names come in two
+ * shapes:
+ *
+ *   · most of the name is in the query — "the university library" against
+ *     "University Library"
+ *   · the query contains a word no other location uses — "the oval" against
+ *     "The Oval (Athletic Field)", where two thirds of the name is decoration
+ *     nobody says out loud
+ *
+ * Neither test alone is enough. Coverage alone loses every parenthesised name;
+ * rarity alone matches on any distinctive word that happens to appear. Ties go
+ * to the rarer words, so "library" picks the library over Library Park.
+ */
+function locationTag(prompt, query) {
+  // Matched to end of line rather than to the first colon: the header itself
+  // contains one, inside the "[LOCATION: id]" it is explaining.
+  const block = (prompt.match(/CAMPUS LOCATIONS[^\n]*\n([\s\S]*?)(?:\n\n|$)/) ?? [])[1];
+  if (!block) return '';
+
+  const entries = [];
+  for (const line of block.split('\n')) {
+    const m = line.match(/^- ([a-z0-9-]+) [—-] (.+)$/);
+    if (m) entries.push({ slug: m[1], words: m[2].toLowerCase().match(/[a-z]{4,}/g) ?? [] });
+  }
+
+  const frequency = new Map();
+  for (const e of entries) {
+    for (const w of new Set(e.words)) frequency.set(w, (frequency.get(w) ?? 0) + 1);
+  }
+
+  const q = query.toLowerCase();
+  let best = null;
+  for (const e of entries) {
+    const words = [...new Set(e.words)];
+    const matched = words.filter((w) => q.includes(w));
+    if (!matched.length) continue;
+
+    const coverage = matched.length / words.length;
+    const distinctive = matched.some((w) => frequency.get(w) === 1);
+    if (coverage < 0.5 && !distinctive) continue;
+
+    const score = matched.reduce((sum, w) => sum + 1 / frequency.get(w), 0);
+    if (!best || score > best.score) best = { slug: e.slug, score };
+  }
+  return best ? ` [LOCATION: ${best.slug}]` : '';
 }
 
 function firstSentences(text, n) {

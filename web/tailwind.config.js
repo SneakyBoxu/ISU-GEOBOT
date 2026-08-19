@@ -67,6 +67,7 @@ export default {
         DEFAULT: 'var(--radius-md)',
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
         pill: 'var(--radius-pill)',
       },
 

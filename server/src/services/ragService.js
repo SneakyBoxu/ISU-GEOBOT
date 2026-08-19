@@ -30,6 +30,120 @@ import { routeQuery } from './router.js';
 import { getAvailability } from './presenceService.js';
 
 let statusLabels = null;
+let gazetteer = { at: 0, rows: [] };
+const GAZETTEER_TTL_MS = 60_000;
+
+/**
+ * The published campus locations, as {slug, name}.
+ *
+ * Read-only, and cached briefly because it is small and changes only when a
+ * Campus Location administrator edits it. Unpublished locations are excluded,
+ * so unpublishing removes a place from the assistant as well as from the map.
+ */
+async function loadGazetteer() {
+  if (Date.now() - gazetteer.at < GAZETTEER_TTL_MS) return gazetteer.rows;
+  const { data } = await db
+    .from('poi')
+    .select('id, slug, name, is_published')
+    .order('name');
+  gazetteer = {
+    at: Date.now(),
+    rows: (data ?? []).filter((p) => p.slug && p.is_published !== false),
+  };
+  return gazetteer.rows;
+}
+
+export function clearGazetteerCache() {
+  gazetteer = { at: 0, rows: [] };
+}
+
+/**
+ * Pull the [LOCATION: id] tag out of a generated answer.
+ *
+ * THE VALIDATION IS THE POINT. The model proposes an id; the server checks it
+ * against the authoritative location list and discards anything that is not
+ * there. A hallucinated or malicious id moves nothing.
+ *
+ * This is a READ-ONLY channel: its entire effect is to pan a map. It cannot
+ * create, modify or delete a location — those live behind the Campus Location
+ * portal's authenticated, role-checked endpoints.
+ */
+export function extractLocationTag(answer, locations) {
+  const m = answer.match(/\[LOCATION:\s*([a-z0-9-]{1,64})\s*\]/i);
+  if (!m) return { text: answer, poi: null };
+
+  const text = answer.replace(m[0], '').trim();
+  const hit = locations.find((l) => l.slug === m[1].toLowerCase());
+  if (!hit) {
+    log.warn({ proposed: m[1] }, 'assistant proposed an unknown location id; ignored');
+    return { text, poi: null };
+  }
+  return { text, poi: { poiId: hit.id, slug: hit.slug, name: hit.name } };
+}
+
+/**
+ * What may be carried forward from earlier turns.
+ *
+ * Multi-turn chat is a real gain — "where is the library" then "how do I get
+ * there from the Oval" is how people actually ask — but replaying history to a
+ * language model has a specific hazard here, and it is not a general one.
+ *
+ * THE HAZARD. Every availability answer is a masked, present-moment estimate,
+ * and that is deliberate: §4.3 and audit F-29 exist because a sequence of
+ * present-moment answers IS a presence timeline. Feeding prior answers back in
+ * hands the model exactly that sequence and invites it to summarise the
+ * pattern — "she has been unavailable all morning" — which no single response
+ * would ever have said, and which the egress filter cannot catch because it is
+ * not a location.
+ *
+ * SO: any prior turn carrying a status is dropped, along with the question that
+ * produced it. Navigation and document follow-ups keep their context; faculty
+ * availability stays strictly single-turn, which is what the design always
+ * claimed it was.
+ *
+ * This is not a security boundary and is not presented as one — a client can
+ * post whatever history it likes. It is a correctness boundary for honest
+ * clients. The actual controls on aggregation are the auth gate and the rate
+ * limit, and both are untouched by this.
+ */
+// Matched against the DISPLAY LABELS in `availability_status`, plus the
+// estimate qualifier every status answer is required to carry. Built from a
+// list rather than written as one literal: the previous version carried an
+// escape that survived as a control character and silently matched nothing,
+// which a regex is uniquely good at hiding.
+//
+// Deliberately over-broad. Dropping a navigation turn that happens to say
+// "estimated" costs a little context; keeping a status turn costs the
+// property this whole function exists to hold.
+const STATUS_HINT = new RegExp(
+  [
+    'available for consultation',
+    'in scheduled class',
+    'unavailable',
+    'off-schedule',
+    'estimated to be',
+  ].join('|'),
+  'i',
+);
+export function sanitiseHistory(raw) {
+  if (!Array.isArray(raw)) return [];
+  const clean = [];
+  for (const m of raw) {
+    if (!m || (m.role !== 'user' && m.role !== 'assistant')) continue;
+    const content = String(m.content ?? '').slice(0, 600).trim();
+    if (!content) continue;
+    if (m.role === 'assistant' && STATUS_HINT.test(content)) {
+      // Drop the answer AND the question that prompted it, so the model is not
+      // left with "is Prof. Santos free?" and no reply to it.
+      if (clean.at(-1)?.role === 'user') clean.pop();
+      continue;
+    }
+    clean.push({ role: m.role, content });
+  }
+  // Six turns is enough for a follow-up to make sense and short enough that a
+  // long session cannot quietly become a transcript in every request.
+  return clean.slice(-6);
+}
 
 async function labelFor(code) {
   if (!statusLabels) {
@@ -72,6 +186,8 @@ export async function retrieve(query, { includeSynthetic = true } = {}) {
  * @param {Date}   [args.at]
  * @param {boolean}[args.includeSynthetic]
  * @param {boolean}[args.allowAvailability] false for anonymous callers (F-29)
+ * @param {Array}  [args.history] prior turns. Defaults to none, which is what
+ *                 the evaluation harness uses — see sanitiseHistory.
  */
 export async function runPipeline({
   query,
@@ -79,6 +195,7 @@ export async function runPipeline({
   at = new Date(),
   includeSynthetic = true,
   allowAvailability = true,
+  history = [],
 }) {
   const tStart = performance.now();
   const timings = { route: 0, guard: 0, rf: 0, embed: 0, retrieve: 0, llm: 0, total: 0 };
@@ -105,6 +222,7 @@ export async function runPipeline({
 
   // 2-3. Retrieval runs unconditionally, in BOTH arms (§3.5.4 step 4) ------
   const retrievalPromise = retrieve(query, { includeSynthetic });
+  const locationsPromise = loadGazetteer();
 
   // 4. Availability — enhanced arm only. This is the ONLY divergence. ------
   //
@@ -141,9 +259,10 @@ export async function runPipeline({
     }
   }
 
-  const [retrieval, availability] = await Promise.all([
+  const [retrieval, availability, locations] = await Promise.all([
     retrievalPromise,
     availabilityPromise,
+    locationsPromise,
   ]);
   timings.embed = retrieval.timings.embed;
   timings.retrieve = retrieval.timings.retrieve;
@@ -206,12 +325,18 @@ export async function runPipeline({
     query,
     chunks: retrieval.chunks,
     availability: availabilityBlock,
+    locations,
+    history: sanitiseHistory(history),
   });
 
   // 6. Generate ----------------------------------------------------------
   const tLlm = performance.now();
   let answer = await generate(messages);
   timings.llm = performance.now() - tLlm;
+
+  // 6b. Location tag ------------------------------------------------------
+  const tagged = extractLocationTag(answer, locations);
+  answer = tagged.text;
 
   // 7. Egress filter -----------------------------------------------------
   // Audit F-27. Masking sanitises the INPUT; nothing in the thesis constrains
@@ -230,10 +355,18 @@ export async function runPipeline({
 
   timings.total = performance.now() - tStart;
 
-  // Map focus for the frontend (audit S1 / brief §3B). Derived from the
-  // retrieved place-cards, so the map follows what actually grounded the
-  // answer rather than a second, unrelated lookup.
+  // Map focus. Two sources, in priority order:
+  //   1. a validated [LOCATION: id] tag — the user explicitly asked to see it
+  //   2. the retrieved place-card — the answer was grounded in that place
+  // The tag wins because "where is the library" should move the map even when
+  // the retriever surfaced a different chunk first.
+  // Both sources resolve to the same shape — id, slug and name — so the
+  // interface can say WHICH place it moved to without a second lookup. A map
+  // that pans with no caption asks the user to work out what just happened.
   const poiChunk = retrieval.chunks.find((c) => c.poi_id);
+  const chunkPoi = poiChunk
+    ? locations.find((l) => l.id === poiChunk.poi_id) ?? { id: poiChunk.poi_id }
+    : null;
 
   return {
     answer,
@@ -250,7 +383,9 @@ export async function runPipeline({
     internalProbabilities: availability?.internalProbabilities ?? null,
     modelVersion: availability?.modelVersion ?? null,
     egressFilterHit: egressHit,
-    poiFocus: poiChunk ? { poiId: poiChunk.poi_id } : null,
+    poiFocus: tagged.poi ?? (chunkPoi
+      ? { poiId: chunkPoi.id, slug: chunkPoi.slug ?? null, name: chunkPoi.name ?? null }
+      : null),
     availabilityWithheld: false,
     timings,
   };

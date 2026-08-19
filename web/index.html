@@ -26,14 +26,18 @@
         try {
           var stored = localStorage.getItem('geobot.theme');
           var theme =
-            stored === 'light' || stored === 'mono'
+            stored === 'light' || stored === 'dark'
               ? stored
-              : window.matchMedia('(prefers-contrast: more)').matches
-              ? 'mono'
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
               : 'light';
           document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute('content', theme === 'dark' ? '#111412' : '#FBFAF8');
         } catch (e) {
           document.documentElement.dataset.theme = 'light';
+          document.documentElement.style.colorScheme = 'light';
         }
       })();
     </script>

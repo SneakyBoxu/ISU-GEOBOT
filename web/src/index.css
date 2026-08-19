@@ -40,7 +40,6 @@
     outline-offset: 2px;
     border-radius: var(--radius-xs);
   }
-  [data-theme='mono'] :focus-visible { outline-width: 2.5px; }
 
   /* Skip link — first tab stop on every page. */
   .skip-link {
@@ -57,7 +56,16 @@
 @layer components {
 
   /* --- measure ------------------------------------------------------ */
-  .container-x { @apply mx-auto w-full max-w-[76rem] px-5 sm:px-8 lg:px-10; }
+  /* 84rem rather than 76rem: on a 1440 or 1920 display the old measure left
+     the page sitting in the middle of the window like a card. Prose still sets
+     its own measure with `max-w-measure`, so widening the frame gives the
+     layout air without stretching a line of text past readability. */
+  .container-x { @apply mx-auto w-full max-w-[84rem] px-5 sm:px-8 lg:px-10 2xl:max-w-[90rem]; }
+
+  /* Application chrome — /app and the portals — runs to the window edges. The
+     landing page is a document and keeps its measure; these are tools, and a
+     tool that insets itself by 350px on each side is wasting the desk. */
+  .container-app { @apply w-full px-4 sm:px-6; }
 
   /* --- rules -------------------------------------------------------- */
   /* The workhorse of this design system. Hierarchy comes from ruled
@@ -130,7 +138,8 @@
 
   /* --- status indicator ---------------------------------------------- */
   /* Pill shape is reserved for these, because here the shape carries the
-     semantic. In Monochrome these resolve to ink with no hue, and remain
+     semantic. Each tone is a token pair, so the Dark theme refills them
+     without any component naming a hue, and they remain
      legible by icon + label + weight alone. */
   .indicator {
     @apply inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1
@@ -180,12 +189,25 @@
 
 .leaflet-container { @apply bg-bg-sunken font-sans; }
 
+/* The popup is a frame for the location card, not a card itself — the card
+   brings its own border, ground and shadow. Two sets of chrome nested inside
+   each other is the "widget inside a widget" look this map is trying not to
+   have. */
 .leaflet-popup-content-wrapper {
-  @apply rounded border border-line bg-surface text-fg shadow-lg;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   padding: 0;
+  @apply text-fg;
 }
-.leaflet-popup-content { margin: 0; }
-.leaflet-popup-tip { @apply border border-line bg-surface; }
+.leaflet-popup-content { margin: 0; width: auto !important; }
+.leaflet-popup { margin-bottom: 0; }
+.leaflet-popup-tip {
+  @apply border border-line bg-surface;
+  box-shadow: var(--shadow-lg);
+  border-radius: 0 0 var(--radius-xs) 0;
+}
 .leaflet-popup-close-button { @apply text-fg-subtle hover:text-fg; }
 
 .leaflet-bar,
@@ -200,10 +222,29 @@
 }
 .leaflet-control-attribution a { @apply text-fg-muted; }
 
-/* Monochrome desaturates the basemap itself. One declaration, no second tile
+/* Dark swaps the basemap for CARTO's night cartography; imagery is only
    provider and no API key — and it keeps the map honest with the theme
    instead of leaving a colour photograph inside a greyscale interface. */
-[data-theme='mono'] .leaflet-tile-pane { filter: grayscale(1) contrast(1.05); }
+/* The plan basemap swaps to CARTO's dark cartography in the dark theme — a
+   real nighttime map, not the day map with a filter over it. See BASEMAPS in
+   CampusMap.jsx. Satellite imagery cannot be re-authored, so it is dimmed just
+   enough to sit in a dark page instead of blazing out of it. Grayscale is
+   deliberately NOT used: aerial imagery without colour is unreadable, and the
+   point of the satellite view is telling a field from a roof. */
+[data-theme='dark'] .leaflet-tile-pane { filter: brightness(0.88); }
+[data-theme='dark'] [data-basemap='satellite'] .leaflet-tile-pane {
+  filter: brightness(0.78) saturate(0.88) contrast(1.04);
+}
+
+/* Leaflet paints its own white ground behind the tiles while they load. */
+[data-theme='dark'] .leaflet-container { background: rgb(var(--bg-sunken)); }
+
+/* The docked assistant sits bottom-right, where Leaflet puts its attribution.
+   The attribution is a licence obligation, not decoration, so the map yields
+   the corner rather than the notice getting covered. Scoped to the screen that
+   has a dock — the landing page's mini-map has none. */
+[data-dock] .leaflet-control-attribution { padding-right: 5.5rem; }
+[data-dock] .leaflet-bottom.leaflet-right { max-width: calc(100% - 1rem); }
 
 /* =====================================================================
    MOTION PREFERENCES

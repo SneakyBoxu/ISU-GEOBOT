@@ -79,5 +79,10 @@ export const config = {
   sessionSalt: process.env.SESSION_SALT ?? 'change-me-in-production',
 };
 
-export const PROMPT_TEMPLATE_VERSION = 'v1.0.0';
+// v1.1.0 — register and length guidance changed, conversation history added.
+// BUMPED DELIBERATELY. eval_run.prompt_template_version records this, and any
+// evaluation run made under v1.0.0 is not comparable with one made under
+// v1.1.0. Changing the prompt without changing this number is how a thesis
+// ends up reporting two different systems as one.
+export const PROMPT_TEMPLATE_VERSION = 'v1.1.0';
 export const ROUTER_VERSION = 'gazetteer-v1.0.0';

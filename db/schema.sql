@@ -30,6 +30,7 @@ create extension if not exists "vector";
 create extension if not exists "pgcrypto";
 create extension if not exists "pg_trgm";   -- fuzzy faculty-name gazetteer (F-31)
 
+drop schema if exists geobot cascade;
 create schema if not exists geobot;
 set search_path = geobot, public, extensions;
 

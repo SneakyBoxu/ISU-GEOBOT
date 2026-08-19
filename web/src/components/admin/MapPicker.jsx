@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { CAMPUS_CENTER } from '../../lib/constants.js';
+import { useTheme } from '../../lib/theme.jsx';
 
 /**
  * Visual verification for a coordinate.
@@ -14,7 +15,26 @@ import { CAMPUS_CENTER } from '../../lib/constants.js';
  * It is a verification aid, not a survey instrument. Thesis §3.4.1(a) still
  * requires on-site GPS mapping verified against physical landmarks; this only
  * makes a wrong number visible.
+ *
+ * SATELLITE IS THE DEFAULT HERE, unlike the public map's toolbar default being
+ * a matter of taste. Checking a coordinate means checking it against the thing
+ * that is actually there — a roof, a road, the edge of the oval. A plan tile
+ * shows a beige polygon and confirms nothing, which makes it the wrong tool for
+ * the one screen in this system whose entire job is catching a wrong number.
  */
+const PICKER_BASEMAPS = {
+  satellite: {
+    label: 'Satellite',
+    url: () => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    reference: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+  },
+  plan: {
+    label: 'Plan',
+    url: (theme) => `https://{s}.basemaps.cartocdn.com/${theme === 'dark' ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`,
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  },
+};
 // Keyed on the coordinate so React remounts the marker when it moves, which
 // replays the placement animation — the visual confirmation that a typed
 // coordinate was understood.
@@ -44,16 +64,34 @@ function ClickCapture({ onPick }) {
 export default function MapPicker({ lat, lng, onPick }) {
   const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
   const centre = hasCoords ? [lat, lng] : CAMPUS_CENTER;
+  const [basemap, setBasemap] = useState('satellite');
+  const { theme } = useTheme();
+  const base = PICKER_BASEMAPS[basemap];
 
   return (
     <div>
-      <div className="h-56 border border-line">
+      <div className="mb-1.5 flex justify-end">
+        <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Base map">
+          {Object.entries(PICKER_BASEMAPS).map(([key, b]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setBasemap(key)}
+              aria-pressed={basemap === key}
+              className={`px-2.5 py-1 text-label transition-colors duration-state ${
+                basemap === key ? 'bg-fg text-bg' : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {b.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="h-56 overflow-hidden rounded-md border border-line">
         <MapContainer center={centre} zoom={hasCoords ? 18 : 16}
                       className="h-full w-full" zoomControl={false}>
-          <TileLayer
-            attribution='&copy; OpenStreetMap contributors'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-          />
+          <TileLayer key={`${basemap}-${theme}`} attribution={base.attribution} url={base.url(theme)} />
+          {base.reference && <TileLayer key={`${basemap}-ref`} url={base.reference} />}
           <ClickCapture onPick={onPick} />
           {hasCoords && (
             <>

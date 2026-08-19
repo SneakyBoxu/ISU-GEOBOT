@@ -42,15 +42,18 @@ export const admin = Router();
 const poiSchema = z.object({
   name: z.string().min(2).max(160),
   poiType: z.enum(['college', 'administrative', 'laboratory', 'library',
-                   'facility', 'landmark', 'other']),
+                   'facility', 'landmark', 'sports', 'other']),
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   buildingFunction: z.string().max(200).optional().nullable(),
   departmentId: z.string().max(64).optional().nullable(),
   description: z.string().max(1000).optional().nullable(),
+  // A NAME from the frontend allowlist, not markup and not a URL. The
+  // pattern is the same one the database CHECK enforces.
+  icon: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/).optional().nullable(),
   isFeatured: z.boolean().optional(),
   isPublished: z.boolean().optional(),
-  surveyMethod: z.enum(['gps_survey', 'floor_plan', 'estimated', 'unknown']).optional(),
+  surveyMethod: z.enum(['gps_survey', 'satellite_imagery', 'floor_plan', 'estimated', 'unknown']).optional(),
   // No default. A location entered before the GPS survey is placeholder data
   // and has to say so (audit F-38).
   dataOrigin: z.enum(['synthetic', 'real']),

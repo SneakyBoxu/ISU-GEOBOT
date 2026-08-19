@@ -193,6 +193,11 @@ def ingest_place_cards(origin: str) -> int:
                p.description, p.data_origin, d.name as department_name
         from geobot.poi p
         left join geobot.department d on d.id = p.department_id
+        -- Unpublished locations are excluded. Unpublishing is how a location
+        -- is retired, and a retired location that keeps answering questions
+        -- has not been retired. Without this, re-running place-card ingestion
+        -- silently resurrects everything the /admin portal took down.
+        where p.is_published
         """
     )
     if not pois:

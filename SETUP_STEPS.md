@@ -51,10 +51,14 @@ Open **http://localhost:5173**
 1. [ ] Create a project at [supabase.com](https://supabase.com) (free tier is fine).
        Region: Singapore or Tokyo for lowest latency from Isabela.
 2. [ ] **Database → Extensions** → enable **`vector`**.
-3. [ ] **SQL Editor** → run these three files **in order**, one at a time:
+3. [ ] **SQL Editor** → run these files **in order**, one at a time:
        - [ ] `db/schema.sql`
        - [ ] `db/functions.sql`
        - [ ] `db/policies.sql`
+       - [ ] `db/migrations/002_roles_and_locations.sql`
+       - [ ] `db/migrations/003_campus_locations.sql` — the 28 real campus
+             locations. Safe to re-run: it matches on `slug` and updates rather
+             than duplicating.
 4. [ ] Run the security check:
        ```sql
        select * from geobot.rls_audit();
@@ -228,43 +232,63 @@ your primary evaluation. Chase this first among the data items.
 
 ---
 
-## ⏳ Phase 7 — Campus map data *(waiting on request)*
+## Phase 7 — Campus map data *(mostly done — GPS verification outstanding)*
 
-Blocks: realistic map, navigation answers.
-Does **not** block: RAGAS on institutional documents.
+Blocks: nothing. The map and the navigation answers work now.
+Outstanding: the coordinates are not yet survey data.
 
-1. [ ] Request campus floor plans / building maps from administration.
-2. [ ] Walk the campus with a phone GPS. For each building, office and landmark
-       record: name, latitude, longitude, department, building function, a
-       one-line description.
-3. [ ] Cross-check each coordinate against a physical landmark.
-4. [ ] **Easiest route: sign in at `/admin` and use the form.** It records the
-       survey method, marks provenance, writes an audit entry, and — the part
-       that matters — regenerates the location's place-card and re-embeds it in
-       the same operation, so the assistant can answer about the building
-       immediately. A map pin the chatbot has never heard of is worse than no
-       pin at all.
+**What is already loaded.** `db/migrations/003_campus_locations.sql` inserts 28
+real ISU Echague locations — colleges, administrative offices, the library, the
+oval, the covered court, the cacao centre, the bike station. They carry real
+names, functions and descriptions, and they are what the map and the assistant
+use today.
 
-       Or load them in bulk via SQL:
-       ```sql
-       insert into geobot.poi
-         (name, poi_type, lat, lng, building_function, department_id,
-          description, is_featured, data_origin)
-       values ('College of Computing Studies', 'college', 16.xxxx, 121.xxxx,
-               'Academic instruction', '<dept-uuid>', '...', true, 'real');
-       ```
-       `poi_type` ∈ `college | administrative | laboratory | library | facility |
-       landmark | other`
-5. [ ] Delete the placeholders: `delete from geobot.poi where data_origin = 'synthetic';`
-6. [ ] Regenerate the searchable place-cards (only needed after a bulk SQL
-       load — the `/admin` form does this for you):
-       ```bash
-       python ingest.py --place-cards --origin real
-       ```
+**What is not yet true about them.** Their coordinates were traced from
+satellite imagery, not walked with a GPS receiver. Every one is stored as
+`survey_method = 'satellite_imagery'`, which is a distinct value from
+`gps_survey` precisely so this is visible in a query rather than remembered.
+Thesis §3.4.1(a) specifies GPS mapping verified against physical landmarks, so
+until the walk happens, §3.4.1(a) is not satisfied and should not be written up
+as though it were.
 
-> **When a new building goes up later**, you do not repeat this phase. Sign in
-> at `/admin`, add it, done — it is on the map and answerable in one step.
-7. [ ] Update the initial map view in `web/src/lib/constants.js` → `CAMPUS_CENTER`.
+To see exactly what still needs verifying:
+
+```sql
+select name, lat, lng from geobot.poi
+where survey_method <> 'gps_survey' and is_published
+order by name;
+```
+
+1. [ ] Walk the campus with a phone GPS. For each location above, stand at the
+       building and record the reading.
+2. [ ] Cross-check each coordinate against a physical landmark.
+3. [ ] Correct it at `/admin` → open the location → update the coordinates and
+       set **Survey method** to *On-site GPS survey*. This writes an audit entry
+       and regenerates the location's place-card in the same operation.
+4. [ ] Re-run the query above. When it returns no rows, §3.4.1(a) is satisfied
+       and that is the sentence you can put in the paper.
+
+**Adding a location that is not in the list** (a new building, a missed office):
+sign in at `/admin` and use the form. It assigns the slug, records provenance,
+writes the audit entry, and re-embeds the place-card so the assistant can answer
+about it immediately. A map pin the chatbot has never heard of is worse than no
+pin at all.
+
+Bulk SQL loading is still possible but is the slower path, because it skips all
+of the above and you have to regenerate the place-cards yourself:
+
+```bash
+python ingest.py --place-cards --origin real
+```
+
+`poi_type` ∈ `college | administrative | laboratory | library | facility |
+landmark | sports | other`
+
+5. [ ] Confirm no synthetic locations remain:
+       `select count(*) from geobot.poi where data_origin = 'synthetic' and is_published;`
+       Migration 003 unpublishes the originals; this should return 0.
+6. [ ] Check the initial map view in `web/src/lib/constants.js` → `CAMPUS_CENTER`
+       still frames the campus once the real coordinates are in.
 
 ---
 

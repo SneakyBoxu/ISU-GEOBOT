@@ -30,7 +30,7 @@
 -- =====================================================================
 
 begin;
-set search_path = geobot, public;
+set search_path = geobot, public, extensions;
 
 -- ---------------------------------------------------------------------
 -- 1. Expanded role vocabulary

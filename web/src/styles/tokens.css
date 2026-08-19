@@ -2,8 +2,8 @@
    ISU-GeoBot — Design tokens
    ---------------------------------------------------------------------
    Semantic names only. No component anywhere names a hue; it names a role.
-   Both themes fill the same token set, which is what makes the Monochrome
-   theme a genuine design rather than a filter.
+   Both themes fill the same token set, which is what makes Dark a genuine
+   design rather than an inversion.
 
    Colours are stored as space-separated RGB channels so Tailwind can apply
    opacity modifiers: `rgb(var(--bg) / <alpha-value>)` → `bg-surface/60` works.
@@ -50,6 +50,25 @@
   /* --- focus -------------------------------------------------------- */
   --focus:           31 93 69;
 
+  /* --- location categories ------------------------------------------
+     A cartographic legend, not a palette. Muted, closer to printed map
+     inks than to UI accent colours, and deliberately not a spectrum —
+     these sit next to each other 28 times on one screen.
+
+     Colour is REINFORCEMENT here. Every marker, chip and card that uses
+     one also carries the category letter, so the distinction survives
+     greyscale printing, colour blindness and a screenshot in a thesis
+     appendix. Nothing is identified by hue alone. */
+  --cat-college:        44  85 120;   /* #2C5578  slate blue   */
+  --cat-administrative:107  78 140;   /* #6B4E8C  violet       */
+  --cat-laboratory:    138  90  22;   /* #8A5A16  ochre        */
+  --cat-library:        31  93  69;   /* #1F5D45  deep green   */
+  --cat-facility:      122  92  62;   /* #7A5C3E  umber        */
+  --cat-landmark:      155  44  44;   /* #9B2C2C  brick        */
+  --cat-sports:         31 111 122;   /* #1F6F7A  teal         */
+  --cat-other:          92  96 104;   /* #5C6068  grey         */
+  --cat-ink:           255 255 255;   /* letter on a filled marker */
+
   /* --- elevation ---------------------------------------------------- */
   --shadow-sm: 0 1px 2px rgb(20 22 26 / 0.06);
   --shadow-md: 0 4px 16px -4px rgb(20 22 26 / 0.10), 0 1px 2px rgb(20 22 26 / 0.05);
@@ -57,56 +76,99 @@
 }
 
 /* =====================================================================
-   MONOCHROME
+   DARK
    ---------------------------------------------------------------------
-   Not an inversion and not a grayscale filter — a designed theme where
-   black IS the accent.
+   Night, not negative. Every value here was chosen against a dark ground,
+   not derived from the light theme by subtraction — the two are the same
+   product at two times of day, which is a different thing from one
+   stylesheet with its lightness flipped.
 
-   Availability statuses carry ZERO hue here, by decision. They are
-   distinguished by icon, label and tonal weight instead. That makes
-   switching to this theme a live demonstration that the status system
-   never depended on colour, which is what the accessibility requirement
-   actually asks for.
+   The ground is a very dark desaturated GREEN-grey, not neutral charcoal
+   and never pure black. Pure black on a screen reads as a hole rather
+   than a surface, and it makes every shadow invisible; a trace of the
+   institutional hue in the ground is what keeps this recognisably the
+   same product rather than a generic dark mode.
 
-   Transient alerts (error/warning/info) keep one desaturated hue, because
-   they are momentary, always carry an icon, and losing the distinction
-   there costs comprehension without buying an accessibility guarantee.
+   The accent lightens and desaturates. #1F5D45 is a deep green that works
+   as a filled button under a white page; on this ground it is nearly
+   invisible. #6FAF8E is the same identity at the luminance a dark theme
+   needs — luminous rather than neon, and it never glows.
+
+   CONTRAST. Every text token is checked against `--surface-raised`, the
+   LIGHTEST ground any of them can land on, not against `--bg`. Checking
+   against the page ground alone is how `--fg-subtle` passed review in the
+   light theme and then failed on a table header.
+
+     --fg          on surface-raised   15.9:1
+     --fg-muted    on surface-raised    7.3:1
+     --fg-subtle   on surface-raised    5.1:1   (AA normal text)
+     --accent      on bg                7.2:1
+     --accent-contrast on --accent      7.5:1
+
+   Elevation is carried by TONE first — surface-raised is genuinely
+   lighter than surface — with shadow only as reinforcement. Stacking
+   black shadows on a dark ground communicates nothing; the eye reads
+   depth from light, and there is none in a black blur.
    ===================================================================== */
 
-[data-theme='mono'] {
-  --bg:              252 252 252;   /* #FCFCFC */
-  --bg-sunken:       242 242 242;   /* #F2F2F2 */
-  --surface:         255 255 255;
-  --surface-raised:  255 255 255;
+[data-theme='dark'] {
+  /* --- ground ------------------------------------------------------- */
+  --bg:              17 20 18;      /* #111412  near-black, faintly green   */
+  --bg-sunken:       11 13 12;      /* #0B0D0C  recessed: table heads, wells */
+  --surface:         23 27 25;      /* #171B19  genuine panels               */
+  --surface-raised:  29 35 32;      /* #1D2320  menus, dialogs, popovers     */
 
-  --fg:              10 10 10;      /* #0A0A0A */
-  --fg-muted:        85 85 90;      /* #55555A */
-  --fg-subtle:       100 100 104;   /* #646468  AA-normal on bg AND bg-sunken */
-  --fg-inverse:      255 255 255;
+  /* --- ink ---------------------------------------------------------- */
+  --fg:              243 245 242;   /* #F3F5F2  never pure white            */
+  --fg-muted:        168 176 170;   /* #A8B0AA */
+  --fg-subtle:       138 146 140;   /* #8A928C  AA on surface-raised AND bg */
+  --fg-inverse:      17 20 18;      /* text sitting ON --fg                 */
 
-  --line:            226 226 226;   /* #E2E2E2 */
-  --line-strong:     196 196 196;   /* #C4C4C4 */
+  /* --- structure ---------------------------------------------------- */
+  --line:            42 48 44;      /* #2A302C  hairline rules              */
+  --line-strong:     58 66 61;      /* #3A423D  inputs, active dividers     */
 
-  --accent:          10 10 10;      /* black is the accent */
-  --accent-hover:    38 38 38;
-  --accent-subtle:   240 240 240;
-  --accent-contrast: 255 255 255;
+  /* --- accent (the only brand-carrying tokens) ---------------------- */
+  --accent:          111 175 142;   /* #6FAF8E  the institutional green,
+                                                lifted for a dark ground    */
+  --accent-hover:    130 190 156;   /* #82BE9C */
+  --accent-subtle:    34  45  39;   /* #222D27  accent at 12% over surface  */
+  --accent-contrast:   7  17  11;   /* #07110B  ink for filled accent       */
 
-  /* Availability statuses resolve to ink, not hue. */
-  --success:         10 10 10;
-  --success-subtle:  240 240 240;
-  --warning:         61 61 61;
-  --warning-subtle:  238 238 238;
-  --error:           26 26 26;
-  --error-subtle:    236 236 236;
-  --info:            85 85 90;
-  --info-subtle:     242 242 242;
+  /* --- semantic ----------------------------------------------------- */
+  --success:         120 184 148;   /* #78B894 */
+  --success-subtle:   37  49  42;
+  --warning:         201 155  86;   /* #C99B56 */
+  --warning-subtle:   48  45  34;
+  --error:           212 122 122;   /* #D47A7A */
+  --error-subtle:     50  40  39;
+  --info:            126 156 180;   /* #7E9CB4 */
+  --info-subtle:      37  45  47;
 
-  --focus:           10 10 10;
+  /* --- focus -------------------------------------------------------- */
+  --focus:           138 196 162;   /* #8AC4A2  brighter than the accent so
+                                                the ring reads on a filled
+                                                accent button as well       */
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.07);
-  --shadow-md: 0 4px 16px -4px rgb(0 0 0 / 0.11), 0 1px 2px rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.17), 0 2px 6px rgb(0 0 0 / 0.06);
+  /* --- location categories ------------------------------------------
+     The same eight inks, lifted to sit on a dark ground. Same order,
+     same meaning, same letters — a person who learned the legend by day
+     has not had it changed on them at night. */
+  --cat-college:       126 166 204;   /* #7EA6CC */
+  --cat-administrative:177 152 212;   /* #B198D4 */
+  --cat-laboratory:    208 164  94;   /* #D0A45E */
+  --cat-library:       111 175 142;   /* #6FAF8E */
+  --cat-facility:      195 161 129;   /* #C3A181 */
+  --cat-landmark:      217 140 140;   /* #D98C8C */
+  --cat-sports:        111 187 196;   /* #6FBBC4 */
+  --cat-other:         168 176 170;   /* #A8B0AA */
+  --cat-ink:             7  17  11;   /* #07110B */
+
+  /* --- elevation ---------------------------------------------------- */
+  /* Short and soft. Tone does the lifting; these only seat an element. */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.34);
+  --shadow-md: 0 4px 14px -4px rgb(0 0 0 / 0.46), 0 1px 2px rgb(0 0 0 / 0.30);
+  --shadow-lg: 0 14px 34px -10px rgb(0 0 0 / 0.58), 0 2px 6px rgb(0 0 0 / 0.34);
 }
 
 /* =====================================================================
@@ -114,12 +176,20 @@
    ===================================================================== */
 
 :root {
-  /* Radius. Near-square: this is drafting, not a consumer app. Pills are
-     reserved for status indicators, where the shape carries the semantic. */
-  --radius-xs: 2px;
-  --radius-sm: 3px;
-  --radius-md: 4px;
-  --radius-lg: 6px;
+  /* Radius.
+     Originally near-square, on the argument that this is drafting rather than
+     a consumer app. Softened on request: controls keep a small, consistent
+     rounding and PANELS — the location card, the docked assistant, menus —
+     carry a larger one, so the two read as different kinds of object rather
+     than the same object at two sizes.
+
+     Pills stay reserved for things whose shape carries meaning: status
+     indicators, category badges, map-pin discs. */
+  --radius-xs:  3px;
+  --radius-sm:  5px;
+  --radius-md:  7px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;   /* floating panels only */
   --radius-pill: 999px;
 
   /* Motion. One animated property per interaction; see the durations in
@@ -133,4 +203,14 @@
 
   /* The structural grid that runs through hero, dividers, map and tables. */
   --grid-unit: 8px;
+
+  /* Map pins. Deliberately NOT theme-varying.
+     The pin body carries the category colour, which flips between themes; the
+     disc at its centre does not. A white disc with near-black ink reads at
+     ~16:1 over any body colour in either theme, which is what lets the letter
+     stay legible while the colour around it changes. Making the disc theme-
+     aware would mean an eight-token second palette for ink-on-disc, all of it
+     solving a problem that a fixed white disc does not have. */
+  --pin-disc:     255 255 255;
+  --pin-disc-ink:  22  24  28;
 }

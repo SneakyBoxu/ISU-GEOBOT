@@ -5,6 +5,7 @@ import { currentSession, signOut } from '../../lib/supabase.js';
 import PortalShell, { SignOutButton } from '../patterns/PortalShell.jsx';
 import PortalLogin from '../shared/PortalLogin.jsx';
 import MapPicker from './MapPicker.jsx';
+import { ICON_CHOICES } from '../app/markerGlyph.js';
 import {
   Alert, Button, EmptyState, Field, Input, Select, SkeletonRows, Textarea,
 } from '../ui/index.js';
@@ -29,17 +30,20 @@ import {
 const POI_TYPES = [
   ['college', 'College / academic building'], ['administrative', 'Administrative office'],
   ['laboratory', 'Laboratory'], ['library', 'Library'],
-  ['facility', 'Facility'], ['landmark', 'Landmark'], ['other', 'Other'],
+  ['facility', 'Facility'], ['landmark', 'Landmark'],
+  ['sports', 'Sports / recreation'], ['other', 'Other'],
 ];
 
 const SURVEY_METHODS = [
-  ['gps_survey', 'On-site GPS survey'], ['floor_plan', 'From a floor plan'],
+  ['gps_survey', 'On-site GPS survey'],
+  ['satellite_imagery', 'Traced from satellite imagery'],
+  ['floor_plan', 'From a floor plan'],
   ['estimated', 'Estimated — not survey data'], ['unknown', 'Not recorded'],
 ];
 
 const EMPTY = {
   name: '', poiType: 'college', lat: '', lng: '', buildingFunction: '',
-  departmentId: '', description: '', isFeatured: false,
+  departmentId: '', description: '', icon: '', isFeatured: false,
   surveyMethod: 'gps_survey', dataOrigin: 'real', note: '',
 };
 
@@ -78,7 +82,8 @@ export default function LocationManager() {
     setForm({
       name: poi.name, poiType: poi.poi_type, lat: String(poi.lat), lng: String(poi.lng),
       buildingFunction: poi.building_function ?? '', departmentId: poi.department_id ?? '',
-      description: poi.description ?? '', isFeatured: Boolean(poi.is_featured),
+      description: poi.description ?? '', icon: poi.icon ?? '',
+      isFeatured: Boolean(poi.is_featured),
       surveyMethod: poi.survey_method ?? 'unknown', dataOrigin: poi.data_origin, note: '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -95,6 +100,7 @@ export default function LocationManager() {
       buildingFunction: form.buildingFunction.trim() || null,
       departmentId: form.departmentId || null,
       description: form.description.trim() || null,
+      icon: form.icon || null,
       isFeatured: form.isFeatured, surveyMethod: form.surveyMethod,
       dataOrigin: form.dataOrigin, note: form.note.trim() || undefined,
     };
@@ -163,6 +169,47 @@ export default function LocationManager() {
                        placeholder="Innovation and Research Center" />
               )}
             </Field>
+            <Field
+              label="Icon"
+              hint="Optional. Leave unset and the location is drawn with its category's icon — set one only where the category glyph is misleading, like a bicycle stand drawn as a building."
+            >
+              {() => (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => set('icon', '')}
+                    aria-pressed={!form.icon}
+                    title="Use the category icon"
+                    className={`grid h-9 w-9 place-items-center rounded-md border transition-colors duration-state ${
+                      !form.icon
+                        ? 'border-accent bg-accent-subtle text-accent'
+                        : 'border-line text-fg-subtle hover:border-line-strong hover:text-fg'
+                    }`}
+                  >
+                    <span aria-hidden className="text-label font-semibold">Aa</span>
+                    <span className="sr-only">Use the category icon</span>
+                  </button>
+                  {ICON_CHOICES.map(([value, label, Glyph]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => set('icon', value)}
+                      aria-pressed={form.icon === value}
+                      title={label}
+                      className={`grid h-9 w-9 place-items-center rounded-md border transition-colors duration-state ${
+                        form.icon === value
+                          ? 'border-accent bg-accent-subtle text-accent'
+                          : 'border-line text-fg-muted hover:border-line-strong hover:text-fg'
+                      }`}
+                    >
+                      <Glyph className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      <span className="sr-only">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </Field>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Type" required>
                 {({ id }) => (

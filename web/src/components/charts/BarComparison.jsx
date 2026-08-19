@@ -11,7 +11,7 @@ import PendingState from './PendingState.jsx';
  *
  * Series are distinguished by FILL PATTERN as well as tone — Standard is
  * hatched, Enhanced is solid — so the comparison survives greyscale printing
- * and the Monochrome theme, where both would otherwise resolve to ink.
+ * and in greyscale, where both would otherwise resolve to the same ink.
  */
 export default function BarComparison({ data, caption }) {
   if (!data?.length) {

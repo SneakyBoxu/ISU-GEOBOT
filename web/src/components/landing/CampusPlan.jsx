@@ -18,7 +18,7 @@ import { useInView, usePointerWithin } from '../../hooks/useMotion.js';
  *   proximity       markers acknowledge a nearby cursor, which is the cue
  *                   that says "this is interactive" without a tooltip
  *
- * All strokes are `currentColor` at token opacities, so Monochrome inherits
+ * All strokes are `currentColor` at token opacities, so the Dark theme inherits
  * the whole drawing with no second asset and no colour logic.
  */
 

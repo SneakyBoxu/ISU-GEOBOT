@@ -82,7 +82,7 @@ function chunk(text, targetWords = 90) {
 export async function reindexPoi(poiId) {
   const { data: poi, error } = await db
     .from('poi')
-    .select('id, name, poi_type, building_function, description, data_origin, department_id')
+    .select('id, slug, name, poi_type, building_function, description, icon, data_origin, department_id')
     .eq('id', poiId)
     .maybeSingle();
   if (error) throw error;
@@ -164,17 +164,48 @@ async function audit(action, poiId, before, after, userId, note) {
   }
 }
 
+/**
+ * A stable, URL-safe identifier derived from the location's name.
+ *
+ * The slug is what the assistant uses to name a location in its [LOCATION: id]
+ * tag, so it has to be readable enough for a language model to pick correctly
+ * out of a list. It is assigned once at creation and never regenerated on
+ * rename: it is an identifier, and identifiers that follow the display name
+ * break every reference that points at them.
+ */
+function slugify(name) {
+  return String(name)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'location';
+}
+
+async function uniqueSlug(name) {
+  const base = slugify(name);
+  const { data } = await db.from('poi').select('slug').like('slug', `${base}%`);
+  const taken = new Set((data ?? []).map((r) => r.slug));
+  if (!taken.has(base)) return base;
+  for (let n = 2; n < 100; n += 1) {
+    if (!taken.has(`${base}-${n}`)) return `${base}-${n}`;
+  }
+  return `${base}-${Date.now()}`;
+}
+
 export async function createPoi(input, userId) {
   const { data, error } = await db
     .from('poi')
     .insert({
       name: input.name,
+      slug: await uniqueSlug(input.name),
       poi_type: input.poiType,
       lat: input.lat,
       lng: input.lng,
       building_function: input.buildingFunction ?? null,
       department_id: input.departmentId ?? null,
       description: input.description ?? null,
+      icon: input.icon ?? null,
       is_featured: input.isFeatured ?? false,
       is_published: input.isPublished ?? true,
       survey_method: input.surveyMethod ?? 'unknown',
@@ -212,6 +243,7 @@ export async function updatePoi(poiId, patch, userId) {
     ...(patch.buildingFunction !== undefined && { building_function: patch.buildingFunction }),
     ...(patch.departmentId !== undefined && { department_id: patch.departmentId }),
     ...(patch.description !== undefined && { description: patch.description }),
+    ...(patch.icon !== undefined && { icon: patch.icon }),
     ...(patch.isFeatured !== undefined && { is_featured: patch.isFeatured }),
     ...(patch.isPublished !== undefined && { is_published: patch.isPublished }),
     ...(patch.surveyMethod !== undefined && { survey_method: patch.surveyMethod }),

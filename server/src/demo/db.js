@@ -164,6 +164,18 @@ class Query {
   eq(col, val) { this.rows = this.rows.filter((r) => r[col] === val); return this; }
   neq(col, val) { this.rows = this.rows.filter((r) => r[col] !== val); return this; }
   in(col, vals) { this.rows = this.rows.filter((r) => vals.includes(r[col])); return this; }
+  like(col, pattern) {
+    // SQL LIKE for the one shape this codebase uses: a literal prefix followed
+    // by %. Written as string operations rather than a translated regex so
+    // there is no escaping hazard when a slug contains regex metacharacters.
+    const [head, ...rest] = pattern.split('%');
+    const isPrefix = rest.length === 1 && rest[0] === '';
+    this.rows = this.rows.filter((r) => {
+      const v = String(r[col] ?? '');
+      return isPrefix ? v.startsWith(head) : v === pattern;
+    });
+    return this;
+  }
   gte(col, val) { this.rows = this.rows.filter((r) => r[col] >= val); return this; }
   order(col, { ascending = true } = {}) {
     this.rows.sort((a, b) => {

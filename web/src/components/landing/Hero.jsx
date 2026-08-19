@@ -17,10 +17,15 @@ import CampusPlan from './CampusPlan.jsx';
  * Capability claims are present tense; outcome claims are future tense.
  */
 export default function Hero() {
+  // The hero fills the first screen rather than sitting as a band inside it:
+  // 100dvh minus the sticky bar, floored at 36rem so a short laptop window does
+  // not crush the type. `dvh` and not `vh` because on a phone `vh` measures the
+  // window as if the browser's own chrome were not there, and the last line of
+  // the paragraph ends up underneath it.
   return (
-    <section className="relative border-b border-line">
+    <section className="relative flex min-h-[36rem] items-center border-b border-line lg:min-h-[calc(100dvh-3.75rem)]">
       <div className="container-x">
-        <div className="grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[7fr_5fr] lg:gap-16 lg:py-28">
+        <div className="grid w-full items-center gap-12 py-16 sm:py-20 lg:grid-cols-[7fr_5fr] lg:gap-16 lg:py-24">
           <div>
             <p className="eyebrow">Isabela State University &middot; Echague Main Campus</p>
 

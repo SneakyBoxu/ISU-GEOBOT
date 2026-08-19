@@ -61,10 +61,16 @@ export default function Nav() {
 
   const onPortal = PORTALS.some((p) => p.to === pathname);
   const isHome = pathname === '/';
+  // The landing page is a document and keeps its centred measure. Everything
+  // else is an application surface, where the brand belongs against the left
+  // edge of the window rather than floating in from it.
+  const appChrome = !isHome;
 
   return (
     <header className="sticky top-0 z-[1000] border-b border-line bg-bg">
-      <nav className="container-x flex h-[3.75rem] items-center justify-between gap-4">
+      <nav className={`flex h-[3.75rem] items-center justify-between gap-4 ${
+        appChrome ? 'container-app' : 'container-x'
+      }`}>
         <Brand />
 
         <div className="hidden items-center gap-1 lg:flex">

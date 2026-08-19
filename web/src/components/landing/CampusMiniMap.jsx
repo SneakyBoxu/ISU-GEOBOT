@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../lib/constants.js';
+import { useTheme } from '../../lib/theme.jsx';
 import { usePrefersReducedMotion } from '../../hooks/useMotion.js';
 
 /**
@@ -52,6 +53,7 @@ function Focus({ target }) {
 }
 
 export default function CampusMiniMap({ pois, hoveredId, selectedId, onSelect }) {
+  const { theme } = useTheme();
   const target = pois.find((p) => p.id === (selectedId ?? hoveredId));
 
   return (
@@ -64,7 +66,12 @@ export default function CampusMiniMap({ pois, hoveredId, selectedId, onSelect })
         scrollWheelZoom={false}
         attributionControl={false}
       >
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+        {/* Themed rather than fixed: a light basemap in the dark theme is a
+            lit rectangle in the middle of a night page. */}
+        <TileLayer
+          key={theme}
+          url={`https://{s}.basemaps.cartocdn.com/${theme === 'dark' ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`}
+        />
         <Focus target={target} />
         {pois.map((p) => {
           const state = p.id === selectedId ? 'active' : p.id === hoveredId ? 'hover' : 'rest';

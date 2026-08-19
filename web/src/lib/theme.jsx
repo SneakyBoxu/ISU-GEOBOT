@@ -3,15 +3,20 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 /**
  * Appearance control.
  *
- * Two themes: `light` (default) and `mono`. Both are light-ground, so a
- * `prefers-color-scheme: dark` signal has no target here and is deliberately
- * ignored — pretending dark-mode preference means "monochrome" would be a
- * guess, not a preference.
+ * Two themes: `light` (default) and `dark`. The system signal is now
+ * `prefers-color-scheme`, which is the direct question — the user's operating
+ * system is telling us which ground they want, and there is finally a theme on
+ * each side of that answer to give them.
  *
- * What IS honoured is `prefers-contrast: more`. Monochrome is the higher
- * contrast theme (pure black on white, no hue), so that mapping is a real
- * accessibility inference rather than a convenient one. It applies only until
- * the user makes an explicit choice; after that their choice wins permanently.
+ * (It used to honour `prefers-contrast: more` instead, because neither theme
+ * had a dark ground and there was nothing for a colour-scheme signal to select.
+ * That was an inference standing in for a preference nobody could express.
+ * Do not reintroduce it: contrast and colour scheme are different questions,
+ * and answering one with the other is how a user who asked for more contrast
+ * ends up with a different hue instead.)
+ *
+ * The system preference applies only until the user makes an explicit choice;
+ * after that their choice wins permanently, and "Follow system" hands it back.
  *
  * The same resolution logic runs as an inline script in index.html so the
  * theme is correct before first paint. If this changes, that must too.
@@ -26,9 +31,9 @@ export const THEMES = [
     description: 'Warm paper ground with an institutional green accent.',
   },
   {
-    value: 'mono',
-    label: 'Monochrome',
-    description: 'Black, white and grayscale. Availability status uses no colour at all.',
+    value: 'dark',
+    label: 'Dark',
+    description: 'Night ground with a luminous institutional green. Same typography, same hierarchy.',
   },
 ];
 
@@ -36,13 +41,13 @@ const ThemeContext = createContext(null);
 
 function systemPreferred() {
   if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-contrast: more)').matches ? 'mono' : 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function stored() {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
-    return v === 'light' || v === 'mono' ? v : null;
+    return v === 'light' || v === 'dark' ? v : null;
   } catch {
     return null;
   }
@@ -57,8 +62,8 @@ export function ThemeProvider({ children }) {
   const theme = explicit ?? system;
 
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-contrast: more)');
-    const onChange = () => setSystem(mq.matches ? 'mono' : 'light');
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => setSystem(mq.matches ? 'dark' : 'light');
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
@@ -67,7 +72,9 @@ export function ThemeProvider({ children }) {
     document.documentElement.dataset.theme = theme;
     // Keep the browser chrome in step with the page ground.
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme === 'mono' ? '#FCFCFC' : '#FBFAF8');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#111412' : '#FBFAF8');
+    // Native form controls, scrollbars and the address bar follow this.
+    document.documentElement.style.colorScheme = theme;
   }, [theme]);
 
   const setTheme = useCallback((next) => {

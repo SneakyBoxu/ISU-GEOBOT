@@ -1,6 +1,59 @@
 # ISU-GeoBot — Visual Redesign Proposal
 
-**Status: awaiting approval. No implementation has started.**
+**Status: approved and implemented.** This document is kept as the record of
+what was proposed and agreed. It is not edited to match later decisions —
+amendments are listed below instead, so the design history stays readable.
+
+---
+
+## Amendments since approval
+
+### A1 — Monochrome replaced by Dark (19 Aug 2026)
+
+The second theme is now **Dark**, not Monochrome. Section C's Monochrome
+palette, and the Monochrome references in §F and the open questions, are
+superseded.
+
+**What changed and why.** Monochrome was proposed as a hueless light theme whose
+purpose was partly demonstrative: switching to it proved the availability status
+never depended on colour. That property is still required, but it no longer
+needs a whole theme to carry it — status is distinguished by icon, label and
+type weight in both themes, and the tokens are checked against every ground.
+
+The system signal changed with it. Monochrome was resolved from
+`prefers-contrast: more`, an inference standing in for a preference nobody could
+express. Dark is resolved from `prefers-color-scheme`, which is the literal
+question.
+
+**What Dark is not.** Not an inversion, not a filter, and not the neon/glass
+aesthetic the original redesign removed. The ground is a very dark desaturated
+green-grey rather than neutral charcoal or pure black; the accent is the same
+institutional green lifted to `#6FAF8E`, which is where it has to sit to be
+legible on that ground. Every text token is verified against
+`--surface-raised`, the lightest ground any of them can land on — the lowest
+ratio in the theme is 5.00:1.
+
+The basemap follows: `cartocdn/dark_all` rather than a grayscale filter over the
+day tiles.
+
+### A2 — Category colour added to map pins (19 Aug 2026)
+
+§F specified markers distinguished by "shape + letterform, not colour alone".
+Pins now carry a category colour as well, as teardrops with a white centre disc.
+
+The rule that mattered is intact and is now stated more precisely: **colour
+reinforces, it never carries.** Every pin, chip, card and legend swatch that
+paints a category colour also draws the category letter, and the letter sits in
+a white disc with near-black ink so it is legible whatever the body colour is —
+in either theme. Nothing on the map is identified by hue alone.
+
+### A3 — Workspace is no longer a split pane (19 Aug 2026)
+
+§F's "split preserved (map left, chat right)" no longer holds. The map is the
+full window; the assistant is a docked bubble that opens a compact panel; the
+campus index is a permanent left column above `md` and a drawer below it.
+
+---
 
 Working from the live codebase (`web/`, 4,091 lines, 27 files) rather than a
 Markdown export, so the inventory below is measured, not estimated.

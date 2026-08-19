@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
  * One notification surface for information, success, warning and error.
  *
  * Every tone carries its own icon, so the meaning survives greyscale, colour
- * blindness and the Monochrome theme. An error states what happened and, where
+ * blindness and greyscale printing. An error states what happened and, where
  * we know it, what to do next — `action` exists so that is a first-class slot
  * rather than a sentence people forget to write.
  */

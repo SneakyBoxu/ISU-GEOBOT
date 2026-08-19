@@ -109,6 +109,7 @@ grant execute on function geobot.has_role(text)          to authenticated;
 grant execute on function geobot.validator_faculty_id()  to authenticated;
 
 -- A signed-in user may read their own role rows and nothing else.
+drop policy if exists app_user_role_self_read on app_user_role;
 create policy app_user_role_self_read on app_user_role
   for select to authenticated
   using (auth_user_id = auth.uid());
@@ -124,6 +125,7 @@ create policy app_user_role_self_read on app_user_role
 
 grant select on faculty, department to authenticated;
 
+drop policy if exists faculty_guard_read on faculty;
 create policy faculty_guard_read on faculty
   for select to authenticated
   using (
@@ -132,6 +134,7 @@ create policy faculty_guard_read on faculty
     and (geobot.has_role('guard') or geobot.has_role('researcher'))
   );
 
+drop policy if exists department_read on department;
 create policy department_read on department
   for select to authenticated
   using (geobot.has_role('guard') or geobot.has_role('researcher'));
@@ -139,6 +142,7 @@ create policy department_read on department
 grant select, insert on guard_presence_event to authenticated;
 grant select on guard_user to authenticated;
 
+drop policy if exists guard_event_insert on guard_presence_event;
 create policy guard_event_insert on guard_presence_event
   for insert to authenticated
   with check (
@@ -157,6 +161,7 @@ create policy guard_event_insert on guard_presence_event
 
 -- Read is scoped to the same-day validity window the override uses (C13),
 -- so the dashboard cannot become a historical movement browser.
+drop policy if exists guard_event_read_today on guard_presence_event;
 create policy guard_event_read_today on guard_presence_event
   for select to authenticated
   using (
@@ -164,6 +169,7 @@ create policy guard_event_read_today on guard_presence_event
     or geobot.has_role('researcher')
   );
 
+drop policy if exists guard_user_self_read on guard_user;
 create policy guard_user_self_read on guard_user
   for select to authenticated
   using (auth_user_id = auth.uid() or geobot.has_role('researcher'));
@@ -185,6 +191,7 @@ comment on policy guard_event_read_today on guard_presence_event is
 
 grant select, insert on faculty_validation to authenticated;
 
+drop policy if exists validation_insert_self on faculty_validation;
 create policy validation_insert_self on faculty_validation
   for insert to authenticated
   with check (
@@ -192,6 +199,7 @@ create policy validation_insert_self on faculty_validation
     and faculty_id = geobot.validator_faculty_id()
   );
 
+drop policy if exists validation_read_self on faculty_validation;
 create policy validation_read_self on faculty_validation
   for select to authenticated
   using (
@@ -201,6 +209,7 @@ create policy validation_read_self on faculty_validation
 
 -- Validators need the status vocabulary to render the checklist.
 grant select on availability_status to anon, authenticated;
+drop policy if exists availability_status_public_read on availability_status;
 create policy availability_status_public_read on availability_status
   for select to anon, authenticated using (true);
 
@@ -228,6 +237,7 @@ begin
   ]
   loop
     execute format('grant select on geobot.%I to authenticated', t);
+    execute format('drop policy if exists %I_researcher_read on geobot.%I', t, t);
     execute format(
       'create policy %I_researcher_read on geobot.%I
          for select to authenticated using (geobot.has_role(''researcher''))',

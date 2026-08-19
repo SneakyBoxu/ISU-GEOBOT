@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Circle, Contrast, Monitor, Sun } from 'lucide-react';
+import { Check, Circle, Monitor, Moon, Sun } from 'lucide-react';
 import { THEMES, useTheme } from '../../lib/theme.jsx';
 
 /**
  * Appearance control.
  *
  * A menu rather than a two-state switch, because there are three meaningful
- * choices — Light, Monochrome, and "follow the system" — and a toggle cannot
- * express the third. Following the system is worth keeping: it is how a
- * high-contrast preference reaches the interface without the user having to
- * find this control at all.
+ * choices — Light, Dark, and "follow the system" — and a toggle cannot express
+ * the third. Following the system is worth keeping: it is how a person who has
+ * set their laptop to dark at 9pm gets a dark page without ever finding this
+ * control.
  */
-const ICONS = { light: Sun, mono: Contrast };
+const ICONS = { light: Sun, dark: Moon };
+const LABELS = { light: 'Light', dark: 'Dark' };
 
 export default function ThemeToggle({ className = '' }) {
   const { theme, setTheme, isExplicit } = useTheme();
@@ -41,7 +42,7 @@ export default function ThemeToggle({ className = '' }) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`Appearance: ${theme === 'mono' ? 'Monochrome' : 'Light'}. Change theme`}
+        aria-label={`Appearance: ${LABELS[theme] ?? 'Light'}${isExplicit ? '' : ' (following your system)'}. Change theme`}
         title="Appearance"
         className="btn-icon"
       >

@@ -1,50 +1,109 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
-import { CAMPUS_CENTER, CAMPUS_ZOOM, POI_CATEGORIES } from '../../lib/constants.js';
+import { Maximize, Minus, Plus } from 'lucide-react';
+import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../lib/constants.js';
 import { usePrefersReducedMotion } from '../../hooks/useMotion.js';
+import { useTheme } from '../../lib/theme.jsx';
+import { TYPE_LETTER, categoryColor } from './markerGlyph.js';
+import LocationCard from './LocationCard.jsx';
 
 /**
  * Interactive campus map (thesis §3.5.1).
  *
- * Markers are distinguished by LETTER as well as by tone — C for college, A
- * for administrative, and so on — so the category survives greyscale, the
- * Monochrome theme and colour blindness. A legend states the mapping rather
- * than leaving it to be inferred.
+ * Markers are teardrop pins: category colour in the body, a white disc at the
+ * centre, and the category LETTER in that disc. The colour is the fast read
+ * across a screen of 28 pins; the letter is what survives greyscale, colour
+ * blindness and a printed appendix. Neither is load-bearing alone, which is
+ * the only way to put colour on a map without excluding the people it
+ * excludes. A legend states the mapping rather than leaving it to be inferred.
  *
- * The toolbar sits in a ruled bar above the canvas rather than floating over
- * it. Translucent panels on top of a map hide the thing the user came to see.
+ * The pin points at its coordinate rather than sitting on it — that is the
+ * whole reason the shape exists, and it is why `iconAnchor` is the tip.
+ *
+ * Searching and filtering live in the campus index beside this map, not in a
+ * toolbar above it. They were here first; they moved when the index arrived,
+ * because two search boxes on one screen is a question about which one is the
+ * real one. This component now renders what it is given.
+ *
+ * Two basemaps, and SATELLITE IS THE DEFAULT. The campus is 355 hectares of
+ * largely unlabelled ground: on a plan tile most of it is empty polygons, and
+ * imagery is how you tell the oval from the rice fields that surround it. The
+ * plan view stays one click away for when the labels matter more than the
+ * ground truth.
+ *
+ * The plan basemap is theme-aware — CARTO publish a genuine dark cartography,
+ * so the dark theme gets a real nighttime map rather than the day map with a
+ * filter dropped over it.
  */
-const TYPE_LETTER = {
-  college: 'C', administrative: 'A', laboratory: 'L',
-  library: 'B', facility: 'F', landmark: 'M', other: '·',
+const CARTO_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+const BASEMAPS = {
+  satellite: {
+    label: 'Satellite',
+    url: () => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    // Roads and place names, drawn over the imagery. Esri publish this as a
+    // companion to World_Imagery, which is the licensed way to get the hybrid
+    // view — the reference project pulled Google's `lyrs=y` tiles straight off
+    // an undocumented endpoint, which is not something to put in a thesis.
+    reference: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19,
+  },
+  plan: {
+    label: 'Plan',
+    url: (theme) => `https://{s}.basemaps.cartocdn.com/${theme === 'dark' ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`,
+    attribution: CARTO_ATTRIBUTION,
+    maxZoom: 20,
+  },
 };
 
+const CTRL = 'grid h-7 w-8 place-items-center text-fg-muted transition-colors duration-state hover:bg-bg-sunken hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus';
+
 function markerIcon(type, active, index = 0) {
-  const size = active ? 30 : 24;
+  const w = active ? 34 : 28;
+  const h = Math.round(w * 1.28);
   const letter = TYPE_LETTER[type] ?? '·';
+  const ink = categoryColor(type);
   // Markers arrive staggered, like pins being placed on a board. The delay is
   // capped so a large campus does not take four seconds to finish appearing.
   const delay = Math.min(index * 45, 700);
+  const id = `pin-${type}-${active ? 'a' : 'r'}`;
+
   return L.divIcon({
     className: '',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
+    iconSize: [w, h],
+    // The tip, not the centre: a teardrop points AT its coordinate, and
+    // anchoring it centrally would place every building half a pin north of
+    // where it actually is.
+    iconAnchor: [w / 2, h],
+    popupAnchor: [0, -h + 2],
     html: `
       <span class="drop-in" style="
-        display:grid;place-items:center;width:${size}px;height:${size}px;
-        border-radius:999px;
-        background:${active ? 'rgb(var(--accent))' : 'rgb(var(--surface))'};
-        color:${active ? 'rgb(var(--accent-contrast))' : 'rgb(var(--fg))'};
-        border:1.5px solid rgb(var(--${active ? 'accent' : 'fg'}));
-        box-shadow:var(--shadow-sm);
-        font:600 ${active ? 12 : 10}px/1 Inter,system-ui,sans-serif;
-        letter-spacing:.02em;
+        display:block;width:${w}px;height:${h}px;
         animation-delay:${delay}ms;
-        ${active ? 'outline:6px solid rgb(var(--accent) / .16);outline-offset:2px;' : ''}
-      ">${letter}</span>`,
+        filter:drop-shadow(0 3px 4px rgb(0 0 0 / .34)) drop-shadow(0 1px 1px rgb(0 0 0 / .22));
+      ">
+        <svg width="${w}" height="${h}" viewBox="0 0 28 36" fill="none"
+             xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity=".26"/>
+              <stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M14 35.2c0-.1 11.6-12.6 11.6-21.2A11.6 11.6 0 1 0 2.4 14c0 8.6 11.6 21.1 11.6 21.2Z"
+                fill="${ink}"/>
+          <path d="M14 35.2c0-.1 11.6-12.6 11.6-21.2A11.6 11.6 0 1 0 2.4 14c0 8.6 11.6 21.1 11.6 21.2Z"
+                fill="url(#${id})"/>
+          <path d="M14 35.2c0-.1 11.6-12.6 11.6-21.2A11.6 11.6 0 1 0 2.4 14c0 8.6 11.6 21.1 11.6 21.2Z"
+                fill="none" stroke="rgb(0 0 0 / .18)" stroke-width="1"/>
+          <circle cx="14" cy="13.4" r="6.4" fill="rgb(var(--pin-disc))"/>
+          <text x="14" y="13.4" text-anchor="middle" dominant-baseline="central"
+                fill="rgb(var(--pin-disc-ink))"
+                style="font:600 9px/1 Inter,system-ui,sans-serif;letter-spacing:.02em">${letter}</text>
+        </svg>
+      </span>`,
   });
 }
 
@@ -61,23 +120,72 @@ function BackgroundClick({ onClear }) {
   return null;
 }
 
-function FocusController({ target }) {
+/**
+ * Frames the whole campus, once, from the locations actually loaded.
+ *
+ * A hardcoded centre goes stale the moment the data moves — this map spent the
+ * whole integration opening on the town of San Fabian because its centre was
+ * still the synthetic placeholder's. Bounds derived from the markers cannot
+ * drift: correct a coordinate in the GPS survey and the opening view corrects
+ * itself.
+ *
+ * Runs once. A user who has panned somewhere has not asked to be sent back.
+ */
+function FitCampus({ bounds, offsetX, skip }) {
+  const map = useMap();
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || skip || !bounds) return;
+    done.current = true;
+    map.fitBounds(bounds, {
+      paddingTopLeft: [offsetX + 48, 48],
+      paddingBottomRight: [48, 48],
+      animate: false,
+    });
+  }, [bounds, map, offsetX, skip]);
+  return null;
+}
+
+function FocusController({ target, offsetX = 0 }) {
   const map = useMap();
   const reduced = usePrefersReducedMotion();
   useEffect(() => {
     if (!target) return;
+
+    // The campus index overlays the left of the map, so the geometric centre
+    // is not the visible centre. Flying to the raw coordinate puts the pin
+    // behind the panel that asked for it. Shifting the destination by half the
+    // panel width lands it in the middle of what the user can actually see.
+    const zoom = 18;
+    const point = map.project([target.lat, target.lng], zoom).subtract([offsetX / 2, 0]);
+    const dest = map.unproject(point, zoom);
+
     // Map focus is meaningful motion — it carries the user from where they
     // were to where they asked about. Reduced motion still moves, instantly.
-    if (reduced) map.setView([target.lat, target.lng], 18);
-    else map.flyTo([target.lat, target.lng], 18, { duration: 0.6 });
-  }, [target, map, reduced]);
+    if (reduced) map.setView(dest, zoom);
+    else map.flyTo(dest, zoom, { duration: 0.6 });
+  }, [target, map, reduced, offsetX]);
   return null;
 }
 
-export default function CampusMap({ pois, focusId, onSelect, onClear }) {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
+/**
+ * Hands the Leaflet instance up to the component so the toolbar can drive it.
+ * `useMap` only works inside MapContainer, and the zoom controls deliberately
+ * live outside it — see the toolbar comment below.
+ */
+function MapHandle({ onReady }) {
+  const map = useMap();
+  useEffect(() => { onReady(map); }, [map, onReady]);
+  return null;
+}
+
+export default function CampusMap({
+  pois = [], visible = [], focusId, onSelect, onClear, onAsk, focusOffsetX = 0,
+}) {
+  const [basemap, setBasemap] = useState('satellite');
+  const [map, setMap] = useState(null);
+  const { theme } = useTheme();
+  const initialFocus = useRef(Boolean(focusId)).current;
 
   // Escape clears the selection too — the same affordance a keyboard user
   // reaches for, and the only way to clear it without a pointer.
@@ -88,78 +196,102 @@ export default function CampusMap({ pois, focusId, onSelect, onClear }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [focusId, onClear]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return pois.filter(
-      (p) => (category === 'all' || p.type === category)
-        && (!q || p.name.toLowerCase().includes(q)
-            || p.department?.toLowerCase().includes(q)
-            || p.buildingFunction?.toLowerCase().includes(q)),
-    );
-  }, [pois, query, category]);
-
+  // Looked up in the FULL set, not the filtered one. An answer that focuses a
+  // library while the filter reads "Colleges" should still move the map — the
+  // alternative is a focus request that silently does nothing.
   const focus = useMemo(() => pois.find((p) => p.id === focusId), [pois, focusId]);
-  const categories = useMemo(
-    () => POI_CATEGORIES.filter((c) => c.key === 'all' || pois.some((p) => p.type === c.key)),
+  const legend = useMemo(
+    () => [...new Set(visible.map((p) => p.type))].slice(0, 7),
+    [visible],
+  );
+
+  // Selection can come from the index, an answer, or a deep link, none of which
+  // go through Leaflet. Holding the marker instances is what lets those open
+  // the same popup a click would.
+  const markerRefs = useRef(new Map());
+  useEffect(() => {
+    if (!focusId) {
+      markerRefs.current.forEach((m) => m.closePopup());
+      return;
+    }
+    const m = markerRefs.current.get(focusId);
+    if (m) m.openPopup();
+  }, [focusId, visible]);
+
+  const bounds = useMemo(
+    () => (pois.length ? L.latLngBounds(pois.map((p) => [p.lat, p.lng])) : null),
     [pois],
   );
-  const legend = useMemo(
-    () => [...new Set(filtered.map((p) => p.type))].slice(0, 6),
-    [filtered],
-  );
+
+  function fitCampus() {
+    onClear?.();
+    if (bounds && map) {
+      map.fitBounds(bounds, {
+        paddingTopLeft: [focusOffsetX + 48, 48],
+        paddingBottomRight: [48, 48],
+      });
+    } else {
+      map?.setView(CAMPUS_CENTER, CAMPUS_ZOOM);
+    }
+  }
 
   return (
-    <div className="flex h-full flex-col bg-bg">
-      <div className="border-b border-line bg-surface">
-        <div className="flex items-center gap-2 px-4 py-2.5">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" aria-hidden />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search buildings, offices, departments"
-              aria-label="Search campus locations"
-              className="input min-h-[2.25rem] border-transparent bg-bg-sunken pl-8 pr-8 text-meta"
-            />
-            {query && (
-              <button
-                type="button" onClick={() => setQuery('')} aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-subtle transition-colors duration-state hover:text-fg"
-              >
-                <X className="h-3.5 w-3.5" aria-hidden />
-              </button>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowFilters((v) => !v)}
-            aria-expanded={showFilters}
-            aria-label="Filter by category"
-            className={`btn-icon ${showFilters || category !== 'all' ? 'bg-accent-subtle text-accent' : ''}`}
-          >
-            <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          </button>
+    <div className="flex h-full min-w-0 flex-1 flex-col bg-bg" data-dock data-basemap={basemap}>
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface px-3 py-2">
+        <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Base map">
+          {Object.entries(BASEMAPS).map(([key, b]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setBasemap(key)}
+              aria-pressed={basemap === key}
+              className={`px-2.5 py-1 text-label transition-colors duration-state ${
+                basemap === key ? 'bg-fg text-bg' : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {b.label}
+            </button>
+          ))}
         </div>
 
-        {showFilters && (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-line px-4 py-2.5">
-            {categories.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                onClick={() => setCategory(c.key)}
-                aria-pressed={category === c.key}
-                className={`text-meta underline-offset-[6px] transition-colors duration-state ${
-                  category === c.key
-                    ? 'text-fg underline decoration-accent decoration-2'
-                    : 'text-fg-muted hover:text-fg'
-                }`}
-              >
-                {c.label}
-              </button>
-            ))}
+        {/* Zoom and reset live in the toolbar rather than floating over the
+            map. On the map they sat top-right, which is exactly where the
+            docked assistant opens — so on a 768px-tall laptop the chat covered
+            the only way to zoom out. A control that a second control can hide
+            is not a control. Here nothing overlaps them at any size. */}
+        <div className="flex items-center gap-3">
+          <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Zoom">
+            <button
+              type="button"
+              onClick={() => map?.zoomOut()}
+              aria-label="Zoom out"
+              className={CTRL}
+            >
+              <Minus className="h-4 w-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => map?.zoomIn()}
+              aria-label="Zoom in"
+              className={`${CTRL} border-l border-line`}
+            >
+              <Plus className="h-4 w-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={fitCampus}
+              aria-label="Fit the whole campus"
+              title="Fit the whole campus"
+              className={`${CTRL} border-l border-line`}
+            >
+              <Maximize className="h-4 w-4" aria-hidden />
+            </button>
           </div>
-        )}
+
+          <span className="font-mono text-data text-fg-subtle" data-numeric>
+            {visible.length}/{pois.length}
+          </span>
+        </div>
       </div>
 
       <div className="relative min-h-0 flex-1">
@@ -169,62 +301,72 @@ export default function CampusMap({ pois, focusId, onSelect, onClear }) {
           className="h-full w-full"
           zoomControl={false}
         >
+          {/* Keying on the basemap forces a fresh layer rather than a URL swap,
+              which otherwise leaves the previous provider's tiles cached in
+              place at zoom levels the new one does not serve. */}
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            key={`${basemap}-${theme}`}
+            attribution={BASEMAPS[basemap].attribution}
+            url={BASEMAPS[basemap].url(theme)}
+            maxZoom={BASEMAPS[basemap].maxZoom}
           />
-          <FocusController target={focus} />
+          {BASEMAPS[basemap].reference && (
+            <TileLayer
+              key={`${basemap}-ref`}
+              url={BASEMAPS[basemap].reference}
+              maxZoom={BASEMAPS[basemap].maxZoom}
+            />
+          )}
+          <FitCampus bounds={bounds} offsetX={focusOffsetX} skip={initialFocus} />
+          <FocusController target={focus} offsetX={focusOffsetX} />
           <BackgroundClick onClear={onClear} />
+          <MapHandle onReady={setMap} />
 
-          {filtered.map((poi, i) => (
+          {visible.map((poi, i) => (
             <Marker
               key={poi.id}
               position={[poi.lat, poi.lng]}
               icon={markerIcon(poi.type, poi.id === focusId, i)}
-              eventHandlers={{ click: () => (poi.id === focusId ? onClear?.() : onSelect?.(poi.id)) }}
+              ref={(m) => { if (m) markerRefs.current.set(poi.id, m); else markerRefs.current.delete(poi.id); }}
+              eventHandlers={{ click: () => onSelect?.(poi.id) }}
             >
-              <Popup>
-                <div className="min-w-[13rem] p-3.5">
-                  <p className="text-meta font-semibold text-fg">{poi.name}</p>
-                  {poi.department && (
-                    <p className="mt-0.5 text-label text-fg-muted">{poi.department}</p>
-                  )}
-                  {poi.buildingFunction && (
-                    <p className="mt-2 text-label leading-relaxed text-fg-muted">
-                      {poi.buildingFunction}
-                    </p>
-                  )}
-                  <p className="mt-2.5 border-t border-line pt-2 font-mono text-data text-fg-subtle" data-numeric>
-                    {Number(poi.lat).toFixed(5)}, {Number(poi.lng).toFixed(5)}
-                  </p>
-                  {poi.isSynthetic && (
-                    <p className="mt-2 text-label text-warning">
-                      Placeholder coordinates &mdash; pending GPS survey
-                    </p>
-                  )}
-                </div>
+              {/* The detail floats ON the pin rather than in a corner panel.
+                  A card in the bottom-left states which building it describes;
+                  a card on the pin SHOWS it, and the eye does not have to
+                  carry a name across the screen to check. */}
+              <Popup
+                closeButton={false}
+                keepInView
+                autoPanPadding={[16, 16]}
+                maxWidth={304}
+                minWidth={220}
+              >
+                <LocationCard
+                  poi={poi}
+                  onClose={onClear}
+                  onAsk={onAsk}
+                  onZoom={(p) => map?.flyTo([p.lat, p.lng], 19, { duration: 0.5 })}
+                />
               </Popup>
             </Marker>
           ))}
         </MapContainer>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[400] flex items-end justify-between gap-3 p-3">
-          {legend.length > 0 && (
-            <dl className="pointer-events-auto flex flex-wrap items-center gap-x-3 gap-y-1 border border-line bg-surface px-2.5 py-1.5 shadow-sm">
-              {legend.map((t) => (
-                <div key={t} className="flex items-center gap-1.5">
-                  <dt className="grid h-4 w-4 place-items-center rounded-pill border border-fg text-[9px] font-semibold text-fg">
-                    {TYPE_LETTER[t] ?? '·'}
-                  </dt>
-                  <dd className="text-label capitalize text-fg-muted">{t}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          <span className="pointer-events-auto border border-line bg-surface px-2 py-1 font-mono text-data text-fg-subtle" data-numeric>
-            {filtered.length}/{pois.length}
-          </span>
-        </div>
+        {legend.length > 0 && (
+          <dl className="absolute bottom-3 left-3 z-[400] flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line bg-surface px-3 py-2 shadow-sm">
+            {legend.map((t) => (
+              <div key={t} className="flex items-center gap-1.5">
+                <dt
+                  className="grid h-4 w-4 place-items-center rounded-pill text-[9px] font-semibold"
+                  style={{ background: categoryColor(t), color: 'rgb(var(--cat-ink))' }}
+                >
+                  {TYPE_LETTER[t] ?? '·'}
+                </dt>
+                <dd className="text-label capitalize text-fg-muted">{t}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
       </div>
     </div>
   );

@@ -37,7 +37,11 @@ export const api = {
   // The token IS sent when a session exists: /api/chat uses optionalAuth, and
   // availability is withheld from anonymous callers (audit F-29). Omitting it
   // would silently downgrade every signed-in user to anonymous.
-  chat: (query, token) => request('/chat', { method: 'POST', body: { query }, token }),
+  // `history` lets a follow-up mean something — "how do I get there from the
+  // Oval" needs a "there". The server caps and sanitises it; the client's job
+  // is only to send the recent turns, not to decide what is safe to replay.
+  chat: (query, token, history) =>
+    request('/chat', { method: 'POST', body: { query, history }, token }),
 
   demoQueries: () => request('/demo/queries'),
   demoCompare: (demoQueryId) =>

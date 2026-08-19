@@ -5,9 +5,11 @@ import { CheckCircle2, GraduationCap, MinusCircle } from 'lucide-react';
  *
  * THREE RULES, all from the thesis rather than from taste:
  *
- * 1. Never colour alone. Each state has a distinct icon and a distinct label,
- *    so it survives greyscale printing, colour blindness and the Monochrome
- *    theme — where these tokens resolve to ink with no hue whatsoever.
+ * 1. Never colour alone. Each state has a distinct icon, a distinct label and
+ *    a distinct type weight, so it survives greyscale printing, colour
+ *    blindness, and either theme — the tones are semantic tokens, and the Dark
+ *    theme fills them with values checked to AA against every ground they can
+ *    land on.
  * 2. Always marked as an estimate. The status is schedule-derived, not
  *    observed, and a reader who takes it as fact has been told something more
  *    precise than the system knows.
