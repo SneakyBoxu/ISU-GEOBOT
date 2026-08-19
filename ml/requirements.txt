@@ -1,0 +1,22 @@
+# ISU-GeoBot — Python ML & Embedding microservice
+# Thesis §3.7 pins Python 3.11 / scikit-learn 1.4 / all-MiniLM-L6-v2.
+# Do not float these versions without recording the deviation.
+
+flask==3.0.3
+waitress==3.0.0                 # production WSGI server (Windows-friendly)
+python-dotenv==1.0.1
+
+scikit-learn==1.4.2
+numpy==1.26.4
+pandas==2.2.2
+joblib==1.4.2
+
+sentence-transformers==2.7.0    # all-MiniLM-L6-v2, 384-d
+torch==2.2.2                    # CPU wheel is sufficient (thesis §3.7: no GPU)
+
+psycopg2-binary==2.9.9
+pgvector==0.2.5
+
+# Evaluation only (STEP 5 harness) — imported by score_ragas.py
+ragas==0.1.9
+datasets==2.19.0

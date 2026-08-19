@@ -1,0 +1,136 @@
+/* =====================================================================
+   ISU-GeoBot — Design tokens
+   ---------------------------------------------------------------------
+   Semantic names only. No component anywhere names a hue; it names a role.
+   Both themes fill the same token set, which is what makes the Monochrome
+   theme a genuine design rather than a filter.
+
+   Colours are stored as space-separated RGB channels so Tailwind can apply
+   opacity modifiers: `rgb(var(--bg) / <alpha-value>)` → `bg-surface/60` works.
+
+   REPLACING THE ACCENT LATER: --accent-* are the only tokens carrying brand
+   identity. If ISU supplies an official colour, change these four lines and
+   nothing else in the codebase moves.
+   ===================================================================== */
+
+:root,
+[data-theme='light'] {
+  /* --- ground ------------------------------------------------------- */
+  --bg:              251 250 248;   /* #FBFAF8  warm ivory, never pure white */
+  --bg-sunken:       244 242 238;   /* #F4F2EE  recessed: table heads, wells */
+  --surface:         255 255 255;   /* #FFFFFF  genuine panels only          */
+  --surface-raised:  255 255 255;   /* #FFFFFF  + shadow: menus, dialogs     */
+
+  /* --- ink ---------------------------------------------------------- */
+  --fg:              22 24 28;      /* #16181C */
+  --fg-muted:        92 96 104;     /* #5C6068 */
+  --fg-subtle:       100 104 112;   /* #646870  AA-normal on bg AND bg-sunken */
+  --fg-inverse:      255 255 255;
+
+  /* --- structure ---------------------------------------------------- */
+  --line:            228 225 219;   /* #E4E1DB  hairline rules              */
+  --line-strong:     207 203 195;   /* #CFCBC3  inputs, active dividers     */
+
+  /* --- accent (the only brand-carrying tokens) ---------------------- */
+  --accent:          31 93 69;      /* #1F5D45  deep institutional green    */
+  --accent-hover:    23 73 54;      /* #174936 */
+  --accent-subtle:   237 243 240;   /* #EDF3F0  selected row, active nav    */
+  --accent-contrast: 255 255 255;
+
+  /* --- semantic ----------------------------------------------------- */
+  --success:         46 107 79;     /* #2E6B4F */
+  --success-subtle:  237 244 240;
+  --warning:         138 90 22;     /* #8A5A16  dark enough for body text   */
+  --warning-subtle:  250 244 233;
+  --error:           155 44 44;     /* #9B2C2C */
+  --error-subtle:    251 240 240;
+  --info:            44 85 120;     /* #2C5578 */
+  --info-subtle:     238 243 248;
+
+  /* --- focus -------------------------------------------------------- */
+  --focus:           31 93 69;
+
+  /* --- elevation ---------------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgb(20 22 26 / 0.06);
+  --shadow-md: 0 4px 16px -4px rgb(20 22 26 / 0.10), 0 1px 2px rgb(20 22 26 / 0.05);
+  --shadow-lg: 0 12px 32px -8px rgb(20 22 26 / 0.16), 0 2px 6px rgb(20 22 26 / 0.06);
+}
+
+/* =====================================================================
+   MONOCHROME
+   ---------------------------------------------------------------------
+   Not an inversion and not a grayscale filter — a designed theme where
+   black IS the accent.
+
+   Availability statuses carry ZERO hue here, by decision. They are
+   distinguished by icon, label and tonal weight instead. That makes
+   switching to this theme a live demonstration that the status system
+   never depended on colour, which is what the accessibility requirement
+   actually asks for.
+
+   Transient alerts (error/warning/info) keep one desaturated hue, because
+   they are momentary, always carry an icon, and losing the distinction
+   there costs comprehension without buying an accessibility guarantee.
+   ===================================================================== */
+
+[data-theme='mono'] {
+  --bg:              252 252 252;   /* #FCFCFC */
+  --bg-sunken:       242 242 242;   /* #F2F2F2 */
+  --surface:         255 255 255;
+  --surface-raised:  255 255 255;
+
+  --fg:              10 10 10;      /* #0A0A0A */
+  --fg-muted:        85 85 90;      /* #55555A */
+  --fg-subtle:       100 100 104;   /* #646468  AA-normal on bg AND bg-sunken */
+  --fg-inverse:      255 255 255;
+
+  --line:            226 226 226;   /* #E2E2E2 */
+  --line-strong:     196 196 196;   /* #C4C4C4 */
+
+  --accent:          10 10 10;      /* black is the accent */
+  --accent-hover:    38 38 38;
+  --accent-subtle:   240 240 240;
+  --accent-contrast: 255 255 255;
+
+  /* Availability statuses resolve to ink, not hue. */
+  --success:         10 10 10;
+  --success-subtle:  240 240 240;
+  --warning:         61 61 61;
+  --warning-subtle:  238 238 238;
+  --error:           26 26 26;
+  --error-subtle:    236 236 236;
+  --info:            85 85 90;
+  --info-subtle:     242 242 242;
+
+  --focus:           10 10 10;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.07);
+  --shadow-md: 0 4px 16px -4px rgb(0 0 0 / 0.11), 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.17), 0 2px 6px rgb(0 0 0 / 0.06);
+}
+
+/* =====================================================================
+   Non-colour tokens
+   ===================================================================== */
+
+:root {
+  /* Radius. Near-square: this is drafting, not a consumer app. Pills are
+     reserved for status indicators, where the shape carries the semantic. */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-pill: 999px;
+
+  /* Motion. One animated property per interaction; see the durations in
+     docs/DESIGN_SYSTEM_PROPOSAL.md §H. */
+  --dur-state:  120ms;
+  --dur-menu:   180ms;
+  --dur-dialog: 240ms;
+  --dur-map:    600ms;
+  --ease-in:  cubic-bezier(.2, 0, 0, 1);      /* entering */
+  --ease-out: cubic-bezier(.4, 0, 1, 1);      /* exiting  */
+
+  /* The structural grid that runs through hero, dividers, map and tables. */
+  --grid-unit: 8px;
+}
