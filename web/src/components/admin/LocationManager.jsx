@@ -48,7 +48,6 @@ const EMPTY = {
 };
 
 export default function LocationManager() {
-  const [session, setSession] = useState(undefined);
   const [pois, setPois] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [form, setForm] = useState(EMPTY);
@@ -62,20 +61,17 @@ export default function LocationManager() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState(null);
 
-  useEffect(() => { currentSession().then((s) => setSession(s ?? null)); }, []);
-
   const load = useCallback(async () => {
-    if (!session) return;
     setLoading(true);
     try {
       const [p, d] = await Promise.all([
-        api.adminPois(session.access_token),
-        api.adminDepartments(session.access_token),
+        api.adminPois(''),
+        api.adminDepartments(''),
       ]);
       setPois(p.pois ?? []); setDepartments(d.departments ?? []);
     } catch (err) { setMsg({ kind: 'error', text: err.message }); }
     finally { setLoading(false); }
-  }, [session]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -110,12 +106,28 @@ export default function LocationManager() {
     };
     try {
       const res = editingId
-        ? await api.adminUpdatePoi(session.access_token, editingId, payload)
-        : await api.adminCreatePoi(session.access_token, payload);
+        ? await api.adminUpdatePoi('', editingId, payload)
+        : await api.adminCreatePoi('', payload);
       setMsg({ kind: 'ok', text: res.message ?? `Saved.${res.reindexed ? ` Place-card re-embedded (${res.indexed} chunk${res.indexed === 1 ? '' : 's'}).` : ''}` });
       cancel(); await load();
     } catch (err) { setMsg({ kind: 'error', text: err.message }); }
     finally { setBusy(false); }
+  }
+
+  async function removePoi(id, name) {
+    if (!window.confirm(`Are you sure you want to remove "${name}" from the campus map and Supabase database?`)) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await api.adminUnpublishPoi('', id, 'Removed via Map Editor');
+      setMsg({ kind: 'ok', text: `"${name}" was deleted from the map and database.` });
+      if (editingId === id) cancel();
+      await load();
+    } catch (err) {
+      setMsg({ kind: 'error', text: err.message });
+    } finally {
+      setBusy(false);
+    }
   }
 
   const shown = useMemo(() => pois.filter(
@@ -124,252 +136,241 @@ export default function LocationManager() {
 
   const placeholders = pois.filter((p) => p.data_origin === 'synthetic').length;
 
-  if (session === undefined) return null;
-  if (!session) {
-    return (
-      <PortalLogin
-        icon={Settings2}
-        title="Campus Locations"
-        description="For researchers and campus administrators. Add or correct buildings, offices and points of interest on the ISU-GeoBot map."
-        onSession={setSession}
-      />
-    );
-  }
-
   return (
-    <PortalShell
-      icon={Settings2}
-      title="Campus Locations"
-      subtitle="Saving a location updates the map and regenerates its place-card in the retrieval corpus, so the assistant can answer about it straight away."
-      actions={
-        <>
-          <Button variant="secondary" size="sm" icon={RefreshCw} onClick={load} disabled={loading}>
-            Refresh
-          </Button>
-          <SignOutButton onSignOut={async () => { await signOut(); setSession(null); }} />
-        </>
-      }
-    >
+    <PortalShell showHeader={false}>
       {placeholders > 0 && (
-        <Alert tone="warning" title={`${placeholders} placeholder location${placeholders === 1 ? '' : 's'}`}>
-          These are marked <code className="font-mono">[DEMO]</code> wherever they
-          appear, and the evaluation harness will refuse to run until every one is
-          replaced with surveyed coordinates.
-        </Alert>
+        <div className="mb-4">
+          <Alert tone="warning" title={`${placeholders} placeholder location${placeholders === 1 ? '' : 's'}`}>
+            These are marked <code className="font-mono">[DEMO]</code> wherever they
+            appear, and the evaluation harness will refuse to run until every one is
+            replaced with surveyed coordinates.
+          </Alert>
+        </div>
       )}
 
-      <div className="mt-8 grid gap-12 lg:grid-cols-[minmax(0,26rem)_1fr]">
-        <form onSubmit={submit} className="lg:sticky lg:top-24 lg:self-start">
-          <h2 className="flex items-center gap-2 border-b border-line pb-3 font-serif text-h3 text-fg">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,28rem)_1fr] lg:items-start">
+        {/* Left Form: Sticky panel with independent internal scroll */}
+        <div className="rounded-xl border border-line bg-surface p-5 shadow-sm lg:sticky lg:top-4 lg:flex lg:flex-col lg:h-[calc(100vh-3.5rem)]">
+          <h2 className="flex items-center gap-2 border-b border-line pb-3 font-serif text-h3 text-fg shrink-0">
             {editingId ? <><Save className="h-4 w-4 text-accent" aria-hidden /> Edit location</>
                        : <><Plus className="h-4 w-4 text-accent" aria-hidden /> Add a location</>}
           </h2>
 
-          <Fieldset legend="Identity">
-            <Field label="Building or office name" required>
-              {({ id }) => (
-                <Input id={id} required minLength={2} maxLength={160} value={form.name}
-                       onChange={(e) => set('name', e.target.value)}
-                       placeholder="Innovation and Research Center" />
-              )}
-            </Field>
-            <Field
-              label="Icon"
-              hint="Optional. Leave unset and the location is drawn with its category's icon — set one only where the category glyph is misleading, like a bicycle stand drawn as a building."
-            >
-              {() => (
-                <div className="flex flex-wrap gap-1.5">
+          <form onSubmit={submit} className="mt-3 flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto pr-2.5 custom-scrollbar space-y-5">
+              <Fieldset legend="Identity">
+                <Field label="Building or office name" required>
+                  {({ id }) => (
+                    <Input id={id} required minLength={2} maxLength={160} value={form.name}
+                           onChange={(e) => set('name', e.target.value)}
+                           placeholder="Innovation and Research Center" />
+                  )}
+                </Field>
+                <Field
+                  label="Icon"
+                  hint="Optional. Leave unset and the location is drawn with its category's icon — set one only where the category glyph is misleading, like a bicycle stand drawn as a building."
+                >
+                  {() => (
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => set('icon', '')}
+                        aria-pressed={!form.icon}
+                        title="Use the category icon"
+                        className={`grid h-9 w-9 place-items-center rounded-md border transition-colors duration-state ${
+                          !form.icon
+                            ? 'border-accent bg-accent-subtle text-accent'
+                            : 'border-line text-fg-subtle hover:border-line-strong hover:text-fg'
+                        }`}
+                      >
+                        <span aria-hidden className="text-label font-semibold">Aa</span>
+                        <span className="sr-only">Use the category icon</span>
+                      </button>
+                      {ICON_CHOICES.map(([value, label, Glyph]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => set('icon', value)}
+                          aria-pressed={form.icon === value}
+                          title={label}
+                          className={`grid h-9 w-9 place-items-center rounded-md border transition-colors duration-state ${
+                            form.icon === value
+                              ? 'border-accent bg-accent-subtle text-accent'
+                              : 'border-line text-fg-muted hover:border-line-strong hover:text-fg'
+                          }`}
+                        >
+                          <Glyph className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                          <span className="sr-only">{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </Field>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Type" required>
+                    {({ id }) => (
+                      <Select id={id} value={form.poiType} onChange={(e) => set('poiType', e.target.value)}>
+                        {POI_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </Select>
+                    )}
+                  </Field>
+                  <Field label="Department">
+                    {({ id }) => (
+                      <Select id={id} value={form.departmentId} onChange={(e) => set('departmentId', e.target.value)}>
+                        <option value="">(None / shared)</option>
+                        {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                      </Select>
+                    )}
+                  </Field>
+                </div>
+              </Fieldset>
+
+              <Fieldset legend="Coordinates">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Latitude" required>
+                    {({ id }) => (
+                      <Input id={id} required type="number" step="any" min="-90" max="90"
+                             value={form.lat} onChange={(e) => set('lat', e.target.value)}
+                             placeholder="16.7123" />
+                    )}
+                  </Field>
+                  <Field label="Longitude" required>
+                    {({ id }) => (
+                      <Input id={id} required type="number" step="any" min="-180" max="180"
+                             value={form.lng} onChange={(e) => set('lng', e.target.value)}
+                             placeholder="121.6751" />
+                    )}
+                  </Field>
+                </div>
+                <p className="field-hint">
+                  {form.lat && form.lng
+                    ? 'Set. Drag the pin on the map or right-click any marker to edit/adjust.'
+                    : 'Not set yet.'}{' '}
                   <button
                     type="button"
-                    onClick={() => set('icon', '')}
-                    aria-pressed={!form.icon}
-                    title="Use the category icon"
-                    className={`grid h-9 w-9 place-items-center rounded-md border transition-colors duration-state ${
-                      !form.icon
-                        ? 'border-accent bg-accent-subtle text-accent'
-                        : 'border-line text-fg-subtle hover:border-line-strong hover:text-fg'
-                    }`}
+                    onClick={() => setView('map')}
+                    className="rounded underline decoration-line-strong underline-offset-4 transition-colors duration-state hover:text-fg"
                   >
-                    <span aria-hidden className="text-label font-semibold">Aa</span>
-                    <span className="sr-only">Use the category icon</span>
-                  </button>
-                  {ICON_CHOICES.map(([value, label, Glyph]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => set('icon', value)}
-                      aria-pressed={form.icon === value}
-                      title={label}
-                      className={`grid h-9 w-9 place-items-center rounded-md border transition-colors duration-state ${
-                        form.icon === value
-                          ? 'border-accent bg-accent-subtle text-accent'
-                          : 'border-line text-fg-muted hover:border-line-strong hover:text-fg'
-                      }`}
-                    >
-                      <Glyph className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                      <span className="sr-only">{label}</span>
-                    </button>
-                  ))}
+                    Place it on the map
+                  </button>{' '}
+                  &mdash; every other location is shown there for reference.
+                </p>
+              </Fieldset>
+
+              <Fieldset legend="Description">
+                <Field label="Primary function">
+                  {({ id }) => (
+                    <Input id={id} maxLength={200} value={form.buildingFunction}
+                           onChange={(e) => set('buildingFunction', e.target.value)}
+                           placeholder="Research laboratories and innovation hub" />
+                  )}
+                </Field>
+                <Field
+                  label="Description"
+                  hint="Embedded into the retrieval corpus, so this is what the assistant draws on. Describe the place — do not list which faculty sit there."
+                >
+                  {({ id, describedBy }) => (
+                    <Textarea id={id} rows={3} maxLength={1000} aria-describedby={describedBy}
+                              value={form.description}
+                              onChange={(e) => set('description', e.target.value)}
+                              placeholder="What is inside, who it serves, anything a student would want to know." />
+                  )}
+                </Field>
+              </Fieldset>
+
+              <Fieldset legend="Data provenance">
+                <Field label="How was the coordinate obtained?" required>
+                  {({ id }) => (
+                    <Select id={id} value={form.surveyMethod}
+                            onChange={(e) => set('surveyMethod', e.target.value)}>
+                      {SURVEY_METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </Select>
+                  )}
+                </Field>
+                <fieldset>
+                  <legend className="field-label">Data origin <span className="text-accent">*</span></legend>
+                  <div className="mt-1.5 grid grid-cols-2 gap-2">
+                    {[
+                      ['real', 'Real ISU data', 'Surveyed and verified'],
+                      ['synthetic', 'Placeholder', 'Blocks evaluation runs'],
+                    ].map(([v, l, hint]) => (
+                      <button
+                        key={v} type="button" onClick={() => set('dataOrigin', v)}
+                        aria-pressed={form.dataOrigin === v}
+                        className={`border px-3 py-2.5 text-left transition-colors duration-state ${
+                          form.dataOrigin === v
+                            ? v === 'real' ? 'border-accent bg-accent-subtle' : 'border-warning bg-warning-subtle'
+                            : 'border-line hover:border-line-strong'
+                        }`}
+                      >
+                        <span className="block text-meta font-medium text-fg">{l}</span>
+                        <span className="mt-0.5 block text-label text-fg-subtle">{hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                {editingId && (
+                  <Field label="Reason for this change" hint="Recorded in the poi_audit log with your identity and a timestamp.">
+                    {({ id, describedBy }) => (
+                      <Input id={id} maxLength={280} aria-describedby={describedBy}
+                             value={form.note} onChange={(e) => set('note', e.target.value)}
+                             placeholder="e.g. Corrected coordinate after on-site GPS survey" />
+                    )}
+                  </Field>
+                )}
+              </Fieldset>
+
+              {msg && (
+                <div className="mt-4">
+                  <Alert tone={msg.kind === 'ok' ? 'success' : 'error'}>{msg.text}</Alert>
                 </div>
               )}
-            </Field>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Type" required>
-                {({ id }) => (
-                  <Select id={id} value={form.poiType} onChange={(e) => set('poiType', e.target.value)}>
-                    {POI_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                  </Select>
-                )}
-              </Field>
-              <Field label="Department">
-                {({ id }) => (
-                  <Select id={id} value={form.departmentId}
-                          onChange={(e) => set('departmentId', e.target.value)}>
-                    <option value="">None</option>
-                    {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </Select>
-                )}
-              </Field>
             </div>
-          </Fieldset>
 
-          <Fieldset legend="Location">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Latitude" required>
-                {({ id }) => (
-                  <Input id={id} type="number" step="0.000001" min={-90} max={90} required
-                         value={form.lat} onChange={(e) => set('lat', e.target.value)}
-                         placeholder="16.7102" />
-                )}
-              </Field>
-              <Field label="Longitude" required>
-                {({ id }) => (
-                  <Input id={id} type="number" step="0.000001" min={-180} max={180} required
-                         value={form.lng} onChange={(e) => set('lng', e.target.value)}
-                         placeholder="121.6751" />
-                )}
-              </Field>
+            <div className="mt-4 flex items-center gap-3 border-t border-line pt-3 shrink-0 bg-surface">
+              <Button type="submit" disabled={busy}>
+                {busy ? 'Saving…' : editingId ? 'Save changes' : 'Save location'}
+              </Button>
+              {editingId && (
+                <>
+                  <Button type="button" variant="secondary" onClick={cancel} disabled={busy}>Cancel</Button>
+                  <Button type="button" variant="danger" onClick={() => removePoi(editingId, form.name)} disabled={busy}>Delete</Button>
+                </>
+              )}
             </div>
-            <p className="field-hint">
-              {form.lat && form.lng
-                ? 'Set. Drag the pin on the map to adjust, and check it against a landmark before saving.'
-                : 'Not set yet.'}{' '}
-              <button
-                type="button"
-                onClick={() => setView('map')}
-                className="rounded underline decoration-line-strong underline-offset-4 transition-colors duration-state hover:text-fg"
-              >
-                Place it on the map
-              </button>{' '}
-              &mdash; every other location is shown there for reference.
-            </p>
-          </Fieldset>
+          </form>
+        </div>
 
-          <Fieldset legend="Description">
-            <Field label="Primary function">
-              {({ id }) => (
-                <Input id={id} maxLength={200} value={form.buildingFunction}
-                       onChange={(e) => set('buildingFunction', e.target.value)}
-                       placeholder="Research laboratories and innovation hub" />
-              )}
-            </Field>
-            <Field
-              label="Description"
-              hint="Embedded into the retrieval corpus, so this is what the assistant draws on. Describe the place — do not list which faculty sit there."
-            >
-              {({ id, describedBy }) => (
-                <Textarea id={id} rows={3} maxLength={1000} aria-describedby={describedBy}
-                          value={form.description}
-                          onChange={(e) => set('description', e.target.value)}
-                          placeholder="What is inside, who it serves, anything a student would want to know." />
-              )}
-            </Field>
-          </Fieldset>
+        {/* Right Section: Large Map that fills the viewport height */}
+        <section className="flex flex-col h-[calc(100vh-3.5rem)] min-h-[38rem] lg:sticky lg:top-4 rounded-xl border border-line bg-surface p-4 shadow-sm" aria-label="Campus locations">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-h3 text-fg">{pois.length}</span>
+              <span className="text-body text-fg-muted">location{pois.length === 1 ? '' : 's'}</span>
 
-          <Fieldset legend="Data provenance">
-            <Field label="How was the coordinate obtained?" required>
-              {({ id }) => (
-                <Select id={id} value={form.surveyMethod}
-                        onChange={(e) => set('surveyMethod', e.target.value)}>
-                  {SURVEY_METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </Select>
-              )}
-            </Field>
-            <fieldset>
-              <legend className="field-label">Data origin <span className="text-accent">*</span></legend>
-              <div className="mt-1.5 grid grid-cols-2 gap-2">
+              <div className="ml-3 flex rounded-md border border-line" role="group" aria-label="View mode">
                 {[
-                  ['real', 'Real ISU data', 'Surveyed and verified'],
-                  ['synthetic', 'Placeholder', 'Blocks evaluation runs'],
-                ].map(([v, l, hint]) => (
+                  ['map', 'Map view', MapIcon],
+                  ['list', 'List view', List],
+                ].map(([v, l, Icon]) => (
                   <button
-                    key={v} type="button" onClick={() => set('dataOrigin', v)}
-                    aria-pressed={form.dataOrigin === v}
-                    className={`border px-3 py-2.5 text-left transition-colors duration-state ${
-                      form.dataOrigin === v
-                        ? v === 'real' ? 'border-accent bg-accent-subtle' : 'border-warning bg-warning-subtle'
-                        : 'border-line hover:border-line-strong'
-                    }`}
-                  >
-                    <span className="block text-meta font-medium text-fg">{l}</span>
-                    <span className="mt-0.5 block text-label text-fg-subtle">{hint}</span>
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-          </Fieldset>
-
-          <Fieldset legend="Publishing">
-            <label className="flex cursor-pointer items-center gap-2.5 text-meta text-fg">
-              <input type="checkbox" checked={form.isFeatured}
-                     onChange={(e) => set('isFeatured', e.target.checked)}
-                     className="accent-accent" />
-              Feature on the public homepage
-            </label>
-            <Field label="Change note" hint="Recorded in the audit trail.">
-              {({ id, describedBy }) => (
-                <Input id={id} maxLength={280} value={form.note} aria-describedby={describedBy}
-                       onChange={(e) => set('note', e.target.value)}
-                       placeholder="Building completed August 2026" />
-              )}
-            </Field>
-          </Fieldset>
-
-          <div className="mt-7 flex gap-2">
-            <Button type="submit" variant="primary" size="lg" loading={busy} className="flex-1">
-              {editingId ? 'Save changes' : 'Add location'}
-            </Button>
-            {editingId && <Button type="button" variant="text" onClick={cancel}>Cancel</Button>}
-          </div>
-
-          {msg && (
-            <Alert tone={msg.kind === 'ok' ? 'success' : 'error'} className="mt-4">{msg.text}</Alert>
-          )}
-        </form>
-
-        <section className="flex min-h-0 flex-col lg:sticky lg:top-6 lg:h-[calc(100dvh-8rem)]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-            <div className="flex items-center gap-3">
-              <h2 className="font-serif text-h3 text-fg">
-                On the map <span className="text-fg-subtle" data-numeric>({pois.length})</span>
-              </h2>
-              <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="View">
-                {[['map', 'Map', MapIcon], ['list', 'List', List]].map(([key, label, Glyph]) => (
-                  <button
-                    key={key}
+                    key={v}
                     type="button"
-                    onClick={() => setView(key)}
-                    aria-pressed={view === key}
+                    onClick={() => setView(v)}
+                    aria-pressed={view === v}
+                    title={l}
                     className={`flex items-center gap-1.5 px-2.5 py-1 text-label transition-colors duration-state ${
-                      view === key ? 'bg-fg text-bg' : 'text-fg-muted hover:text-fg'
+                      view === v ? 'bg-fg text-bg' : 'text-fg-muted hover:text-fg'
                     }`}
                   >
-                    <Glyph className="h-3.5 w-3.5" aria-hidden />
-                    {label}
+                    <Icon className="h-3.5 w-3.5" aria-hidden />
+                    <span>{l.split(' ')[0]}</span>
                   </button>
                 ))}
               </div>
+
+              <Button variant="ghost" size="sm" icon={RefreshCw} onClick={load} disabled={loading} title="Refresh locations" className="ml-1" />
             </div>
             <div className={`relative w-full max-w-xs ${view === 'map' ? 'hidden' : ''}`}>
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" aria-hidden />
@@ -387,11 +388,13 @@ export default function LocationManager() {
                 lng={form.lng}
                 name={form.name}
                 onPick={(a, b) => { set('lat', a.toFixed(6)); set('lng', b.toFixed(6)); }}
+                onEdit={startEdit}
+                onDelete={removePoi}
               />
             </div>
           )}
 
-          <div className={`min-h-0 flex-1 overflow-y-auto ${view === 'list' ? '' : 'hidden'}`}>
+          <div className={`min-h-0 flex-1 overflow-y-auto custom-scrollbar ${view === 'list' ? '' : 'hidden'}`}>
           {loading && pois.length === 0 && <SkeletonRows rows={6} />}
 
           {shown.length > 0 && (
@@ -416,7 +419,10 @@ export default function LocationManager() {
                       {p.department?.name ? ` · ${p.department.name}` : ''}
                     </p>
                   </div>
-                  <Button variant="secondary" size="sm" onClick={() => startEdit(p)}>Edit</Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => startEdit(p)}>Edit</Button>
+                    <Button variant="danger" size="sm" onClick={() => removePoi(p.id, p.name)}>Delete</Button>
+                  </div>
                 </li>
               ))}
             </ul>

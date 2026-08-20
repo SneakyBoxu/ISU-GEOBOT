@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { ChevronRight, PanelLeftClose, Search, X } from 'lucide-react';
 import { POI_CATEGORIES } from '../../lib/constants.js';
-import { TYPE_LETTER, categoryColor } from './markerGlyph.js';
+import { categoryColor } from './markerGlyph.js';
+import { PoiGlyph } from './pinIcon.js';
 
 /**
  * The campus index.
@@ -64,6 +65,7 @@ function CategoryChips({ value, onChange, pois }) {
 }
 
 function LocationRow({ poi, active, onSelect }) {
+  const poiType = poi.type || poi.poi_type || poi.category;
   return (
     <li>
       <button
@@ -76,10 +78,10 @@ function LocationRow({ poi, active, onSelect }) {
       >
         <span
           aria-hidden
-          className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-pill text-[10px] font-semibold"
-          style={{ background: categoryColor(poi.type), color: 'rgb(var(--cat-ink))' }}
+          className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full"
+          style={{ background: categoryColor(poiType), color: 'rgb(var(--cat-ink))' }}
         >
-          {TYPE_LETTER[poi.type] ?? '·'}
+          <PoiGlyph type={poiType} icon={poi.icon} size={14} />
         </span>
 
         <span className="min-w-0 flex-1">

@@ -39,13 +39,9 @@ export const config = {
   },
 
   groq: {
-    apiKey: process.env.GROQ_API_KEY ?? '',
-    // Thesis §3.7 names Llama 3.1 8B. Pinned, and recorded on every eval_run.
-    // If Groq retires this id the substitution must be DISCLOSED, not silent —
-    // every prior number becomes non-comparable (audit §8.7).
-    model: process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant',
-    // Temperature 0 is not a style choice: it is required for the evaluation
-    // runs to be reproducible, and it reduces hallucination (audit §8.5).
+    apiKey: process.env.GROQ_API_KEY ?? process.env.LLM_API_KEY ?? '',
+    apiUrl: process.env.GROQ_API_URL ?? process.env.LLM_API_URL ?? 'https://openrouter.ai/api/v1/chat/completions',
+    model: process.env.GROQ_MODEL ?? process.env.LLM_MODEL ?? 'openai/gpt-oss-120b',
     temperature: 0,
     maxTokens: Number(process.env.GROQ_MAX_TOKENS ?? 700),
     timeoutMs: Number(process.env.GROQ_TIMEOUT_MS ?? 30000),

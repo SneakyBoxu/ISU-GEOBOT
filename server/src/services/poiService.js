@@ -147,6 +147,13 @@ export async function reindexPoi(poiId) {
   return { chunks: pieces.length, text };
 }
 
+function toUuid(val) {
+  if (typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
+    return val;
+  }
+  return null;
+}
+
 async function audit(action, poiId, before, after, userId, note) {
   try {
     await db.from('poi_audit').insert({
@@ -154,7 +161,7 @@ async function audit(action, poiId, before, after, userId, note) {
       action,
       before_state: before ?? null,
       after_state: after ?? null,
-      changed_by: userId,
+      changed_by: toUuid(userId) ?? '00000000-0000-0000-0000-000000000000',
       note: note ?? null,
     });
   } catch (err) {
@@ -212,8 +219,8 @@ export async function createPoi(input, userId) {
       // Provenance is explicit and has no default (audit F-38). A location
       // entered before the GPS survey is placeholder data and says so.
       data_origin: input.dataOrigin,
-      created_by: userId,
-      updated_by: userId,
+      created_by: toUuid(userId),
+      updated_by: toUuid(userId),
       updated_at: new Date().toISOString(),
     })
     .select()
@@ -248,7 +255,7 @@ export async function updatePoi(poiId, patch, userId) {
     ...(patch.isPublished !== undefined && { is_published: patch.isPublished }),
     ...(patch.surveyMethod !== undefined && { survey_method: patch.surveyMethod }),
     ...(patch.dataOrigin !== undefined && { data_origin: patch.dataOrigin }),
-    updated_by: userId,
+    updated_by: toUuid(userId),
     updated_at: new Date().toISOString(),
   };
 

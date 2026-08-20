@@ -77,7 +77,7 @@ export async function generate(messages) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), config.groq.timeoutMs);
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const res = await fetch(config.groq.apiUrl, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${config.groq.apiKey}`,
@@ -94,7 +94,7 @@ export async function generate(messages) {
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
-      const err = new Error(`Groq request failed (${res.status})`);
+      const err = new Error(`LLM request failed (${res.status})`);
       err.status = res.status === 429 ? 429 : 502;
       err.detail = detail.slice(0, 500);
       throw err;

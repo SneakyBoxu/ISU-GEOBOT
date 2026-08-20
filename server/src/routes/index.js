@@ -195,29 +195,45 @@ api.post('/demo/compare', limit(config.rateLimit.demoMax), async (req, res, next
   } catch (err) { next(err); }
 });
 
+const normalizeType = (cat) => {
+  const c = String(cat || '').toLowerCase();
+  if (c === 'admin' || c === 'administrative') return 'administrative';
+  if (c === 'academic' || c === 'college') return 'college';
+  if (c === 'landmark') return 'landmark';
+  if (c === 'facility') return 'facility';
+  if (c === 'sports' || c === 'recreation') return 'sports';
+  if (c === 'library') return 'library';
+  if (c === 'laboratory' || c === 'lab') return 'laboratory';
+  return 'other';
+};
+
+const normalizeIcon = (ic) => {
+  if (!ic) return null;
+  return ic.replace(/^fas fa-/, '').replace(/^fa-/, '');
+};
+
 api.get('/map/pois', limit(config.rateLimit.generalMax), async (req, res, next) => {
   try {
     const { data, error } = await db
       .from('poi')
       .select('id, slug, name, poi_type, lat, lng, building_function, description, is_featured, icon, data_origin, department:department_id (name)')
+      .eq('is_published', true)
       .order('name');
     if (error) throw error;
+
     res.json({
       pois: (data ?? []).map((p) => ({
         id: p.id,
-        slug: p.slug ?? null,
-        icon: p.icon ?? null,
-        // Audit F-38 / R1: synthetic rows are visibly marked wherever they
-        // surface, so a screenshot of placeholder data is self-evidently
-        // placeholder data.
-        name: p.data_origin === 'synthetic' ? `[DEMO] ${p.name}` : p.name,
-        type: p.poi_type,
-        lat: p.lat,
-        lng: p.lng,
-        buildingFunction: p.building_function,
-        description: p.description,
+        slug: p.slug ?? p.id,
+        icon: normalizeIcon(p.icon),
+        name: p.name,
+        type: normalizeType(p.category ?? p.poi_type),
+        lat: Number(p.lat),
+        lng: Number(p.lng),
+        buildingFunction: p.building_function ?? p.description ?? '',
+        description: p.description ?? '',
         department: p.department?.name ?? null,
-        isFeatured: p.is_featured,
+        isFeatured: Boolean(p.is_featured ?? true),
         isSynthetic: p.data_origin === 'synthetic',
       })),
     });

@@ -15,30 +15,35 @@ export default function PortalShell({
   title,
   subtitle,
   actions,
+  showHeader = true,
   width = 'container-x',
   children,
 }) {
+  const hasHeader = showHeader && (title || subtitle || Icon || actions);
+
   return (
     <div className="min-h-screen bg-bg">
       <a href="#portal-main" className="skip-link">Skip to content</a>
       <Nav />
       <DemoBanner />
 
-      <header className="border-b border-line bg-surface">
-        <div className={`${width} flex flex-wrap items-end justify-between gap-4 py-7`}>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 text-fg-muted">
-              {Icon && <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
-              <span className="eyebrow">Portal</span>
+      {hasHeader && (
+        <header className="border-b border-line bg-surface">
+          <div className={`${width} flex flex-wrap items-end justify-between gap-4 py-7`}>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-fg-muted">
+                {Icon && <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />}
+                <span className="eyebrow">Portal</span>
+              </div>
+              <h1 className="mt-2 font-serif text-h2 text-fg">{title}</h1>
+              {subtitle && <p className="lede mt-2 text-body">{subtitle}</p>}
             </div>
-            <h1 className="mt-2 font-serif text-h2 text-fg">{title}</h1>
-            {subtitle && <p className="lede mt-2 text-body">{subtitle}</p>}
+            {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
           </div>
-          {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main id="portal-main" className={`${width} py-8`}>{children}</main>
+      <main id="portal-main" className={`${width} ${hasHeader ? 'py-8' : 'py-4'}`}>{children}</main>
     </div>
   );
 }

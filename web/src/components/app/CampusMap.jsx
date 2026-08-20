@@ -5,8 +5,8 @@ import { Maximize, Minus, Plus } from 'lucide-react';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../lib/constants.js';
 import { usePrefersReducedMotion } from '../../hooks/useMotion.js';
 import { useTheme } from '../../lib/theme.jsx';
-import { TYPE_LETTER, categoryColor } from './markerGlyph.js';
-import { teardropIcon } from './pinIcon.js';
+import { categoryColor } from './markerGlyph.js';
+import { teardropIcon, PoiGlyph } from './pinIcon.js';
 import LocationCard from './LocationCard.jsx';
 
 /**
@@ -281,7 +281,7 @@ export default function CampusMap({
             <Marker
               key={poi.id}
               position={[poi.lat, poi.lng]}
-              icon={teardropIcon({ type: poi.type, active: poi.id === focusId, index: i })}
+              icon={teardropIcon({ type: poi.type, icon: poi.icon, active: poi.id === focusId, index: i })}
               ref={(m) => { if (m) markerRefs.current.set(poi.id, m); else markerRefs.current.delete(poi.id); }}
               eventHandlers={{ click: () => onSelect?.(poi.id) }}
             >
@@ -312,10 +312,10 @@ export default function CampusMap({
             {legend.map((t) => (
               <div key={t} className="flex items-center gap-1.5">
                 <dt
-                  className="grid h-4 w-4 place-items-center rounded-pill text-[9px] font-semibold"
+                  className="grid h-4 w-4 place-items-center rounded-full"
                   style={{ background: categoryColor(t), color: 'rgb(var(--cat-ink))' }}
                 >
-                  {TYPE_LETTER[t] ?? '·'}
+                  <PoiGlyph type={t} size={11} />
                 </dt>
                 <dd className="text-label capitalize text-fg-muted">{t}</dd>
               </div>
