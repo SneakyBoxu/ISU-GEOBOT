@@ -448,11 +448,101 @@
   /* Smaller variant for the landing-page mini map. */
   .map-pin[data-size='sm'] { width: 18px; height: 18px; font-size: 9px; }
   .map-pin[data-size='sm'][data-state='active'] { width: 24px; height: 24px; font-size: 10px; }
+
+  /* -------------------------------------------------------------------
+     Teardrop pins (mapPinIconBuilder.js)
+     -------------------------------------------------------------------
+     The wrapper exists only to raise z-index on hover. Leaflet positions
+     markers with `transform: translate3d(...)` on that same element, so
+     the lift has to be applied to the INNER span — animating the wrapper
+     would fight Leaflet for the transform and make the pin jump to the
+     top-left of the map.
+     ------------------------------------------------------------------- */
+  .campus-pin-wrapper,
+  .draft-pin-wrapper { transition: z-index 0s ease; }
+  .campus-pin-wrapper:hover,
+  .draft-pin-wrapper:hover { z-index: 1000 !important; }
+
+  .campus-pin {
+    display: block;
+    transform-origin: 50% 100%;   /* the tip, so a lift does not leave the coordinate */
+    transition:
+      transform var(--dur-state) cubic-bezier(.34, 1.56, .64, 1),
+      filter var(--dur-state) ease,
+      opacity var(--dur-state) ease;
+    filter: drop-shadow(0 3px 4px rgb(0 0 0 / .34)) drop-shadow(0 1px 1px rgb(0 0 0 / .22));
+    will-change: transform, filter;
+    cursor: pointer;
+  }
+
+  .campus-pin-wrapper:hover .campus-pin,
+  .campus-pin-wrapper:focus-visible .campus-pin {
+    transform: translateY(-8px) scale(1.18);
+    filter:
+      drop-shadow(0 12px 18px rgb(0 0 0 / .5))
+      drop-shadow(0 4px 6px rgb(0 0 0 / .3))
+      drop-shadow(0 0 10px rgb(var(--accent) / .5));
+    /* A dimmed context pin becomes fully legible while pointed at. */
+    opacity: 1 !important;
+  }
+
+  .campus-pin-wrapper:active .campus-pin {
+    transform: translateY(-2px) scale(1.06);
+    transition-duration: 80ms;
+  }
+
+  .draft-pin {
+    display: block;
+    transition:
+      transform var(--dur-state) cubic-bezier(.34, 1.56, .64, 1),
+      box-shadow var(--dur-state) ease;
+    will-change: transform, box-shadow;
+    cursor: grab;
+  }
+  .draft-pin-wrapper:hover .draft-pin {
+    transform: scale(1.28);
+    box-shadow:
+      0 0 0 6px rgb(var(--accent) / .4),
+      0 0 16px rgb(var(--accent) / .5),
+      var(--shadow-lg) !important;
+  }
+  .draft-pin-wrapper:active .draft-pin {
+    cursor: grabbing;
+    transform: scale(1.12);
+  }
+
+  /* Leaflet paints a white card with a tail behind every popup. The editor
+     popup supplies its own surface, so the default chrome is removed rather
+     than themed — two stacked cards read as a rendering bug. */
+  .editor-popup .leaflet-popup-content-wrapper,
+  .editor-popup .leaflet-popup-tip {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+  }
+  .editor-popup .leaflet-popup-content { margin: 0; width: auto !important; }
+
+  /* A scrollbar for panels that scroll inside a fixed-height column. */
+  .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgb(var(--fg) / .18) transparent; }
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--fg) / .18);
+    border-radius: var(--radius-pill);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--fg) / .35); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .leaflet-marker-icon:hover .map-pin,
   .leaflet-marker-icon:focus-visible .map-pin { transform: none; }
+  .campus-pin, .draft-pin { transition: none; }
+  .campus-pin-wrapper:hover .campus-pin,
+  .campus-pin-wrapper:focus-visible .campus-pin,
+  .campus-pin-wrapper:active .campus-pin,
+  .draft-pin-wrapper:hover .draft-pin,
+  .draft-pin-wrapper:active .draft-pin { transform: none; }
 }
 
 

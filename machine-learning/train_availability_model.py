@@ -68,6 +68,9 @@ def parse_args():
                    help="Enable thesis §3.5.2(b) historical attendance features")
     p.add_argument("--plumbing-run", action="store_true",
                    help="Development run. Metrics are printed but NOT persisted.")
+    p.add_argument("--simulation", action="store_true",
+                   help="Simulation study on synthetic attendance. Metrics ARE "
+                        "persisted, stamped data_origin='synthetic'.")
     return p.parse_args()
 
 
@@ -101,18 +104,27 @@ def split_indices(args, samples):
 def main():
     args = parse_args()
 
+    if args.simulation and args.plumbing_run:
+        raise SystemExit(
+            "\n--simulation and --plumbing-run mean different things.\n"
+            "  --plumbing-run  runs the pipeline and persists nothing.\n"
+            "  --simulation    persists metrics, stamped data_origin='synthetic'.\n"
+            "Pick one.\n"
+        )
+
     circular = (
         args.label_source == "schedule_derived" and not args.attendance_features
     )
-    if circular and not args.plumbing_run:
+    if circular and not (args.plumbing_run or args.simulation):
         raise SystemExit(
             "\nREFUSING TO PERSIST A CIRCULAR MODEL.\n\n"
             "Features and labels are both schedule-derived, so this forest is\n"
             "reproducing schedule_lookup_status() by construction. Its accuracy\n"
-            "cannot be evidence that ML outperforms rule-based lookup — it IS\n"
+            "cannot be evidence that ML outperforms rule-based lookup -- it IS\n"
             "the rule-based lookup (audit F-18/F-20, open decision C4).\n\n"
             "Either:\n"
             "  --label-source attendance_derived --attendance-features   (real)\n"
+            "  --simulation                                              (synthetic)\n"
             "  --plumbing-run                                            (dev)\n"
         )
 
@@ -218,11 +230,22 @@ def main():
         "python_version": platform.python_version(),
         "trained_at": datetime.now(timezone.utc).isoformat(),
         "is_plumbing_run": bool(args.plumbing_run),
+        "is_simulation": bool(args.simulation),
     }
 
-    artifact = MODEL_DIR / (
-        f"{version}{'-SYNTHETIC-PLUMBING' if args.plumbing_run else ''}.joblib"
-    )
+    # GATE FIRST, THEN WRITE.
+    #
+    # This used to run after both joblib.dump() calls, so a run that the gate
+    # refused had already overwritten rf_current.joblib -- the file the Flask
+    # service loads -- with an unlabelled model built from synthetic rows. The
+    # refusal was printed, the damage was done, and the serving model was the
+    # thing the refusal was trying to prevent.
+    if not (args.plumbing_run or args.simulation):
+        db.assert_research_ready()
+
+    suffix = "-SYNTHETIC-PLUMBING" if args.plumbing_run else \
+             "-SIMULATION" if args.simulation else ""
+    artifact = MODEL_DIR / f"{version}{suffix}.joblib"
     joblib.dump(bundle, artifact)
     joblib.dump(bundle, MODEL_DIR / "rf_current.joblib")
     print(f"artifact: {artifact}")
@@ -234,20 +257,53 @@ def main():
         )
         return
 
-    db.assert_research_ready()
+    # ------------------------------------------------------------------
+    # SIMULATION STUDY
+    #
+    # assert_research_ready() refuses to let a number out of a corpus that
+    # contains synthetic rows, and attendance_record is one of the entities it
+    # checks. That is the correct default and it is untouched below.
+    #
+    # This branch exists because the thesis advisor ruled that real Daily Time
+    # Records cannot be requested, so the only attendance available is
+    # generated. A run on that data is a simulation: it measures whether the
+    # pipeline recovers behaviour that was deliberately injected, and it says
+    # nothing about real faculty. Those numbers are still worth recording --
+    # but only if the record itself carries the caveat, which is why the row is
+    # written with data_origin='synthetic' rather than the usual 'real'.
+    #
+    # The flag has to be passed on purpose. Nothing here happens by default.
+    # ------------------------------------------------------------------
+    if args.simulation:
+        print(
+            "\n" + "=" * 68
+            + "\n SIMULATION RUN -- these metrics are NOT a research result."
+            "\n"
+            "\n Trained on synthetic attendance. The accuracy above answers"
+            "\n \"does the pipeline recover the injected traits?\" and NOT"
+            "\n \"does the system predict real faculty availability?\"."
+            "\n"
+            "\n The rf_model_version row is stamped data_origin='synthetic'."
+            "\n Chapter 4 must describe this as a simulation study.\n"
+            + "=" * 68
+        )
     with db.cursor() as cur:
         cur.execute(
             """
             insert into geobot.rf_model_version
               (version, sklearn_version, training_row_count, class_order,
                feature_list, split_strategy, label_source, cv_folds,
-               metrics, feature_importance, artifact_path, data_origin)
-            values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'real')
+               metrics, feature_importance, artifact_path, data_origin, notes)
+            values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             returning id
             """,
             (version, sklearn.__version__, int(len(tr_idx)), order, names,
              args.split, args.label_source, args.cv_folds,
-             json.dumps(metrics), json.dumps(dict(importance)), str(artifact)),
+             json.dumps(metrics), json.dumps(dict(importance)), str(artifact),
+             "synthetic" if args.simulation else "real",
+             ("Simulation study on generated attendance. Measures recovery of "
+              "injected behavioural traits, not real-world availability."
+              if args.simulation else None)),
         )
         print(f"registered rf_model_version id={cur.fetchone()['id']}")
 

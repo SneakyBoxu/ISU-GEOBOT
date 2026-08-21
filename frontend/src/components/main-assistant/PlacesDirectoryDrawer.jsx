@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { ChevronRight, PanelLeftClose, Search, X } from 'lucide-react';
 import { POI_CATEGORIES } from '../../frontend-utilities/appConstants.js';
-import { TYPE_LETTER, categoryColor } from './mapMarkerGlyphs.js';
+import { categoryColor } from './mapMarkerGlyphs.js';
+import { PoiGlyph } from './mapPinIconBuilder.js';
 
 /**
  * The campus index.
@@ -76,10 +77,10 @@ function LocationRow({ poi, active, onSelect }) {
       >
         <span
           aria-hidden
-          className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-pill text-[10px] font-semibold"
+          className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-pill"
           style={{ background: categoryColor(poi.type), color: 'rgb(var(--cat-ink))' }}
         >
-          {TYPE_LETTER[poi.type] ?? '·'}
+          <PoiGlyph type={poi.type} icon={poi.icon} size={14} />
         </span>
 
         <span className="min-w-0 flex-1">

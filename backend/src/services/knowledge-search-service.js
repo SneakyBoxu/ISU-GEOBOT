@@ -363,7 +363,22 @@ export async function runPipeline({
   // Both sources resolve to the same shape — id, slug and name — so the
   // interface can say WHICH place it moved to without a second lookup. A map
   // that pans with no caption asks the user to work out what just happened.
-  const poiChunk = retrieval.chunks.find((c) => c.poi_id);
+  //
+  // THE FALLBACK ONLY APPLIES TO QUESTIONS ABOUT PLACES.
+  //
+  // It used to fire on any retrieved place-card, whatever was asked. Retrieval
+  // always returns its top-k, so a question with no location in it still
+  // surfaced whichever building embedded closest -- and the map moved. Asking
+  // "Is Professor Alado available right now?" panned to a building called
+  // "Alamario" while the answer said the system had no such information: the
+  // text declined and the interface pointed somewhere anyway, which is worse
+  // than either on its own.
+  //
+  // A validated [LOCATION: id] tag still wins unconditionally above; that one
+  // is the model deliberately naming a place, not the retriever's leftovers.
+  const wantsPlace = route.category === 'campus_navigation'
+    || route.category === 'combined';
+  const poiChunk = wantsPlace ? retrieval.chunks.find((c) => c.poi_id) : null;
   const chunkPoi = poiChunk
     ? locations.find((l) => l.id === poiChunk.poi_id) ?? { id: poiChunk.poi_id }
     : null;

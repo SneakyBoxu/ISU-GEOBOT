@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { Crosshair, Maximize2, Minimize2, Minus, Plus } from 'lucide-react';
+import {
+  Check, Copy, Crosshair, Edit3, ExternalLink, Maximize2, Minimize2,
+  Minus, Move, Plus, Trash2,
+} from 'lucide-react';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../frontend-utilities/appConstants.js';
 import { useTheme } from '../../frontend-utilities/themeContext.jsx';
 import { teardropIcon, draftIcon } from '../main-assistant/mapPinIconBuilder.js';
@@ -14,7 +17,7 @@ import { teardropIcon, draftIcon } from '../main-assistant/mapPinIconBuilder.js'
  * a new pin sits sensibly among the others, and showing only the pin being
  * edited so there was nothing to judge it against.
  *
- * So it shows EVERY location, dimmed, with the one being edited full size and
+ * So it shows EVERY location, with the one being edited full size and
  * draggable. Placing a building is a question about where it sits relative to
  * the others, and this is the only view that can answer it.
  *
@@ -24,9 +27,12 @@ import { teardropIcon, draftIcon } from '../main-assistant/mapPinIconBuilder.js'
  * which makes it the wrong basemap for the one screen whose entire job is
  * catching a wrong number.
  *
- * READ-ONLY except through the form. Dragging a pin changes the coordinate in
- * the form; nothing here writes to the server. The save button is still the
- * only thing that calls an endpoint, and that endpoint still checks the role.
+ * THE MAP IS AN INPUT DEVICE, NOT A WRITER. Right-clicking a pin offers Edit,
+ * Reposition, Copy coordinates and Delete, but every one of those either
+ * changes local form state or calls a handler the PARENT owns. Nothing here
+ * talks to the server, and the endpoints the parent calls still check the role
+ * server-side. A context menu is a shortcut through the UI, never around the
+ * authorization.
  */
 const BASEMAPS = {
   satellite: {
@@ -44,6 +50,10 @@ const BASEMAPS = {
   },
 };
 
+/** Context-menu box, used to keep it inside the viewport. */
+const MENU_W = 224;
+const MENU_H = { poi: 264, point: 152 };
+
 /**
  * Empty is not zero.
  *
@@ -58,18 +68,80 @@ function toCoord(v) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-function ClickToPlace({ onPick }) {
-  useMapEvents({ click: (e) => onPick(e.latlng.lat, e.latlng.lng) });
+/**
+ * Copy to clipboard, including where the Clipboard API does not exist.
+ *
+ * `navigator.clipboard` is undefined on any origin that is not HTTPS or
+ * localhost, and `writeText` rejects when the document is not focused. Both
+ * happen in normal use, so the caller is told whether it actually worked
+ * rather than being shown a tick regardless.
+ */
+async function copyText(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through to the textarea path */ }
+
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function MapInteraction({ onPick, onContextMenu }) {
+  useMapEvents({
+    click: (e) => onPick(e.latlng.lat, e.latlng.lng),
+    contextmenu: (e) => {
+      e.originalEvent.preventDefault();
+      onContextMenu(e.latlng.lat, e.latlng.lng, e.originalEvent.clientX, e.originalEvent.clientY);
+    },
+  });
   return null;
 }
 
 function Controller({ target, fitTo, resizeKey }) {
   const map = useMap();
 
-  // The container changes size when the pane goes fullscreen, and Leaflet only
-  // measures itself at mount.
+  /**
+   * Leaflet measures its container once, at mount. This pane changes size
+   * without the window changing size — going fullscreen, the form growing a
+   * validation message, the browser pane being dragged — and a stale
+   * measurement renders as grey tiles in the newly-exposed strip.
+   *
+   * A ResizeObserver catches every one of those. The trailing timeouts cover
+   * the case where the size change is animated, so the observer fires on the
+   * first frame of the transition and the final size arrives later.
+   */
   useEffect(() => {
-    const id = setTimeout(() => map.invalidateSize(), 260);
+    const container = map.getContainer();
+    if (!container) return undefined;
+
+    const onResize = () => map.invalidateSize({ pan: false });
+    const observer = new ResizeObserver(onResize);
+    observer.observe(container);
+
+    onResize();
+    const timers = [100, 300, 600].map((ms) => setTimeout(onResize, ms));
+
+    return () => {
+      observer.disconnect();
+      timers.forEach(clearTimeout);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    const id = setTimeout(() => map.invalidateSize({ pan: false }), 200);
     return () => clearTimeout(id);
   }, [resizeKey, map]);
 
@@ -111,11 +183,14 @@ function Controls({ bounds, onLocate, hasDraft }) {
 }
 
 export default function EditorMap({
-  pois = [], editingId, lat, lng, onPick, name,
+  pois = [], editingId, lat, lng, onPick, name, onEdit, onDelete,
 }) {
   const [basemap, setBasemap] = useState('satellite');
   const [full, setFull] = useState(false);
   const [recentre, setRecentre] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [menu, setMenu] = useState(null);   // { x, y, poi, lat, lng }
+  const menuRef = useRef(null);
   const { theme } = useTheme();
   const base = BASEMAPS[basemap];
 
@@ -143,6 +218,66 @@ export default function EditorMap({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [full]);
+
+  // Dismiss the context menu on outside press or Escape. `pointerdown` rather
+  // than `click`, so the menu closes on the press that starts a map drag
+  // instead of hanging around through it.
+  useEffect(() => {
+    if (!menu) return undefined;
+    const onDown = (e) => {
+      if (!menuRef.current?.contains(e.target)) setMenu(null);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setMenu(null); };
+    window.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menu]);
+
+  // Move focus into the menu when it opens, so it is operable from the
+  // keyboard and so Escape has somewhere to return from.
+  useEffect(() => {
+    if (menu) menuRef.current?.querySelector('[role="menuitem"]')?.focus();
+  }, [menu]);
+
+  /**
+   * Place the menu against the VIEWPORT, not the map container.
+   *
+   * It is `position: fixed`, so viewport coordinates are the ones that apply,
+   * and it is allowed to overhang the map. Clamping on both ends matters:
+   * clamping only the far edge lets a right-click near the left or top of the
+   * screen position the menu at a negative offset, off-screen.
+   */
+  const placeMenu = useCallback((clientX, clientY, kind) => {
+    const h = MENU_H[kind];
+    return {
+      x: Math.max(8, Math.min(clientX, window.innerWidth - MENU_W - 8)),
+      y: Math.max(8, Math.min(clientY, window.innerHeight - h - 8)),
+    };
+  }, []);
+
+  const handleCopy = async (y, x) => {
+    const ok = await copyText(`${Number(y).toFixed(6)}, ${Number(x).toFixed(6)}`);
+    if (!ok) return;                       // no tick for a copy that did not happen
+    setCopied(true);
+    setTimeout(() => { setCopied(false); setMenu(null); }, 900);
+  };
+
+  const openMarkerMenu = (e, p) => {
+    e.originalEvent.preventDefault();
+    e.originalEvent.stopPropagation();
+    const { x, y } = placeMenu(e.originalEvent.clientX, e.originalEvent.clientY, 'poi');
+    setMenu({ x, y, poi: p, lat: Number(p.lat), lng: Number(p.lng) });
+  };
+
+  const openPointMenu = (y, x, clientX, clientY) => {
+    const pos = placeMenu(clientX, clientY, 'point');
+    setMenu({ x: pos.x, y: pos.y, poi: null, lat: y, lng: x });
+  };
+
+  const item = 'flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-label text-fg transition-colors duration-state hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:outline-none';
 
   return (
     <div className={full
@@ -198,7 +333,7 @@ export default function EditorMap({
           />
           {base.reference && <TileLayer key={`${basemap}-ref`} url={base.reference} maxZoom={base.maxZoom} />}
 
-          <ClickToPlace onPick={onPick} />
+          <MapInteraction onPick={onPick} onContextMenu={openPointMenu} />
           <Controller target={draft} fitTo={draft ? null : bounds} resizeKey={`${full}-${recentre}`} />
           <Controls bounds={bounds} hasDraft={hasDraft} onLocate={() => setRecentre((n) => n + 1)} />
 
@@ -206,10 +341,49 @@ export default function EditorMap({
             <Marker
               key={p.id}
               position={[Number(p.lat), Number(p.lng)]}
-              icon={teardropIcon({ type: p.poi_type, dim: true, index: i })}
-              title={p.name}
-              interactive={false}
-            />
+              icon={teardropIcon({ type: p.poi_type, icon: p.icon, dim: true, index: i })}
+              title={`${p.name} — right-click for options`}
+              eventHandlers={{ contextmenu: (e) => openMarkerMenu(e, p) }}
+            >
+              <Popup className="editor-popup" closeButton={false}>
+                <div className="w-[min(18rem,calc(100vw-6rem))] rounded-xl border border-line bg-surface p-3.5 text-left text-fg shadow-lg">
+                  <p className="truncate font-serif text-meta font-semibold leading-tight text-fg">{p.name}</p>
+                  <span className="mt-1 inline-block rounded-sm bg-accent-subtle px-1.5 py-0.5 text-label font-medium uppercase tracking-wider text-accent">
+                    {p.poi_type ?? 'location'}
+                  </span>
+                  <p className="mt-1.5 font-mono text-label text-fg-subtle" data-numeric>
+                    {Number(p.lat).toFixed(5)}, {Number(p.lng).toFixed(5)}
+                  </p>
+                  {p.description && (
+                    <p className="mt-2 line-clamp-2 border-t border-line pt-1.5 text-label leading-relaxed text-fg-muted">
+                      {p.description}
+                    </p>
+                  )}
+                  <div className="mt-3 flex items-center gap-2 border-t border-line pt-2.5">
+                    {onEdit && (
+                      <button
+                        type="button"
+                        onClick={() => onEdit(p)}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-accent px-2 py-1.5 text-label font-medium text-accent-contrast transition-colors duration-state hover:bg-accent-hover"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" aria-hidden /> Edit
+                      </button>
+                    )}
+                    {onDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(p)}
+                        title={`Unpublish ${p.name}`}
+                        className="flex items-center justify-center rounded-md bg-error/10 px-2.5 py-1.5 text-error transition-colors duration-state hover:bg-error hover:text-bg"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                        <span className="sr-only">Unpublish {p.name}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
           ))}
 
           {draft && (
@@ -217,7 +391,7 @@ export default function EditorMap({
               position={draft}
               icon={draftIcon()}
               draggable
-              title={name || 'New location'}
+              title={name || 'New location — drag to reposition'}
               eventHandlers={{
                 dragend: (e) => {
                   const { lat: y, lng: x } = e.target.getLatLng();
@@ -239,10 +413,86 @@ export default function EditorMap({
         )}
       </div>
 
+      {menu && (
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label={menu.poi ? `Options for ${menu.poi.name}` : 'Map point options'}
+          style={{ top: menu.y, left: menu.x, width: MENU_W }}
+          className="animate-pop fixed z-[2000] rounded-lg border border-line bg-surface/95 p-1.5 shadow-lg backdrop-blur-md"
+        >
+          <div className="mb-1 border-b border-line px-2.5 py-1.5">
+            <p className="truncate text-label font-medium text-fg">{menu.poi ? menu.poi.name : 'Map point'}</p>
+            <p className="truncate font-mono text-label text-fg-subtle" data-numeric>
+              {Number(menu.lat).toFixed(5)}, {Number(menu.lng).toFixed(5)}
+            </p>
+          </div>
+
+          {menu.poi ? (
+            <>
+              {onEdit && (
+                <button type="button" role="menuitem" className={item}
+                  onClick={() => { onEdit(menu.poi); setMenu(null); }}>
+                  <Edit3 className="h-3.5 w-3.5 text-accent" aria-hidden /> Edit in the form
+                </button>
+              )}
+              <button type="button" role="menuitem" className={item}
+                onClick={() => { onPick(menu.lat, menu.lng); setMenu(null); }}>
+                <Move className="h-3.5 w-3.5 text-fg-muted" aria-hidden /> Reposition pin
+              </button>
+              <button type="button" role="menuitem" className={item}
+                onClick={() => handleCopy(menu.lat, menu.lng)}>
+                {copied
+                  ? <Check className="h-3.5 w-3.5 text-success" aria-hidden />
+                  : <Copy className="h-3.5 w-3.5 text-fg-muted" aria-hidden />}
+                {copied ? 'Coordinates copied' : 'Copy coordinates'}
+              </button>
+              <a
+                role="menuitem"
+                href={`/app?poi=${encodeURIComponent(menu.poi.id)}`}
+                target="_blank"
+                rel="noreferrer"
+                className={item}
+                onClick={() => setMenu(null)}
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-fg-muted" aria-hidden /> View on public map
+              </a>
+              {onDelete && (
+                <>
+                  <div className="my-1 border-t border-line" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`${item} text-error hover:bg-error/10 focus-visible:bg-error/10`}
+                    onClick={() => { onDelete(menu.poi); setMenu(null); }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Unpublish location
+                  </button>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <button type="button" role="menuitem" className={item}
+                onClick={() => { onPick(menu.lat, menu.lng); setMenu(null); }}>
+                <Plus className="h-3.5 w-3.5 text-accent" aria-hidden /> Place the pin here
+              </button>
+              <button type="button" role="menuitem" className={item}
+                onClick={() => handleCopy(menu.lat, menu.lng)}>
+                {copied
+                  ? <Check className="h-3.5 w-3.5 text-success" aria-hidden />
+                  : <Copy className="h-3.5 w-3.5 text-fg-muted" aria-hidden />}
+                {copied ? 'Coordinates copied' : 'Copy coordinates'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       <p className="mt-1.5 shrink-0 text-label text-fg-subtle">
         {hasDraft
-          ? 'Drag the pin or click elsewhere to adjust. Check it against a landmark on the satellite view before saving.'
-          : 'Nothing is saved until you use the form. This map only sets the coordinate.'}
+          ? 'Drag the pin, or right-click any location for options. Check it against a landmark on the satellite view before saving.'
+          : 'Right-click a pin to edit, reposition or unpublish it. Nothing is saved until you use the form.'}
       </p>
     </div>
   );

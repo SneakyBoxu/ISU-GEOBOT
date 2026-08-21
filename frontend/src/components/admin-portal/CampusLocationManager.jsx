@@ -118,6 +118,36 @@ export default function LocationManager() {
     finally { setBusy(false); }
   }
 
+  /**
+   * Retire a location, from the map rather than from the form.
+   *
+   * UNPUBLISH, NOT DELETE. A hard delete removes a row an earlier evaluation
+   * run may have retrieved against, which would make that run unreproducible.
+   * The server enforces the same thing — there is no delete endpoint to call —
+   * so the wording here says "unpublish" rather than promising a deletion the
+   * system will not perform.
+   *
+   * The confirm step is deliberate. This is reachable from a right-click menu,
+   * which is a much easier thing to hit by accident than a button in a form.
+   */
+  async function removePoi(poi) {
+    const ok = window.confirm(
+      `Unpublish "${poi.name}"?\n\n`
+      + 'It will be removed from the campus map, the landing page and the '
+      + "assistant's answers. The record is kept, and it can be republished.",
+    );
+    if (!ok) return;
+
+    setBusy(true); setMsg(null);
+    try {
+      await api.adminUnpublishPoi(session.access_token, poi.id, 'Unpublished from the map editor');
+      setMsg({ kind: 'ok', text: `"${poi.name}" is no longer published.` });
+      if (editingId === poi.id) cancel();
+      await load();
+    } catch (err) { setMsg({ kind: 'error', text: err.message }); }
+    finally { setBusy(false); }
+  }
+
   const shown = useMemo(() => pois.filter(
     (p) => p.name.toLowerCase().includes(query.trim().toLowerCase()),
   ), [pois, query]);
@@ -388,6 +418,8 @@ export default function LocationManager() {
                 lng={form.lng}
                 name={form.name}
                 onPick={(a, b) => { set('lat', a.toFixed(6)); set('lng', b.toFixed(6)); }}
+                onEdit={startEdit}
+                onDelete={removePoi}
               />
             </div>
           )}

@@ -5,8 +5,8 @@ import { Maximize, Minus, Plus } from 'lucide-react';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../frontend-utilities/appConstants.js';
 import { usePrefersReducedMotion } from '../../custom-react-hooks/useReducedMotionPreference.js';
 import { useTheme } from '../../frontend-utilities/themeContext.jsx';
-import { TYPE_LETTER, categoryColor } from './mapMarkerGlyphs.js';
-import { teardropIcon } from './mapPinIconBuilder.js';
+import { categoryColor } from './mapMarkerGlyphs.js';
+import { PoiGlyph, teardropIcon } from './mapPinIconBuilder.js';
 import LocationCard from './PlaceDetailCard.jsx';
 
 /**
@@ -312,10 +312,10 @@ export default function CampusMap({
             {legend.map((t) => (
               <div key={t} className="flex items-center gap-1.5">
                 <dt
-                  className="grid h-4 w-4 place-items-center rounded-pill text-[9px] font-semibold"
+                  className="grid h-4 w-4 place-items-center rounded-pill"
                   style={{ background: categoryColor(t), color: 'rgb(var(--cat-ink))' }}
                 >
-                  {TYPE_LETTER[t] ?? '·'}
+                  <PoiGlyph type={t} size={11} />
                 </dt>
                 <dd className="text-label capitalize text-fg-muted">{t}</dd>
               </div>

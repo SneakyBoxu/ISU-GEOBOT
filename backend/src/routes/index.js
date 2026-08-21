@@ -199,11 +199,18 @@ api.get('/map/pois', limit(config.rateLimit.generalMax), async (req, res, next) 
   try {
     const { data, error } = await db
       .from('poi')
-      .select('id, slug, name, poi_type, lat, lng, building_function, description, is_featured, icon, data_origin, department:department_id (name)')
+      .select('id, slug, name, poi_type, lat, lng, building_function, description, is_featured, icon, data_origin, is_published, department:department_id (name)')
       .order('name');
     if (error) throw error;
+
+    // Unpublished locations are excluded HERE, not only in the portal that
+    // hides them. Unpublishing is how a location is retired, and a retired
+    // location that still appears on the public map, in the landing page counts
+    // and in the assistant's gazetteer has not been retired at all — it has
+    // just been hidden from the one screen the administrator was looking at.
+    const published = (data ?? []).filter((p) => p.is_published !== false);
     res.json({
-      pois: (data ?? []).map((p) => ({
+      pois: published.map((p) => ({
         id: p.id,
         slug: p.slug ?? null,
         icon: p.icon ?? null,

@@ -3,12 +3,43 @@ dist/
 .env
 .env.local
 *.joblib
-ml/models/*
-!ml/models/.gitkeep
 __pycache__/
 *.pyc
 .venv/
 venv/
 .DS_Store
-*.md
-docs/
+
+# Trained model artifacts. The directory is tracked, its contents are not:
+# a .joblib is build output, and rf_current.joblib is rewritten every run.
+machine-learning/saved-models/*
+!machine-learning/saved-models/.gitkeep
+
+# ---------------------------------------------------------------------
+# Markdown
+# ---------------------------------------------------------------------
+# This used to be a blanket `*.md`, which silently untracked EVERY markdown
+# file in the repository -- README.md, setup-guide.md, thesis-paper-analysis.md,
+# implementation-decisions.md, pre-implementation-audit.md, the UI/UX reviews.
+# A fresh clone got the code and none of the documentation explaining it.
+#
+# Generated tables stay ignored, because they are output.
+notebooks/tables/*.md
+
+# ---------------------------------------------------------------------
+# Institutional documents
+# ---------------------------------------------------------------------
+# The RAG corpus source material is university property -- handbooks,
+# memoranda, registrar procedures. It is ingested locally and should not be
+# redistributed through this repository. The README explaining how to add it
+# IS tracked, because instructions are useless if they do not survive a clone.
+machine-learning/institutional-documents/*
+!machine-learning/institutional-documents/README.md
+
+# The schedule workbook is institutional data about 37 named people, none of
+# whom have consented to anything.
+CCSICT-SCHEDULE-*.xlsx
+
+# Generated training data. The workbook is pseudonymous, but it is output --
+# regenerate it with generate_synthetic_attendance.py rather than cloning it.
+machine-learning/training-data/*
+!machine-learning/training-data/.gitkeep

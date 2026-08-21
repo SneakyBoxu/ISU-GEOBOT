@@ -158,11 +158,33 @@ async function checkDatabase() {
         'Placeholder data will appear on the public map, marked [DEMO].');
     }
 
-    const unsurveyed = published.filter((p) => p.survey_method !== 'gps_survey').length;
-    if (unsurveyed) {
-      soft(WARN, `${unsurveyed} locations are not from an on-site GPS survey`,
-        'Thesis §3.4.1(a) is not yet satisfied. Fine to run; not yet writable up.');
+    // SATELLITE GEOREFERENCING IS THE CHOSEN METHOD, not a shortfall.
+    //
+    // This used to warn on anything that was not `gps_survey`, because the
+    // thesis originally specified an on-site walk. That walk is not happening:
+    // coordinates are digitised against high-resolution satellite imagery in
+    // the Campus Location editor, which is a stated methodology, not a
+    // placeholder for one. Warning on all 28 rows trained the eye to ignore
+    // the warning block, which is how a real problem gets missed.
+    //
+    // What still deserves a warning is a location whose provenance nobody
+    // recorded -- `unknown` or null means no one can say where the coordinate
+    // came from, and that is the thing Chapter 3 cannot describe.
+    const ACCEPTED = new Set(['gps_survey', 'satellite_imagery', 'floor_plan']);
+    const unrecorded = published.filter((p) => !ACCEPTED.has(p.survey_method)).length;
+    if (unrecorded) {
+      soft(WARN, `${unrecorded} locations have no recorded survey method`,
+        "survey_method is null, 'unknown' or 'estimated'. Set it in the Campus "
+        + 'Location editor so the coordinate provenance is reportable.');
     }
+
+    const bySurvey = published.reduce((acc, p) => {
+      const k = p.survey_method ?? 'unrecorded';
+      acc[k] = (acc[k] ?? 0) + 1;
+      return acc;
+    }, {});
+    soft(OK, 'coordinate provenance: '
+      + Object.entries(bySurvey).map(([k, n]) => `${n} ${k}`).join(', '));
   } catch (err) {
     report(FAIL, 'cannot read the poi table', err.message);
   }
@@ -244,7 +266,15 @@ function finish() {
     console.log('BLOCKED. Fix the FAIL lines above, then set DEMO_MODE=false.\n');
     process.exit(1);
   }
-  console.log('The campus map is ready to run live. Set DEMO_MODE=false in backend/.env.');
+  // The instruction is only useful while it is still true. Printing "set
+  // DEMO_MODE=false" at someone who set it an hour ago is how a checklist
+  // stops being read.
+  const stillDemo = String(process.env.DEMO_MODE).toLowerCase() === 'true';
+  if (stillDemo) {
+    console.log('The campus map is ready to run live. Set DEMO_MODE=false in backend/.env.');
+  } else {
+    console.log('Running live: DEMO_MODE is already false.');
+  }
   console.log('Warnings above affect the assistant, not the map.\n');
   process.exit(0);
 }

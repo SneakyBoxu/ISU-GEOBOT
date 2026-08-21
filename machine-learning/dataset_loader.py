@@ -33,6 +33,7 @@ explicitly marked as a plumbing run.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, time
 
@@ -41,6 +42,9 @@ from feature_engineering import ContextRow, semester_phase_of
 
 OBSERVATION_HOURS = (time(7, 0), time(19, 0))
 SLOT_MINUTES = 30
+
+# The campus runs on one clock, and every time in this module is that clock.
+CAMPUS_TIMEZONE = os.getenv("CAMPUS_TIMEZONE", "Asia/Manila")
 
 
 @dataclass
@@ -125,6 +129,34 @@ def build_samples(
     events = load_events()
     attendance = _load_attendance_index() if label_source == "attendance_derived" else {}
 
+    # ------------------------------------------------------------------
+    # HISTORICAL ATTENDANCE FEATURES -- thesis §3.5.2(b).
+    #
+    # These were declared in ContextRow and consumed by build_vector, but
+    # nothing ever computed them: they defaulted to 0.0 and stayed there, so
+    # --attendance-features added three constant columns and the forest went on
+    # learning the timetable. That is the difference between a model that beats
+    # the rule baseline and one that merely reports a larger feature list.
+    #
+    # STRICTLY CAUSAL. Every rate below is accumulated from days BEFORE the day
+    # being labelled, and the counters are updated only after that day's rows
+    # are emitted. Computing them over the whole semester would let the row's
+    # own attendance into its own feature -- the feature would approximate the
+    # label, accuracy would go up, and the number would mean nothing. It also
+    # matches what is actually knowable at inference time: on a Tuesday morning
+    # the system has last week, not this afternoon.
+    # ------------------------------------------------------------------
+    slot_hit: dict[tuple, int] = {}
+    slot_obs: dict[tuple, int] = {}
+    punct_hit: dict[str, int] = {}
+    punct_obs: dict[str, int] = {}
+    early_hit: dict[str, int] = {}
+    early_obs: dict[str, int] = {}
+
+    def _rate(hit: dict, obs: dict, key) -> float:
+        n = obs.get(key, 0)
+        return (hit.get(key, 0) / n) if n else 0.0
+
     samples: list[Sample] = []
     day = semester_start
     while day <= semester_end:
@@ -137,33 +169,72 @@ def build_samples(
         exam_period = 1 if ev and ev["event_type"] == "exam_period" else 0
         phase = semester_phase_of(datetime.combine(day, time(0, 0)),
                                   semester_start, semester_end)
+        dow = (day.weekday() + 1) % 7
 
         for person in roster:
+            pid = person["pseudonym_id"]
             blocks = schedule.get(person["faculty_id"], [])
+
             for when in _slots_for_day(day):
                 block = _block_at(blocks, when)
                 ctx = ContextRow(
-                    pseudonym_id=person["pseudonym_id"],
+                    pseudonym_id=pid,
                     when=when,
                     is_consultation_hour=1 if block == "consultation" else 0,
                     is_scheduled_class=1 if block == "class" else 0,
                     exam_period_flag=exam_period,
                     campus_event_flag=campus_event,
                     semester_phase=phase,
+                    hist_presence_rate=_rate(slot_hit, slot_obs,
+                                             (pid, dow, when.time())),
+                    hist_punctuality_rate=_rate(punct_hit, punct_obs, pid),
+                    hist_early_departure_rate=_rate(early_hit, early_obs, pid),
                 )
 
                 if label_source == "schedule_derived":
                     label = _schedule_label(block, campus_event)
                 else:
                     label = _attendance_label(
-                        attendance, person["pseudonym_id"], when, block, campus_event
+                        attendance, pid, when, block, campus_event
                     )
                     if label is None:
                         continue  # no observation for this slot; drop the row
 
-                samples.append(
-                    Sample(person["faculty_id"], person["pseudonym_id"], when, ctx, label)
-                )
+                samples.append(Sample(person["faculty_id"], pid, when, ctx, label))
+
+        # ---- only now does today become history ----
+        if attendance:
+            for person in roster:
+                pid = person["pseudonym_id"]
+                blocks = schedule.get(person["faculty_id"], [])
+                intervals = [(s, e) for s, e in attendance.get(pid, [])
+                             if s.date() == day]
+
+                for when in _slots_for_day(day):
+                    key = (pid, dow, when.time())
+                    slot_obs[key] = slot_obs.get(key, 0) + 1
+                    if any(s <= when < e for s, e in intervals):
+                        slot_hit[key] = slot_hit.get(key, 0) + 1
+
+                todays = [b for b in blocks if b["day_of_week"] == dow]
+                if not todays:
+                    continue
+                first = datetime.combine(day, min(b["start_time"] for b in todays))
+                last = datetime.combine(day, max(b["end_time"] for b in todays))
+
+                punct_obs[pid] = punct_obs.get(pid, 0) + 1
+                early_obs[pid] = early_obs.get(pid, 0) + 1
+                if intervals:
+                    arrived = min(s for s, _ in intervals)
+                    left = max(e for _, e in intervals)
+                    if arrived <= first:
+                        punct_hit[pid] = punct_hit.get(pid, 0) + 1
+                    if left < last:
+                        early_hit[pid] = early_hit.get(pid, 0) + 1
+                else:
+                    # Absent: not punctual, and counts as having left early.
+                    early_hit[pid] = early_hit.get(pid, 0) + 1
+
         day += timedelta(days=1)
 
     return samples
@@ -188,12 +259,26 @@ def _load_attendance_index() -> dict:
     circular. Rows with granularity != 'intraday' are refused loudly rather
     than silently degraded.
     """
+    # CAMPUS-LOCAL, NAIVE.
+    #
+    # event_time is timestamptz, so psycopg2 returns aware datetimes, while the
+    # slots this index is compared against come from _slots_for_day() and are
+    # naive campus wall-clock (OBSERVATION_HOURS is 07:00-19:00 local). Comparing
+    # the two raises TypeError, which nothing hit before because this function
+    # returns early on an empty attendance_record -- the table has been empty for
+    # the life of the project.
+    #
+    # Converting here, once, keeps every downstream comparison in the same frame
+    # as the timetable it is being matched against.
     rows = db.fetch_all(
         """
-        select pseudonym_id, event_time, event_type, granularity
+        select pseudonym_id,
+               event_time at time zone %s as event_time,
+               event_type, granularity
         from geobot.attendance_record
         order by pseudonym_id, event_time
-        """
+        """,
+        (CAMPUS_TIMEZONE,),
     )
     if not rows:
         raise RuntimeError(

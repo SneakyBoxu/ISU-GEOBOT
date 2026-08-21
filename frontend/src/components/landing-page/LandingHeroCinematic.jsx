@@ -1,40 +1,31 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight, Search } from 'lucide-react';
+import { ArrowRight, MessageSquare, Search } from 'lucide-react';
 import Button from '../ui-primitives/ActionButton.jsx';
 import LandingRevealText from './LandingRevealText.jsx';
 
 /**
- * WORDING RULES (audit §10.3) — these outrank the visual design.
+ * The hero, written for a student standing outside a building they cannot find.
  *
- * The thesis is a PROPOSAL. Chapters 4 and 5 do not exist, no model has been
- * trained, no comparison has been run. So nothing here claims a result:
+ * IT USED TO OPEN WITH THE THESIS. Retrieval-augmented generation, an
+ * evaluation plan, a disclaimer about unpublished results — all true, none of
+ * it an answer to "can this help me right now". The research has not gone
+ * anywhere; it moved to the section that is about the research.
  *
- *   NOT "94% accurate"               -> no numbers at all until measured
- *   NOT "outperforms standard RAG"   -> that is the study's hypothesis
- *   NOT "validated by 15 faculty"    -> validation has not happened
- *   NOT "real-time faculty tracking" -> "tracking" is the word the thesis avoids
- *
- * Capability claims are present tense; outcome claims are future tense. The
- * page around this got considerably louder; the sentences did not.
- *
- * COMPOSITION. Anchored to the corners of the viewport rather than stacked down
- * the middle. A centred column is the default every template arrives at, and it
- * wastes the two things a full-bleed 3D hero actually has — width, and negative
- * space. Here the meta sits top-left, the statement occupies the lower-left
- * quadrant where the eye lands after the field has moved, and the index card
- * holds the right margin. The field is left visible through the middle instead
- * of being covered by the text that is supposed to be sharing the screen with
- * it.
+ * WHAT IS CLAIMED HERE IS ONLY WHAT THE SYSTEM DOES TODAY: find the 28 indexed
+ * campus locations, answer questions grounded in university documents, and show
+ * a generalized availability status where one exists. No turn-by-turn routing,
+ * no live tracking, no indoor positioning — none of that is built, so none of
+ * it is advertised.
  */
 
-const INDEX = [
-  ['01', 'Campus', 'Twenty-eight surveyed locations'],
-  ['02', 'Retrieval', 'Grounded in university documents'],
-  ['03', 'Privacy', 'A status, never a location'],
+const EXAMPLES = [
+  'Where is the College of Computing?',
+  'Where can I find the Registrar?',
+  'Where is the university library?',
 ];
 
-export default function LandingHeroCinematic() {
+export default function LandingHeroCinematic({ onAskAssistant, count, categories }) {
   const [question, setQuestion] = useState('');
   const navigate = useNavigate();
 
@@ -54,32 +45,29 @@ export default function LandingHeroCinematic() {
           <span className="text-accent">Isabela State University</span>
           <span aria-hidden className="hidden h-px w-8 bg-line-strong sm:block" />
           Echague Main Campus
-          <span aria-hidden className="hidden h-px w-8 bg-line-strong sm:block" />
-          Undergraduate thesis
         </p>
       </div>
 
-      <div className="container-x grid flex-1 items-end gap-12 pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] lg:gap-16">
-        {/* ---- statement ---- */}
-        <div className="max-w-[36rem]">
+      <div className="container-x grid flex-1 items-end gap-12 pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,17rem)] lg:gap-16">
+        <div className="max-w-[38rem]">
           <LandingRevealText
             as="h1"
-            lines={['Find your way', 'around campus,', 'and know before you go.']}
-            accentFrom={2}
-            className="font-serif text-[2.7rem] leading-[0.98] tracking-[-0.03em] text-fg sm:text-[3.6rem] lg:text-[4.4rem]"
+            lines={['Your campus,', 'easier to explore.']}
+            accentFrom={1}
+            className="font-serif text-[2.8rem] leading-[0.98] tracking-[-0.03em] text-fg sm:text-[3.8rem] lg:text-[4.6rem]"
           />
 
-          <p className="lede mt-8 max-w-[30rem]">
-            One place to ask about buildings, offices and university documents
-            &mdash; and a generalized estimate of whether a faculty member is
-            free, without ever disclosing where they are.
+          <p className="lede mt-8 max-w-[31rem]">
+            Find buildings, offices and facilities across the Echague Main
+            Campus &mdash; and ask ISU-GeoBot anything about them, in plain
+            language.
           </p>
 
           <form
             onSubmit={ask}
-            className="mt-9 flex max-w-[30rem] items-center gap-2 rounded-pill border border-line bg-surface/95 py-1.5 pl-4 pr-1.5 transition-colors duration-state focus-within:border-accent"
+            className="mt-9 flex max-w-[31rem] items-center gap-2 rounded-pill border border-line bg-surface py-1.5 pl-4 pr-1.5 shadow-sm transition-colors duration-state focus-within:border-accent"
           >
-            <label htmlFor="hero-ask" className="sr-only">Ask about the campus</label>
+            <label htmlFor="hero-ask" className="sr-only">Search for a campus location</label>
             <Search className="h-4 w-4 shrink-0 text-fg-subtle" aria-hidden />
             <input
               id="hero-ask"
@@ -90,50 +78,64 @@ export default function LandingHeroCinematic() {
               className="min-w-0 flex-1 bg-transparent py-1.5 text-meta text-fg outline-none placeholder:text-fg-subtle"
             />
             <Button type="submit" variant="primary" size="sm" className="shrink-0 !rounded-pill">
-              Ask
+              Find it
             </Button>
           </form>
 
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <Button as={Link} to="/app" variant="primary" size="lg" iconRight={ArrowRight}>
-              Launch Assistant
+              Explore Campus
             </Button>
-            <Link
-              to="/app"
-              className="group inline-flex items-center gap-1.5 text-meta text-fg-muted transition-colors duration-state hover:text-fg"
+            <Button
+              variant="secondary"
+              size="lg"
+              icon={MessageSquare}
+              onClick={onAskAssistant}
             >
-              Explore the campus map
-              <ArrowUpRight className="h-4 w-4 transition-transform duration-state group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
-            </Link>
+              Ask ISU-GeoBot
+            </Button>
           </div>
         </div>
 
-        {/* ---- index, right margin ----
-            Doubles as a contents page for the scroll and as the three claims
-            the field is about to make in sequence. */}
-        <ol className="hidden border-l border-line pl-6 lg:block">
-          {INDEX.map(([n, title, note], i) => (
-            <li key={n} className={i ? 'mt-7' : ''}>
-              <span className="font-mono text-data text-accent">{n}</span>
-              <p className="mt-1 text-meta font-medium text-fg">{title}</p>
-              <p className="mt-0.5 text-label leading-relaxed text-fg-subtle">{note}</p>
-            </li>
-          ))}
-        </ol>
+        {/* Example questions, in the right margin. Three things a student would
+            actually type, so the search box above reads as usable rather than
+            decorative. */}
+        <div className="hidden border-l border-line pl-6 lg:block">
+          <p className="eyebrow">Try asking</p>
+          <ul className="mt-4 space-y-3">
+            {EXAMPLES.map((q) => (
+              <li key={q}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/app?q=${encodeURIComponent(q)}`)}
+                  className="text-left text-meta leading-snug text-fg-muted transition-colors duration-state hover:text-accent"
+                >
+                  &ldquo;{q}&rdquo;
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
-      {/* ---- footer band ---- */}
       <div className="container-x mt-14">
-        <div className="flex flex-wrap items-end justify-between gap-6 border-t border-line pt-5">
-          {/* Audit R6-R12: where a "94% accurate" badge would normally sit. */}
-          <p className="max-w-[38rem] text-label leading-relaxed text-fg-subtle">
-            The Enhanced RAG architecture will be evaluated against a standard
-            RAG baseline using the RAGAS framework, and its availability
-            estimates will be validated by selected faculty members.
-            <strong className="font-medium text-fg-muted"> No results have been published yet.</strong>
+        <div className="flex flex-wrap items-center justify-between gap-6 border-t border-line pt-5">
+          {/* Counted from the data, not typed in. Adding a building through
+              the Campus Location portal changes these without anyone editing
+              this file. 355 hectares is an institutional fact, not a count. */}
+          <p className="flex flex-wrap items-center gap-x-6 gap-y-2 text-label text-fg-subtle">
+            <span>
+              <strong className="font-medium text-fg-muted" data-numeric>{count || '—'}</strong>
+              {' '}campus {count === 1 ? 'location' : 'locations'} indexed
+            </span>
+            <span>
+              <strong className="font-medium text-fg-muted" data-numeric>{categories || '—'}</strong>
+              {' '}{categories === 1 ? 'category' : 'categories'}
+            </span>
+            <span><strong className="font-medium text-fg-muted">355</strong> hectares</span>
           </p>
           <a
-            href="#problem"
+            href="#find-your-way"
             className="group inline-flex items-center gap-2 font-mono text-data uppercase tracking-[0.16em] text-fg-subtle transition-colors duration-state hover:text-fg"
           >
             Scroll

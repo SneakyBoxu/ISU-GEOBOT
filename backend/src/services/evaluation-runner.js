@@ -59,13 +59,66 @@ export async function assertResearchReady() {
   }
   const { data, error } = await db.rpc('corpus_is_research_ready');
   if (error) throw error;
-  const offenders = (data ?? []).filter((r) => !r.ready);
+
+  /**
+   * BLOCK WHAT WOULD BE CONTAMINATED, NOT EVERYTHING.
+   *
+   * The gate used to refuse on any synthetic row anywhere. That is right in
+   * spirit and too broad in practice: whether a lecturer's attendance was
+   * generated has no bearing on the Context Precision of "where is the
+   * library". Refusing that measurement does not protect it, it just means it
+   * never happens — and a blanket refusal that blocks legitimate work is the
+   * kind of check people eventually comment out.
+   *
+   * So the corpus entities are always required to be real, because every query
+   * retrieves against them. The faculty and attendance entities are required
+   * only when the registered test set actually contains a question whose
+   * answer depends on them. An availability query scored against invented
+   * attendance would be a fabricated result; a navigation query would not.
+   *
+   * This is deliberately keyed on the REGISTERED SET, not on a flag. Adding an
+   * availability query re-arms the gate automatically.
+   */
+  const CORPUS = ['poi', 'document', 'document_chunk'];
+  const PEOPLE = ['faculty', 'faculty_schedule', 'attendance_record',
+                  'guard_presence_event'];
+
+  const { data: queries, error: qErr } = await db
+    .from('eval_query')
+    .select('category');
+  if (qErr) throw qErr;
+
+  const needsPeople = (queries ?? []).some(
+    (q) => q.category === 'faculty_availability' || q.category === 'combined',
+  );
+  const required = needsPeople ? [...CORPUS, ...PEOPLE] : CORPUS;
+
+  const offenders = (data ?? []).filter(
+    (r) => !r.ready && required.includes(r.entity),
+  );
   if (offenders.length) {
     const detail = offenders.map((r) => `${r.entity}=${r.synthetic_rows}`).join(', ');
     throw new Error(
-      `REFUSING TO RUN: synthetic rows present (${detail}).\n` +
-      'Replace placeholder data with real ISU data and set data_origin=\'real\' ' +
-      'before producing any reportable result. Audit F-38 / R1-R12.',
+      `REFUSING TO RUN: synthetic rows present in ${detail}.\n` +
+      (needsPeople
+        ? 'The registered test set contains faculty_availability or combined '
+          + 'queries, so faculty and attendance data must be real. Either '
+          + 'obtain consented real attendance, or remove those queries and '
+          + 'measure the navigation and institutional arms only.\n'
+        : '') +
+      'Replace placeholder data with data_origin=\'real\' before producing any '
+      + 'reportable result. Audit F-38 / R1-R12.',
+    );
+  }
+
+  const ignored = (data ?? []).filter(
+    (r) => !r.ready && !required.includes(r.entity),
+  );
+  if (ignored.length) {
+    console.warn(
+      `\nNOTE: synthetic rows exist in ${ignored.map((r) => r.entity).join(', ')}.\n`
+      + 'The registered test set does not ask anything that depends on them, so\n'
+      + 'this run proceeds. Chapter 4 must still say which arms were measured.\n',
     );
   }
 }

@@ -62,6 +62,53 @@ async function scheduleContext(facultyId, at) {
   };
 }
 
+/**
+ * The three historical-attendance features, thesis §3.5.2(b).
+ *
+ * WHY THIS EXISTS. dataset_loader.py computes these when it builds training
+ * rows, and they carry roughly a third of the trained model's decision —
+ * hist_presence_rate alone is its second strongest feature. This path used to
+ * send seven features and leave these out, so the Flask service filled them
+ * with zeros and every live prediction was made with a third of the model's
+ * signal flat.
+ *
+ * That failure is silent by construction: the model still returns a class, the
+ * logs still look healthy, and the offline accuracy stays high. It is the
+ * train/serve skew feature_engineering.py opens by warning about.
+ *
+ * One definition, in the database, called by both sides. A degraded read
+ * returns zeros rather than throwing: an availability answer computed from a
+ * partial feature vector is worse than a slow one, but far better than a
+ * 500 on the whole query.
+ */
+async function attendanceHistory(pseudonym, at) {
+  const zero = {
+    hist_presence_rate: 0,
+    hist_punctuality_rate: 0,
+    hist_early_departure_rate: 0,
+  };
+  if (!pseudonym) return zero;
+
+  try {
+    const { data, error } = await db.rpc('attendance_features', {
+      p_pseudonym: pseudonym,
+      p_at: at.toISOString(),
+      p_timezone: config.presence.timezone,
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return zero;
+    return {
+      hist_presence_rate: Number(row.hist_presence_rate ?? 0),
+      hist_punctuality_rate: Number(row.hist_punctuality_rate ?? 0),
+      hist_early_departure_rate: Number(row.hist_early_departure_rate ?? 0),
+    };
+  } catch (err) {
+    log.warn({ err }, 'attendance_features unavailable; predicting without §3.5.2(b)');
+    return zero;
+  }
+}
+
 async function pseudonymFor(facultyId) {
   // Audit F-19. The model receives a pseudonym, never a name and never the
   // faculty UUID. The map is held separately and is not exposed by any route.
@@ -107,6 +154,8 @@ export async function getAvailability(facultyId, at = new Date()) {
     scheduleContext(facultyId, at),
   ]);
 
+  const history = await attendanceHistory(pseudonym, at);
+
   const t1 = performance.now();
   let prediction;
   try {
@@ -118,6 +167,9 @@ export async function getAvailability(facultyId, at = new Date()) {
       exam_period_flag: sched.eventType === 'exam_period' ? 1 : 0,
       campus_event_flag: sched.isEventDay ? 1 : 0,
       semester_phase: semesterPhase(),
+      // Thesis §3.5.2(b). Omitting these does not omit the features — the
+      // service defaults them to zero, and the model goes on weighting them.
+      ...history,
     });
   } catch (err) {
     if (err.mlError === 'model_unavailable') {

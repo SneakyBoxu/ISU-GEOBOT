@@ -39,11 +39,9 @@ const PORTALS = [
 ];
 
 const SECTIONS = [
-  { href: '#the-problem', label: 'Problem' },
-  { href: '#the-solution', label: 'Solution' },
-  { href: '#how-it-works', label: 'How it works' },
-  { href: '#privacy', label: 'Privacy' },
   { href: '#campus', label: 'Campus' },
+  { href: '#assistant', label: 'Assistant' },
+  { href: '#privacy', label: 'Privacy' },
   { href: '#research', label: 'Research' },
 ];
 
@@ -74,16 +72,10 @@ export default function Nav() {
 
   const onPortal = PORTALS.some((p) => p.to === pathname);
   const isHome = pathname === '/';
-  // The landing page is a document and keeps its centred measure. Everything
-  // else is an application surface, where the brand belongs against the left
-  // edge of the window rather than floating in from it.
-  const appChrome = !isHome;
 
   return (
     <header className="sticky top-0 z-[1000] border-b border-line bg-bg">
-      <nav className={`flex h-[3.75rem] items-center justify-between gap-4 ${
-        appChrome ? 'container-app' : 'container-x'
-      }`}>
+      <nav className="container-app flex h-[3.75rem] items-center justify-between gap-4">
         <ISULogoBrand />
 
         <div className="hidden items-center gap-1 lg:flex">

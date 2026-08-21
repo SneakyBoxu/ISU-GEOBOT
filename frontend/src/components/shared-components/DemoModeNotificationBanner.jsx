@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, FlaskConical } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 
 /**
@@ -25,10 +24,6 @@ import { api } from '../../frontend-utilities/backendApiClient.js';
 export default function DemoBanner() {
   const [info, setInfo] = useState(null);
   const [open, setOpen] = useState(false);
-  // Matches the navigation above it: edge to edge on application surfaces,
-  // centred on the landing page. A banner indented differently from the bar it
-  // sits under reads as a rendering fault rather than a notice.
-  const appChrome = useLocation().pathname !== '/';
 
   useEffect(() => {
     api.health()
@@ -40,7 +35,10 @@ export default function DemoBanner() {
 
   return (
     <div className="shrink-0 border-b border-warning/35 bg-warning-subtle">
-      <div className={appChrome ? 'container-app' : 'container-x'}>
+      {/* Edge to edge, matching the navigation above it. A banner indented
+          differently from the bar it sits under reads as a rendering fault
+          rather than as a notice. */}
+      <div className="container-app">
         <div className="flex items-center gap-2.5 py-2">
           <FlaskConical className="h-3.5 w-3.5 shrink-0 text-warning" strokeWidth={2} aria-hidden />
           <p className="min-w-0 flex-1 text-label text-warning">
