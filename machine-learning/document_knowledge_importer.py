@@ -134,7 +134,22 @@ def chunk_document(text: str) -> list[tuple[str, int]]:
             chunks.append("\n\n".join(cur))
             # Overlap: carry the tail of the previous chunk forward.
             keep = max(1, int(len(cur) * OVERLAP_RATIO)) if len(cur) > 1 else 0
-            cur = (cur[-keep:] if keep else []) + [piece]
+            tail = cur[-keep:] if keep else []
+
+            # THE OVERLAP IS A NICETY. THE CEILING IS NOT.
+            #
+            # The carried tail used to be prepended without re-checking the
+            # budget, so a piece already near TARGET_TOKENS plus a tail could
+            # land above MAX_TOKENS and trip the guard below — 221 against a
+            # ceiling of 220, on the first real document large enough to
+            # produce uniformly big blocks. Place-cards are a few sentences
+            # each and never came close, which is why this sat undiscovered.
+            #
+            # Dropping the tail costs a little retrieval context at one
+            # boundary. Keeping it costs the whole ingestion.
+            if tail and count_tokens(["\n\n".join(tail + [piece])])[0] > MAX_TOKENS:
+                tail = []
+            cur = tail + [piece]
         else:
             cur = candidate
     if cur:
@@ -276,9 +291,15 @@ def infer_doc_type(name: str) -> str:
 
 
 def ingest_path(root: Path, origin: str) -> tuple[int, int]:
-    files = [p for p in root.rglob("*") if p.suffix.lower() in (".txt", ".md")]
+    # A README explains the folder; it is not institutional content. Ingesting
+    # one puts the corpus's own instructions into the corpus, where they can be
+    # retrieved and cited as though the university had published them.
+    files = [
+        p for p in root.rglob("*")
+        if p.suffix.lower() in (".txt", ".md") and p.stem.lower() != "readme"
+    ]
     if not files:
-        print(f"no .txt/.md files under {root}")
+        print(f"no ingestible .txt/.md files under {root}")
         return 0, 0
 
     docs = chunks = 0
@@ -316,7 +337,21 @@ def ingest_path(root: Path, origin: str) -> tuple[int, int]:
             )
             doc_id = cur.fetchone()["id"]
 
-        n = _write_chunks(doc_id, text, origin)
+        # A DOCUMENT ROW WITHOUT CHUNKS IS WORSE THAN NO ROW.
+        #
+        # The insert above commits on its own. If chunking then fails — the
+        # 220-token guard is the realistic case — the document row survives
+        # with zero chunks, and because the checksum now matches, every later
+        # run reports "unchanged, skipping". A failed ingestion becomes
+        # permanent, silently, and the only symptom is a document nobody can
+        # retrieve. Undo the row so a re-run genuinely re-runs.
+        try:
+            n = _write_chunks(doc_id, text, origin)
+        except Exception:
+            with db.cursor() as cur:
+                cur.execute("delete from geobot.document where id = %s", (doc_id,))
+            print(f"  ! {path.name}: chunking failed, document row removed")
+            raise
         print(f"  + {path.name}: {n} chunks")
         docs += 1
         chunks += n

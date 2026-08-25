@@ -97,6 +97,11 @@ export async function generate(messages) {
       const err = new Error(`Groq request failed (${res.status})`);
       err.status = res.status === 429 ? 429 : 502;
       err.detail = detail.slice(0, 500);
+      // Surfaced for the offline evaluation harness, which paces itself
+      // against the upstream quota. Nothing here retries: a retry inside the
+      // request path would fold the wait into t_llm_ms, and Response Time is
+      // a reported thesis metric (audit F-17).
+      err.retryAfterMs = Number(res.headers.get('retry-after')) * 1000 || null;
       throw err;
     }
     const json = await res.json();

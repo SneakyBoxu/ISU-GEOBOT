@@ -43,3 +43,25 @@ CCSICT-SCHEDULE-*.xlsx
 # regenerate it with generate_synthetic_attendance.py rather than cloning it.
 machine-learning/training-data/*
 !machine-learning/training-data/.gitkeep
+
+# ---------------------------------------------------------------------
+# Thesis paper (large binary PDF)
+# ---------------------------------------------------------------------
+ISU_GeoBot_Thesis_Paper.pdf
+
+# ---------------------------------------------------------------------
+# AI-generated planning / audit documents
+# ---------------------------------------------------------------------
+pre-implementation-audit.md
+thesis-paper-analysis.md
+implementation-decisions.md
+ui-ux-component-code.md
+ui-ux-design-review.md
+scope-and-ethics-decisions.md
+documentation/
+
+# ---------------------------------------------------------------------
+# Generated notebook outputs (figures & tables)
+# ---------------------------------------------------------------------
+notebooks/figures/
+notebooks/tables/

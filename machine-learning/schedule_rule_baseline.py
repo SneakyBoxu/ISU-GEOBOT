@@ -54,9 +54,20 @@ def rule_predict(sample) -> str:
     """
     The rule the thesis says ML should beat: an IF/ELSE over the schedule.
 
-    Mirrors geobot.schedule_lookup_status() exactly. Kept in Python rather than
-    calling the SQL function per row so the baseline runs over the same
-    in-memory sample set as the forest, with no per-row round trip.
+    Mirrors geobot.schedule_lookup_status(). Kept in Python rather than calling
+    the SQL function per row so the baseline runs over the same in-memory
+    sample set as the forest, with no per-row round trip.
+
+    "MIRRORS" IS A PROMISE THAT HAS ALREADY BEEN BROKEN ONCE. When migration
+    008 taught the SQL function about `campus`, this function was not updated
+    and neither was dataset_loader._block_at(), so the live service and the
+    baseline disagreed about whether a lecturer teaching in Santiago was in
+    class. The docstring still said "exactly".
+
+    The campus rule now lives in _block_at(), which both arms read through
+    `is_scheduled_class`, so this function stays a pure translation of the
+    context flags and has nothing campus-specific to drift on. Anything else
+    added to the SQL function has to be added there, not here.
     """
     ctx = sample.context
     if ctx.campus_event_flag:

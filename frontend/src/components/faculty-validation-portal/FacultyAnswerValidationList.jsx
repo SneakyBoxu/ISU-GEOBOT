@@ -123,6 +123,29 @@ export default function ValidationChecklist() {
             {ctx?.systemStatus ? (
               <div className="mt-4">
                 <StatusIndicator code={ctx.systemStatus} label={ctx.systemStatusLabel} asOf={ctx.estimatedAt} />
+
+                {/* WHICH OF THE THREE OPTIONS THAT WORDING IS.
+                    The label may be phrasing the canonical status rather than
+                    naming it — "Teaching this period; not scheduled on this
+                    campus" is how `unavailable_off_schedule` reads when the
+                    class is on another campus. A validator choosing from the
+                    three canonical options on the right could otherwise rate it
+                    incorrect for not matching any of them, which would record a
+                    disagreement about wording as a disagreement about fact.
+                    Shown only when the two differ. */}
+                {(() => {
+                  const canonical = (ctx.statusOptions ?? [])
+                    .find((o) => o.code === ctx.systemStatus)?.display_label;
+                  if (!canonical || canonical === ctx.systemStatusLabel) return null;
+                  return (
+                    <p className="mt-3 text-label leading-relaxed text-fg-subtle">
+                      Recorded as <strong className="font-medium text-fg-muted">{canonical}</strong>
+                      {' '}&mdash; the wording above explains that status, it is not a
+                      separate one.
+                    </p>
+                  );
+                })()}
+
                 {ctx.overrideApplied && (
                   <p className="mt-3 text-label leading-relaxed text-fg-subtle">
                     This came from a security presence log rather than the

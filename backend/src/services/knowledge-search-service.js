@@ -313,6 +313,32 @@ export async function runPipeline({
   let availabilityBlock = null;
   if (availability?.masked) {
     statusLabel = await labelFor(availability.masked.statusCode);
+
+    /**
+     * A class on another campus, said without saying where.
+     *
+     * The status CODE is unchanged — `unavailable_off_schedule`, one of the
+     * three in `availability_status`. No new state is introduced; only the
+     * human label differs, which is what the label field is for.
+     *
+     * Why bother: "Unavailable / Off-Schedule" reads as "not working", which
+     * is false when the person is in fact teaching, and gives a student
+     * nothing to act on. This says they are occupied and that waiting here is
+     * pointless, without naming a campus, building, room or coordinate.
+     *
+     * SUBORDINATE TO THE MODEL. The override fires only when the authoritative
+     * status is ALREADY `unavailable_off_schedule`. If the Random Forest
+     * returns `available_consultation` or `in_scheduled_class` from attendance
+     * evidence, that result stands and this does nothing — the schedule
+     * explains the model's answer, it never replaces it.
+     */
+    if (
+      availability.masked.statusCode === 'unavailable_off_schedule'
+      && availability.scheduleContext?.onOtherCampus
+    ) {
+      statusLabel = 'Teaching this period; not scheduled on this campus';
+    }
+
     availabilityBlock = {
       facultyName: faculty?.fullName ?? 'the faculty member',
       statusLabel,

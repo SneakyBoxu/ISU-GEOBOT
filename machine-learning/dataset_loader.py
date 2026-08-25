@@ -46,6 +46,16 @@ SLOT_MINUTES = 30
 # The campus runs on one clock, and every time in this module is that clock.
 CAMPUS_TIMEZONE = os.getenv("CAMPUS_TIMEZONE", "Asia/Manila")
 
+# WHICH CAMPUS THESE SAMPLES ARE ABOUT (migration 005/008).
+#
+# Eleven CCSICT lecturers also teach in Santiago City. "Available" is always
+# relative to a place: a class two hours away is not availability here, and it
+# is not a free period either. Without this, `is_scheduled_class` was 1 during
+# a Santiago block, so both the forest and the rule baseline were told the
+# person was in a local class while the attendance labels said, correctly, that
+# nobody was on campus.
+CAMPUS = os.getenv("CAMPUS", "echague")
+
 
 @dataclass
 class Sample:
@@ -82,7 +92,7 @@ def load_schedule(semester: str) -> dict[str, list[dict]]:
     rows = db.fetch_all(
         """
         select faculty_id::text as faculty_id, day_of_week,
-               start_time, end_time, block_kind
+               start_time, end_time, block_kind, campus
         from geobot.faculty_schedule
         where semester = %s
         """,
@@ -95,18 +105,52 @@ def load_schedule(semester: str) -> dict[str, list[dict]]:
 
 
 def load_events() -> dict[date, dict]:
+    """
+    Disrupting events, keyed by date — mirroring schedule_lookup_status().
+
+    ONE DATE CAN CARRY SEVERAL ROWS. `institutional_event` is unique on
+    (event_date, event_type), not on date, so 19 November 2026 holds both the
+    non-graduating final examination and the academic-window end marker.
+
+    Building a dict over every row let the marker, which has
+    disrupts_schedule = false, overwrite the examination that has it true — so
+    exam_period_flag and campus_event_flag were both 0 on a real examination
+    day, and `_schedule_label` labelled it from the timetable instead of as a
+    disrupted day. The SQL function was unaffected because it selects
+    `where ie.disrupts_schedule`, so production and training disagreed about
+    that date: the same class of divergence as the campus rule before it.
+
+    Filtering here to disrupting rows restores the match. Non-disrupting rows —
+    the window markers — are invisible to both sides, which is what they are
+    for.
+    """
     rows = db.fetch_all(
-        "select event_date, event_type, disrupts_schedule from geobot.institutional_event"
+        "select event_date, event_type, disrupts_schedule "
+        "from geobot.institutional_event where disrupts_schedule"
     )
     return {r["event_date"]: r for r in rows}
 
 
 def _block_at(blocks: list[dict], when: datetime) -> str | None:
+    """
+    The block covering `when` ON THIS CAMPUS.
+
+    Must stay in step with geobot.schedule_lookup_status(), which applies the
+    same campus rule in SQL. Two copies of one rule is already one too many;
+    the divergence to avoid is the one that happened -- the SQL learned about
+    campuses and this did not, so the live service and the training data
+    disagreed about whether a lecturer was in class.
+
+    A block on another campus returns None: from here, the person is simply not
+    in a local block, which is what the feature vector should say.
+    """
     dow = (when.weekday() + 1) % 7
     t = when.time()
     hit = None
     for b in blocks:
         if b["day_of_week"] != dow:
+            continue
+        if b.get("campus", CAMPUS) != CAMPUS:
             continue
         if b["start_time"] <= t < b["end_time"]:
             if b["block_kind"] == "class":

@@ -98,12 +98,31 @@ export async function reindexPoi(poiId) {
   const text = buildPlaceCard(poi, departmentName);
 
   // Remove the previous card and its chunks before writing the new one.
-  const { data: existing } = await db
+  //
+  // TWO PROVENANCE FORMS, AND MISSING ONE LEFT DUPLICATES IN THE CORPUS.
+  // The initial bulk import (machine-learning ingest) wrote source_origin
+  // 'generated:poi' with no identifier; this service writes
+  // 'generated:poi:<uuid>'. Matching only the second meant a reindex through
+  // the admin UI never deleted the imported card and simply added a rival
+  // copy beside it. Six POIs ended up with two near-identical place cards,
+  // which is invisible in the UI and costs a retrieval slot at query time —
+  // it lands directly on Context Precision.
+  //
+  // Legacy rows carry no id, so within that set the title is what identifies
+  // the POI. Modern rows are matched by id and are unaffected by a rename.
+  const { data: current } = await db
     .from('document')
     .select('id')
     .eq('doc_type', 'poi_place_card')
     .eq('source_origin', `generated:poi:${poi.id}`);
-  for (const d of existing ?? []) {
+  const { data: legacy } = await db
+    .from('document')
+    .select('id')
+    .eq('doc_type', 'poi_place_card')
+    .eq('source_origin', 'generated:poi')
+    .eq('title', `Place card — ${poi.name}`);
+
+  for (const d of [...(current ?? []), ...(legacy ?? [])]) {
     await db.from('document_chunk').delete?.().eq?.('document_id', d.id);
     await db.from('document').delete?.().eq?.('id', d.id);
   }

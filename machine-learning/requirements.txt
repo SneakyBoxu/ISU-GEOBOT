@@ -32,3 +32,10 @@ langchain==0.2.17
 langchain-core==0.2.43
 langchain-community==0.2.19
 langchain-openai==0.1.25
+
+# The RAGAS judge. Without this, evaluate() has no llm= argument, falls back to
+# ragas.llms.llm_factory(), builds a ChatOpenAI and dies asking for
+# OPENAI_API_KEY -- so eval_run.judge_model said llama-3.3-70b-versatile while
+# the scorer was reaching for GPT. Pinned to the 0.1.x line, which is what
+# langchain-core 0.2.43 supports.
+langchain-groq==0.1.10

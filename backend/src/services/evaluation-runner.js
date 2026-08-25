@@ -123,6 +123,36 @@ export async function assertResearchReady() {
   }
 }
 
+/**
+ * The judge is not used until scoring, which happens in a different process,
+ * on a different day, after 66 completions have already been spent. So a
+ * judge name that does not exist is discovered at the worst possible moment:
+ * `llama-3.3-70b-versatile` was accepted here, the full run generated
+ * normally, and RAGAS then returned 404 on every grading call and wrote NaN.
+ * Ask Groq now, while it is still cheap to be wrong.
+ */
+async function assertJudgeExists(judgeModel) {
+  if (!config.groq.apiKey) return;          // preflight covers the missing-key case
+  let available;
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { authorization: `Bearer ${config.groq.apiKey}` },
+    });
+    if (!res.ok) return;                    // not reachable: do not block the run
+    available = (await res.json()).data?.map((m) => m.id) ?? [];
+  } catch {
+    return;                                 // offline: same reasoning
+  }
+  if (available.length && !available.includes(judgeModel)) {
+    throw new Error(
+      `The judge model "${judgeModel}" is not available on this Groq account.\n`
+      + 'RAGAS would 404 on every grading call AFTER the whole run had been '
+      + 'generated, and score it all as NaN.\n'
+      + `Available: ${available.sort().join(', ')}`,
+    );
+  }
+}
+
 export async function createRun({ label, judgeModel, notes }) {
   if (!judgeModel) throw new Error('--judge is required (audit F-05)');
   if (judgeModel === config.groq.model) {
@@ -132,6 +162,7 @@ export async function createRun({ label, judgeModel, notes }) {
       'panelist who knows RAGAS will ask about it. Audit F-05.',
     );
   }
+  await assertJudgeExists(judgeModel);
 
   const { data: modelRow } = await db
     .from('rf_model_version')
@@ -209,6 +240,50 @@ async function runOne(runId, query, mode) {
   return result;
 }
 
+const sleep = (ms) => new Promise((r) => { setTimeout(r, ms); });
+
+/**
+ * Groq's free tier rate-limits well below the burst this harness produces:
+ * 33 queries x 2 arms is 66 completions as fast as the network allows, and
+ * the run died at query 3 with a 429.
+ *
+ * WHY THE WAIT LIVES HERE AND NOT IN generate(). A retry inside the request
+ * path would add the backoff to t_llm_ms, and Response Time is a reported
+ * thesis metric (§1.2 Objective 2) — the architecture would look slower
+ * because someone else's quota was full. Here the wait is outside the timed
+ * region entirely.
+ *
+ * WHY RETRYING DOES NOT BIAS THE RESULT. runOne throws before it inserts, so
+ * a rejected attempt writes no eval_result row and contributes no timing.
+ * What is measured is a completed call, which is what Response Time means.
+ * A 429 is upstream quota, not a property of either arm, and it falls on
+ * whichever arm happens to be next — dropping the run instead would bias by
+ * position.
+ */
+const PACING_MS = Number(process.env.EVAL_PACING_MS ?? 1500);
+const MAX_QUOTA_RETRIES = 5;
+let pacingMs = PACING_MS;
+
+async function runWithQuotaBackoff(runId, query, mode) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await runOne(runId, query, mode);
+    } catch (err) {
+      if (err?.status !== 429 || attempt >= MAX_QUOTA_RETRIES) throw err;
+      // Honour Retry-After when Groq sends one; otherwise exponential.
+      const wait = err.retryAfterMs ?? Math.min(60_000, 2000 * 2 ** attempt);
+      // The quota is clearly tighter than the current pace, so slow the whole
+      // run down rather than rediscovering the same limit on every query.
+      pacingMs = Math.min(10_000, Math.max(pacingMs, 2000) * 1.5);
+      process.stdout.write(
+        `    quota hit, waiting ${Math.round(wait / 1000)}s `
+        + `(attempt ${attempt + 1}/${MAX_QUOTA_RETRIES}, pacing now ${Math.round(pacingMs)}ms)\n`,
+      );
+      await sleep(wait);
+    }
+  }
+}
+
 export async function executeRun(runId) {
   const { data: queries, error } = await db
     .from('eval_query')
@@ -228,10 +303,11 @@ export async function executeRun(runId) {
     process.stdout.write(`[${i + 1}/${queries.length}] ${q.query_text.slice(0, 58)}\n`);
     // Interleaved — audit F-02.
     for (const mode of ['standard', 'enhanced']) {
-      const r = await runOne(runId, q, mode);
+      const r = await runWithQuotaBackoff(runId, q, mode);
       latency[mode].push(r.timings.total);
       process.stdout.write(`    ${mode.padEnd(8)} ${Math.round(r.timings.total)}ms\n`);
     }
+    if (pacingMs > 0 && i < queries.length - 1) await sleep(pacingMs);
   }
 
   await db.from('eval_run').update({ finished_at: new Date().toISOString() })

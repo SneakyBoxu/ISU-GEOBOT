@@ -56,13 +56,12 @@ import openpyxl
 from openpyxl.styles import Alignment, Font
 from openpyxl.utils import get_column_letter
 
+import database_connector as db
 import schedule_importer as si
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 SEMESTER = "2026-2027-1"
-SEM_START = date(2026, 8, 10)
-SEM_END = date(2026, 12, 18)
 
 # Reproducibility is a methodology requirement, not a convenience: the dataset
 # has to be regenerable from this file alone for anyone checking the work.
@@ -73,21 +72,38 @@ PSEUDONYM_SALT = "isu-geobot-ccsict-2026-2027-1"
 # its own hours; it removes the surrounding ones from the Echague campus too.
 TRAVEL_MARGIN = timedelta(minutes=90)
 
-# PLACEHOLDER CALENDAR. Plausible Philippine regular holidays and a plausible
-# exam structure -- NOT the ISU academic calendar, which is public institutional
-# data and should replace this. Marked synthetic so it is never mistaken.
-HOLIDAYS = {
-    date(2026, 8, 21): "Ninoy Aquino Day",
-    date(2026, 8, 31): "National Heroes Day",
-    date(2026, 11, 2): "All Souls' Day",
-    date(2026, 11, 30): "Bonifacio Day",
-    date(2026, 12, 8): "Feast of the Immaculate Conception",
-    date(2026, 12, 25): "Christmas Day",
-}
-EXAM_PERIODS = [
-    (date(2026, 10, 12), date(2026, 10, 16), "Midterm examinations"),
-    (date(2026, 12, 14), date(2026, 12, 18), "Final examinations"),
-]
+# THE CALENDAR IS READ, NOT DECLARED.
+#
+# This file used to carry its own holidays, its own exam periods and its own
+# semester bounds, and it INSERTED them into institutional_event. That made the
+# generator a second source of truth for the academic calendar, and it was the
+# wrong one: the exam periods were placeholders invented before the official ISU
+# calendar was consulted, and they were about a month adrift from the real ones.
+#
+# The authoritative rows now live in institutional_event, corrected against
+# https://isu.edu.ph/school-calendar/ by 006_official_calendar.sql, and are read
+# from there by the availability service, by dataset_loader, and by this file.
+# One calendar, three readers.
+def _load_calendar():
+    """(window_start, window_end, {date: title} holidays, {date: title} exams)."""
+    rows = db.fetch_all(
+        "select event_date, event_type, title, disrupts_schedule "
+        "from geobot.institutional_event order by event_date"
+    )
+    window = [r for r in rows
+              if r["event_type"] == "other" and str(r["title"]).startswith("Academic window")]
+    if len(window) != 2:
+        raise SystemExit(
+            "No academic window in institutional_event. Run "
+            "database/sample-data/006_official_calendar.sql first -- the "
+            "semester bounds are not this script's to invent."
+        )
+    holidays = {r["event_date"]: r["title"] for r in rows if r["event_type"] == "holiday"}
+    exams = {r["event_date"]: r["title"] for r in rows if r["event_type"] == "exam_period"}
+    return window[0]["event_date"], window[1]["event_date"], holidays, exams
+
+
+SEM_START, SEM_END, HOLIDAYS, EXAM_DAYS = _load_calendar()
 
 
 # ------------------------------------------------------------------ behaviour
@@ -157,14 +173,8 @@ def weekdays(start: date, end: date):
 
 
 def exam_days() -> dict[date, str]:
-    out = {}
-    for a, b, title in EXAM_PERIODS:
-        d = a
-        while d <= b:
-            if d.weekday() < 5:
-                out[d] = title
-            d += timedelta(days=1)
-    return out
+    """Examination days, straight from institutional_event."""
+    return {d: t for d, t in EXAM_DAYS.items() if d.weekday() < 5}
 
 
 def at(day: date, t: time) -> datetime:
@@ -350,17 +360,17 @@ def emit_sql(punches, traits, calendar, names, blocks) -> str:
         "  join faculty f on f.full_name = v.full_name",
         "on conflict (faculty_id) do nothing;",
         "",
-        "-- 2. Academic calendar. PLACEHOLDER -- plausible Philippine holidays and",
-        "--    an assumed exam structure, not the ISU calendar. Replace with the",
-        "--    real one, which is public institutional data.",
-        "insert into institutional_event (event_date, event_type, title, disrupts_schedule, data_origin)",
-        "values",
-    ]
-    out.append(",\n".join(
-        f"  ({q(c['date'].isoformat())}::date, {q(c['type'])}, {q(c['title'])}, true, 'synthetic')"
-        for c in calendar))
-    out += [
-        "on conflict (event_date, event_type) do nothing;",
+        "-- 2. Academic calendar: DELIBERATELY NOT WRITTEN HERE.",
+        "--",
+        "--    institutional_event is authoritative, and 006_official_calendar.sql",
+        "--    corrects it against https://isu.edu.ph/school-calendar/. This script",
+        "--    now READS that calendar (see _load_calendar) instead of declaring",
+        "--    one. It used to insert its own placeholder holidays and examination",
+        "--    periods, which made it a competing source of truth -- and the wrong",
+        "--    one, adrift by about a month on both examination windows.",
+        "--",
+        f"--    Window in force for this run: {SEM_START} to {SEM_END}",
+        f"--    Read from the calendar: {len(HOLIDAYS)} holidays, {len(EXAM_DAYS)} examination days",
         "",
         "-- 4. The cohort's timetable: the real teaching shapes, on synthetic",
         "--    people. Marked synthetic so corpus_is_research_ready() counts it.",

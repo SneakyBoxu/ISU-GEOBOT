@@ -70,6 +70,22 @@ ALIASES = {"DILAMANTA": "DIMALANTA"}
 # appear there only when the cell is missing a line.
 ROOM_WORDS = re.compile(r"^(LAB|ROOM|RM|R)\s*\d*$|^(IT LAB|CENTRUM|RX)\b", re.I)
 
+# The room names this workbook actually uses, surveyed from every cell:
+#   RX  LAVR  R1..R112  LAB n  IT LAB n  CSS LAB  CENTRUM n  ROOM n
+# Anchored to the end of the section line. Deliberately excludes a bare
+# number, which is a year level -- see split_cell().
+ROOM_TAIL = re.compile(
+    r"\s+("
+    r"RX"
+    r"|LAVR"
+    r"|R\d{1,3}"
+    r"|(?:IT\s+|CSS\s+)?LAB(?:\s+\d+)?"
+    r"|CENTRUM(?:\s+\d+)?"
+    r"|ROOM(?:\s+\d+)?"
+    r")\s*$",
+    re.I,
+)
+
 
 # ---------------------------------------------------------------- time parsing
 def _parse_clock(token: str) -> time | None:
@@ -107,12 +123,28 @@ def split_cell(raw: str) -> tuple[str, str, str]:
     middle = lines[1] if len(lines) > 1 else ""
     room = lines[2] if len(lines) > 2 else ""
 
-    # A room tacked onto the end of the section line, two spaces in.
+    # A room tacked onto the end of the section line.
+    #
+    # SPACING CANNOT DECIDE THIS. The old rule required two or more spaces,
+    # which the workbook only sometimes uses: 'BAC 3  RX' split correctly and
+    # 'BAC 2 RX' did not, leaving RX inside the section. Matching a known room
+    # vocabulary works regardless of how many spaces the typist used.
+    #
+    # A TRAILING BARE NUMBER IS NOT A ROOM. 'BLIS 1', 'BSCS 4' and 'BAELS 3'
+    # end in the YEAR LEVEL, and a spacing- or digit-based rule strips it and
+    # silently turns three different year groups into one section.
     if not room and middle:
-        m = re.search(r"\s{2,}(\S.*)$", middle)
+        m = ROOM_TAIL.search(middle)
         if m:
             room = m.group(1).strip()
             middle = middle[: m.start()].strip()
+        else:
+            # Anything else set off by a clear gap is still probably a room;
+            # keep the old behaviour as the fallback rather than losing it.
+            m = re.search(r"\s{2,}(\S.*)$", middle)
+            if m:
+                room = m.group(1).strip()
+                middle = middle[: m.start()].strip()
     return course, middle, room
 
 

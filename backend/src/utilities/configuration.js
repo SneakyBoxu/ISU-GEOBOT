@@ -64,6 +64,14 @@ export const config = {
     // Audit C13. Same-calendar-day. A departure log governs until end of day;
     // anything longer is not defensible as "real-time".
     timezone: process.env.CAMPUS_TIMEZONE ?? 'Asia/Manila',
+
+    // WHICH CAMPUS THIS DEPLOYMENT ANSWERS FOR (migration 008).
+    //
+    // Eleven CCSICT lecturers also teach in Santiago City. "Available" is
+    // always relative to a place, so the question the system answers is
+    // "available HERE" — and it has to know where here is. A class on the
+    // other campus is not availability, and it is not absence either.
+    campus: process.env.CAMPUS ?? 'echague',
   },
 
   rateLimit: {
@@ -84,5 +92,5 @@ export const config = {
 // evaluation run made under v1.0.0 is not comparable with one made under
 // v1.1.0. Changing the prompt without changing this number is how a thesis
 // ends up reporting two different systems as one.
-export const PROMPT_TEMPLATE_VERSION = 'v1.1.0';
+export const PROMPT_TEMPLATE_VERSION = 'v1.2.0';
 export const ROUTER_VERSION = 'gazetteer-v1.0.0';

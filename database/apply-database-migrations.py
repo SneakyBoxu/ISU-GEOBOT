@@ -33,6 +33,15 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # The order is the point. Functions reference tables; policies reference
 # functions; migrations assume all three.
+#
+# KEEP THIS LIST IN STEP WITH database/migrations/. It fell four migrations
+# behind once (005-008 existed on disk and were applied by hand to the live
+# database, but were absent here), which meant a fresh install produced a
+# database that looked complete and was not: no faculty_schedule.campus, no
+# attendance_features(), and a schedule_lookup_status() that did not know
+# about campuses. Nothing errors -- the system just answers wrongly. The
+# check at the bottom of this file now fails if a migration on disk is
+# missing from this list.
 FILES = [
     ("database/tables-and-structure.sql", "tables, types, constraints", True),
     ("database/database-functions.sql", "presence resolution, retrieval, gazetteer", False),
@@ -40,7 +49,29 @@ FILES = [
     ("database/migrations/002_user_roles_and_locations.sql", "roles, POI audit, visibility", False),
     ("database/migrations/003_campus_places_and_departments.sql", "the 28 real campus locations", False),
     ("database/migrations/004_map_pin_icons.sql", "per-location icon override", False),
+    ("database/migrations/005_schedule_campus.sql", "faculty_schedule.campus + lookup index", False),
+    ("database/migrations/006_provision_accounts.sql", "admin/validator role rows", False),
+    ("database/migrations/007_attendance_features.sql", "attendance_features() for the RF", False),
+    ("database/migrations/008_campus_aware_presence.sql", "campus-aware schedule_lookup_status()", False),
+    ("database/migrations/009_dedupe_place_cards.sql", "remove superseded POI place cards", False),
 ]
+
+
+def assert_migration_list_complete() -> None:
+    """Every migration on disk must appear above, in order."""
+    on_disk = sorted(p.name for p in (ROOT / "database" / "migrations").glob("*.sql"))
+    listed = [pathlib.PurePath(f[0]).name for f in FILES if "/migrations/" in f[0]]
+    missing = [n for n in on_disk if n not in listed]
+    if missing:
+        sys.exit(
+            "database/migrations/ contains files this script does not apply:\n  "
+            + "\n  ".join(missing)
+            + "\n\nAdd them to FILES in the correct order. A migration that "
+            "exists but is never applied\nproduces a database that looks "
+            "complete and behaves wrongly."
+        )
+    if listed != sorted(listed):
+        sys.exit(f"migrations are listed out of order: {listed}")
 
 
 def database_url() -> str:
@@ -69,6 +100,8 @@ def main() -> None:
     ap.add_argument("--initial", action="store_true",
                     help="include schema.sql, which DROPS the geobot schema first")
     args = ap.parse_args()
+
+    assert_migration_list_complete()
 
     url = database_url()
     host = url.split("@")[-1].split(":")[0]
