@@ -1,3 +1,4 @@
+import React from 'react';
 import { useReveal } from '../../custom-react-hooks/useReducedMotionPreference.js';
 
 /**

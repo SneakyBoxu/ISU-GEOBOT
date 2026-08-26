@@ -7,7 +7,7 @@
  * faculty_id, we show all validation entries by default, and also provide a direct submit form
  * where the admin can manually record a (systemStatus, actualStatus, correctness) triple.
  */
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ClipboardCheck, RefreshCw } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { Alert, Button, EmptyState, Field, Select, SkeletonRows, Textarea } from '../ui-primitives/index.js';

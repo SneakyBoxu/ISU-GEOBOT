@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Section openers for the landing page.
  *

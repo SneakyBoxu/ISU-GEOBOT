@@ -1,3 +1,4 @@
+import React from 'react';
 import { CornerUpRight, MapPin, MessageSquarePlus, X, ZoomIn } from 'lucide-react';
 import { Button } from '../ui-primitives/index.js';
 import { categoryColor, iconFor } from './mapMarkerGlyphs.js';

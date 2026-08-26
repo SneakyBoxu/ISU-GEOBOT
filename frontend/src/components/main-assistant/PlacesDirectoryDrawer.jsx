@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ChevronRight, PanelLeftClose, Search, X } from 'lucide-react';
 import { POI_CATEGORIES } from '../../frontend-utilities/appConstants.js';
 import { categoryColor } from './mapMarkerGlyphs.js';

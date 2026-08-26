@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronDown, ClipboardCheck, LayoutDashboard, Menu, Settings2, ShieldCheck, X } from 'lucide-react';
 import ISULogoBrand from './ISULogoBrand.jsx';

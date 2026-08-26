@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, Compass, Copy, FileText, RotateCcw, Send, User, X } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { currentSession } from '../../frontend-utilities/supabaseClient.js';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DEMO_AUTH, demoAccountFor, demoAuthMode, signIn } from '../../frontend-utilities/supabaseClient.js';
 import TopNavigationBar from './TopNavigationBar.jsx';
 import DemoModeNotificationBanner from './DemoModeNotificationBanner.jsx';

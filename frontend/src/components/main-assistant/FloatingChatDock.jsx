@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MessageSquare, X } from 'lucide-react';
 import ChatbotMessagePanel from './ChatbotMessagePanel.jsx';
 

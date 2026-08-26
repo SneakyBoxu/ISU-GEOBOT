@@ -1,3 +1,4 @@
+import React from 'react';
 import { useInView } from '../../custom-react-hooks/useReducedMotionPreference.js';
 
 /**

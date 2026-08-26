@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronDown, FlaskConical } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 

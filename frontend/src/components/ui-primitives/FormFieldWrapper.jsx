@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import React, { useId } from 'react';
 
 /**
  * Label, control, hint, error — in that order, wired together.

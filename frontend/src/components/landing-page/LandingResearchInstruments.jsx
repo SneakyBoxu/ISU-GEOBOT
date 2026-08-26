@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Braces, Compass, Radar, ShieldCheck, Sparkles } from 'lucide-react';
 import Button from '../ui-primitives/ActionButton.jsx';
