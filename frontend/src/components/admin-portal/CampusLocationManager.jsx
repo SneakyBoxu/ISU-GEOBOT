@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, List, Map as MapIcon, MapPin, Plus, RefreshCw, Save, Search, Settings2 } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { currentSession, signOut } from '../../frontend-utilities/supabaseClient.js';

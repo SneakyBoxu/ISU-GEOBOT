@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import TopNavigationBar from '../shared-components/TopNavigationBar.jsx';
 import DemoModeNotificationBanner from '../shared-components/DemoModeNotificationBanner.jsx';
 import PageFooter from '../shared-components/PageFooter.jsx';

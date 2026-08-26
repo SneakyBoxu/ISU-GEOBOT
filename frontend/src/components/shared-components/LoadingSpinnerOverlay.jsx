@@ -1,3 +1,4 @@
+import React from 'react';
 import { Mark } from './ISULogoBrand.jsx';
 
 export default function Loading({ label = 'Loading ISU-GeoBot' }) {

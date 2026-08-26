@@ -1,3 +1,4 @@
+import React from 'react';
 import { Compass, MapPinned, MessageCircleQuestion, ShieldCheck } from 'lucide-react';
 import { useReveal } from '../../custom-react-hooks/useReducedMotionPreference.js';
 import LandingRevealText from './LandingRevealText.jsx';

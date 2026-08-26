@@ -1,3 +1,4 @@
+import React from 'react';
 import TopNavigationBar from '../shared-components/TopNavigationBar.jsx';
 import DemoModeNotificationBanner from '../shared-components/DemoModeNotificationBanner.jsx';
 import Button from '../ui-primitives/ActionButton.jsx';

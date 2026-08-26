@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { TYPE_LETTER, categoryColor, iconFor } from '../main-assistant/mapMarkerGlyphs.js';

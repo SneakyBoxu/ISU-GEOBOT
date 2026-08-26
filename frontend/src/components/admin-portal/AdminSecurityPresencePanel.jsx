@@ -2,7 +2,7 @@
  * Security Presence panel for the unified Admin Dashboard.
  * Admin has full access — can view the roster AND log arrival/departure events.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { LogIn, LogOut, RefreshCw, Search, Users } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { Alert, Button, EmptyState, Input, SkeletonRows } from '../ui-primitives/index.js';

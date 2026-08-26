@@ -1,3 +1,4 @@
+import React from 'react';
 import { CheckCircle2, GraduationCap, MinusCircle } from 'lucide-react';
 
 /**

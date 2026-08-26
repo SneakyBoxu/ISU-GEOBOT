@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Shape-of-the-content placeholders.
  *

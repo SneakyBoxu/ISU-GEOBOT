@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, Circle, Monitor, Moon, Sun } from 'lucide-react';
 import { THEMES, useTheme } from '../../frontend-utilities/themeContext.jsx';
 

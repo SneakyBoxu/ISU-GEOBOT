@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, MessageSquare, Search } from 'lucide-react';
 import Button from '../ui-primitives/ActionButton.jsx';

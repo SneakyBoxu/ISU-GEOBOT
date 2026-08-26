@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, MessageSquare, Search, Sparkles } from 'lucide-react';
 import Button from '../ui-primitives/ActionButton.jsx';

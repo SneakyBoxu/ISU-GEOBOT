@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInView } from '../../custom-react-hooks/useReducedMotionPreference.js';
 
 /**

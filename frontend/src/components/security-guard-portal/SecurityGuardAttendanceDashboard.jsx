@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { LogIn, LogOut, RefreshCw, Search, ShieldCheck, Users } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { currentSession, signOut } from '../../frontend-utilities/supabaseClient.js';

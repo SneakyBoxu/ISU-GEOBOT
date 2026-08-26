@@ -3,7 +3,7 @@
  * Accepts a `session` prop so no additional sign-in is needed.
  * Reuses the same UI logic as the standalone CampusLocationManager.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, List, Map as MapIcon, Plus, RefreshCw, Save, Search } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import EditorMap from './CampusMapEditor.jsx';

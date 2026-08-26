@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import TopNavigationBar from '../shared-components/TopNavigationBar.jsx';

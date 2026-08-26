@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { Alert, Button, Input } from '../ui-primitives/index.js';

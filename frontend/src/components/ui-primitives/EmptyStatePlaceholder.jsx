@@ -1,3 +1,4 @@
+import React from 'react';
 /**
  * Every empty state answers three questions: what is missing, why, and what
  * to do next. A blank panel answers none of them, and in a research system an
