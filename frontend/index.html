@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ISU-GeoBot — Campus Navigation Assistant</title>
+    <meta name="description"
+      content="A web-based campus navigation assistant integrating an Enhanced RAG architecture for privacy-compliant faculty availability estimation. Undergraduate thesis research, Isabela State University Echague." />
+    <meta name="theme-color" content="#FBFAF8" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Source Serif 4 carries display and section headings; Inter carries all
+         application UI. Latin subset, two weights each. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap"
+      rel="stylesheet" />
+
+    <script>
+      /* Applied before first paint so the theme never flashes.
+         Kept inline and dependency-free on purpose — a module import would
+         resolve after the first frame, which is exactly the flash we are
+         avoiding. Mirrors the logic in src/lib/theme.jsx; if one changes the
+         other must too. */
+      (function () {
+        try {
+          var stored = localStorage.getItem('geobot.theme');
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute('content', theme === 'dark' ? '#111412' : '#FBFAF8');
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+          document.documentElement.style.colorScheme = 'light';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

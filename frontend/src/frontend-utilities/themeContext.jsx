@@ -1,0 +1,107 @@
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+
+/**
+ * Appearance control.
+ *
+ * Two themes: `light` (default) and `dark`. The system signal is now
+ * `prefers-color-scheme`, which is the direct question — the user's operating
+ * system is telling us which ground they want, and there is finally a theme on
+ * each side of that answer to give them.
+ *
+ * (It used to honour `prefers-contrast: more` instead, because neither theme
+ * had a dark ground and there was nothing for a colour-scheme signal to select.
+ * That was an inference standing in for a preference nobody could express.
+ * Do not reintroduce it: contrast and colour scheme are different questions,
+ * and answering one with the other is how a user who asked for more contrast
+ * ends up with a different hue instead.)
+ *
+ * The system preference applies only until the user makes an explicit choice;
+ * after that their choice wins permanently, and "Follow system" hands it back.
+ *
+ * The same resolution logic runs as an inline script in index.html so the
+ * theme is correct before first paint. If this changes, that must too.
+ */
+
+const STORAGE_KEY = 'geobot.theme';
+
+export const THEMES = [
+  {
+    value: 'light',
+    label: 'Light',
+    description: 'Warm paper ground with an institutional green accent.',
+  },
+  {
+    value: 'dark',
+    label: 'Dark',
+    description: 'Night ground with a luminous institutional green. Same typography, same hierarchy.',
+  },
+];
+
+const ThemeContext = createContext(null);
+
+function systemPreferred() {
+  if (typeof window === 'undefined') return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function stored() {
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    return v === 'light' || v === 'dark' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export function ThemeProvider({ children }) {
+  // `explicit` is null until the user picks one; that is what lets the system
+  // preference keep applying, and what makes "Reset to system" meaningful.
+  const [explicit, setExplicit] = useState(stored);
+  const [system, setSystem] = useState(systemPreferred);
+
+  const theme = explicit ?? system;
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => setSystem(mq.matches ? 'dark' : 'light');
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    // Keep the browser chrome in step with the page ground.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#111412' : '#FBFAF8');
+    // Native form controls, scrollbars and the address bar follow this.
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
+
+  const setTheme = useCallback((next) => {
+    setExplicit(next);
+    try {
+      if (next) localStorage.setItem(STORAGE_KEY, next);
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* private browsing — the choice still applies for this session */
+    }
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      theme,
+      setTheme,
+      isExplicit: explicit !== null,
+      resetToSystem: () => setTheme(null),
+    }),
+    [theme, setTheme, explicit],
+  );
+
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used inside <ThemeProvider>');
+  return ctx;
+}

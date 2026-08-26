@@ -1,0 +1,18 @@
+# =====================================================================
+# ISU-GeoBot — Git Ignore Configuration
+# =====================================================================
+
+# 1. Dependency and build artifacts (auto-installed via npm / pip)
+node_modules/
+dist/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# 2. Intermediate model runs (track active production model only)
+machine-learning/saved-models/*
+!machine-learning/saved-models/.gitkeep
+!machine-learning/saved-models/rf_current.joblib

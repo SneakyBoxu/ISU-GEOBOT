@@ -1,0 +1,619 @@
+@import './styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =====================================================================
+   BASE
+   ===================================================================== */
+
+@layer base {
+  :root { color-scheme: light; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-bg text-fg font-sans text-body antialiased;
+    font-feature-settings: 'cv05' 1, 'ss03' 1;   /* Inter: nicer l, rounder g */
+  }
+
+  /* Headings default to the serif. A heading that wants the sans asks for it
+     explicitly — that way the editorial voice is the default, not the option. */
+  h1, h2, h3 { @apply font-serif text-fg; text-wrap: balance; }
+  h4, h5, h6 { @apply font-sans font-semibold text-fg; }
+  p { text-wrap: pretty; }
+
+  /* Tabular numerals everywhere numbers are compared down a column. */
+  table, time, [data-numeric] { font-variant-numeric: tabular-nums; }
+
+  ::selection { @apply bg-accent/15 text-fg; }
+
+  /* One focus treatment for the entire product. Never removed, never
+     restyled per component, only ever :focus-visible so pointer users are
+     not shown rings they did not ask for. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--focus));
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Skip link — first tab stop on every page. */
+  .skip-link {
+    @apply absolute left-4 z-[2000] -translate-y-24 rounded bg-accent px-4 py-2
+           text-meta font-medium text-accent-contrast transition-transform;
+  }
+  .skip-link:focus { @apply translate-y-4; }
+}
+
+/* =====================================================================
+   PRIMITIVES
+   ===================================================================== */
+
+@layer components {
+
+  /* --- measure ------------------------------------------------------ */
+  /* 84rem rather than 76rem: on a 1440 or 1920 display the old measure left
+     the page sitting in the middle of the window like a card. Prose still sets
+     its own measure with `max-w-measure`, so widening the frame gives the
+     layout air without stretching a line of text past readability. */
+  .container-x { @apply mx-auto w-full max-w-[84rem] px-5 sm:px-8 lg:px-10 2xl:max-w-[90rem]; }
+
+  /* Application chrome — /app and the portals — runs to the window edges. The
+     landing page is a document and keeps its measure; these are tools, and a
+     tool that insets itself by 350px on each side is wasting the desk. */
+  .container-app { @apply w-full px-4 sm:px-6; }
+
+  /* --- rules -------------------------------------------------------- */
+  /* The workhorse of this design system. Hierarchy comes from ruled
+     divisions and space, not from wrapping things in boxes. */
+  .rule { @apply border-t border-line; }
+
+
+  /* --- typography roles --------------------------------------------- */
+  .eyebrow {
+    @apply font-sans text-label font-medium uppercase tracking-[0.08em] text-fg-subtle;
+  }
+  .lede { @apply max-w-measure text-body-lg text-fg-muted; }
+  .caption { @apply text-meta text-fg-subtle; }
+  .data { @apply font-mono text-data text-fg-muted; }
+
+  /* --- surfaces ------------------------------------------------------ */
+  /* Containers exist to communicate grouping, interaction, hierarchy or
+     state. A section is not automatically a panel. */
+  .panel { @apply rounded-md border border-line bg-surface; }
+  .panel-raised { @apply rounded-md border border-line bg-surface-raised shadow-md; }
+
+  /* --- buttons ------------------------------------------------------- */
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded
+           font-sans text-meta font-medium transition-[background-color,border-color,color,box-shadow]
+           duration-state ease-in
+           disabled:pointer-events-none disabled:opacity-45;
+    min-height: 2.25rem;
+    padding-inline: 0.875rem;
+  }
+  .btn-sm { min-height: 2rem; padding-inline: .625rem; @apply text-label; }
+  .btn-lg { min-height: 2.75rem; padding-inline: 1.25rem; @apply text-body; }
+
+  .btn-primary {
+    @apply btn bg-accent text-accent-contrast hover:bg-accent-hover active:bg-accent-hover;
+  }
+  .btn-secondary {
+    @apply btn border border-line-strong bg-surface text-fg
+           hover:border-fg-subtle hover:bg-bg-sunken active:bg-bg-sunken;
+  }
+  .btn-tertiary {
+    @apply btn bg-accent-subtle text-accent hover:bg-accent/10 active:bg-accent/15;
+  }
+  .btn-text {
+    @apply btn px-1 text-fg-muted hover:text-fg hover:underline
+           underline-offset-4 decoration-line-strong;
+  }
+  .btn-destructive {
+    @apply btn border border-error/30 bg-error-subtle text-error
+           hover:border-error/50 hover:bg-error/10;
+  }
+  .btn-icon {
+    @apply btn px-0 text-fg-muted hover:bg-bg-sunken hover:text-fg;
+    min-width: 2.25rem;
+  }
+  /* --- form controls -------------------------------------------------- */
+  .field-label { @apply block font-sans text-label font-medium text-fg; }
+  .field-hint { @apply mt-1 text-meta text-fg-subtle; }
+  .field-error { @apply mt-1 text-meta text-error; }
+
+  .input {
+    @apply w-full rounded border border-line-strong bg-surface px-3 py-2
+           font-sans text-body text-fg placeholder:text-fg-subtle
+           transition-[border-color,box-shadow] duration-state ease-in
+           hover:border-fg-subtle
+           disabled:cursor-not-allowed disabled:bg-bg-sunken disabled:text-fg-subtle;
+    min-height: 2.5rem;
+  }
+  .input[aria-invalid='true'] { @apply border-error; }
+
+  /* --- status indicator ---------------------------------------------- */
+  /* Pill shape is reserved for these, because here the shape carries the
+     semantic. Each tone is a token pair, so the Dark theme refills them
+     without any component naming a hue, and they remain
+     legible by icon + label + weight alone. */
+  .indicator {
+    @apply inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1
+           font-sans text-label font-medium;
+  }
+
+  /* --- tables --------------------------------------------------------- */
+  .table-head {
+    @apply border-b border-line-strong bg-bg-sunken text-label font-medium
+           uppercase tracking-[0.06em] text-fg-subtle;
+  }
+  .table-row { @apply border-b border-line transition-colors duration-state; }
+  .table-row:hover { @apply bg-bg-sunken; }
+
+  /* --- alerts --------------------------------------------------------- */
+  .alert { @apply flex gap-3 rounded border px-4 py-3 text-meta; }
+  .alert-info { @apply alert border-info/25 bg-info-subtle text-info; }
+  .alert-success { @apply alert border-success/25 bg-success-subtle text-success; }
+  .alert-warning { @apply alert border-warning/30 bg-warning-subtle text-warning; }
+  .alert-error { @apply alert border-error/25 bg-error-subtle text-error; }
+
+  /* --- skeleton ------------------------------------------------------- */
+  .skeleton { @apply rounded bg-bg-sunken; animation: shimmer 1.4s ease-in-out infinite; }
+
+  /* --- scroll reveal -------------------------------------------------- */
+  /* Retained but reduced: 12px, 400ms, once, opacity+transform only. */
+  .reveal {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+    transition: opacity 400ms var(--ease-in), transform 400ms var(--ease-in);
+  }
+  .reveal.is-in { opacity: 1; transform: none; }
+  .stagger > * { transition-delay: calc(var(--i, 0) * 50ms); }
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+
+/* =====================================================================
+   LEAFLET
+   ---------------------------------------------------------------------
+   The map is a product surface, not a widget: its chrome uses the same
+   tokens as everything else.
+   ===================================================================== */
+
+.leaflet-container { @apply bg-bg-sunken font-sans; }
+
+/* The popup is a frame for the location card, not a card itself — the card
+   brings its own border, ground and shadow. Two sets of chrome nested inside
+   each other is the "widget inside a widget" look this map is trying not to
+   have. */
+.leaflet-popup-content-wrapper {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  @apply text-fg;
+}
+.leaflet-popup-content { margin: 0; width: auto !important; }
+.leaflet-popup { margin-bottom: 0; }
+.leaflet-popup-tip {
+  @apply border border-line bg-surface;
+  box-shadow: var(--shadow-lg);
+  border-radius: 0 0 var(--radius-xs) 0;
+}
+.leaflet-popup-close-button { @apply text-fg-subtle hover:text-fg; }
+
+/* Tooltip on marker hover */
+.leaflet-tooltip.campus-map-tooltip {
+  @apply rounded-lg border border-line bg-surface/95 px-2.5 py-1 text-label font-medium text-fg shadow-md backdrop-blur-sm;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.leaflet-tooltip-top.campus-map-tooltip::before {
+  border-top-color: rgb(var(--line));
+}
+.leaflet-tooltip-bottom.campus-map-tooltip::before {
+  border-bottom-color: rgb(var(--line));
+}
+.leaflet-tooltip-left.campus-map-tooltip::before {
+  border-left-color: rgb(var(--line));
+}
+.leaflet-tooltip-right.campus-map-tooltip::before {
+  border-right-color: rgb(var(--line));
+}
+
+.leaflet-bar,
+.leaflet-bar a {
+  @apply border-line bg-surface text-fg-muted;
+}
+.leaflet-bar a:hover { @apply bg-bg-sunken text-fg; }
+
+.leaflet-control-attribution {
+  @apply bg-surface/85 text-fg-subtle;
+  font-size: 10px;
+}
+.leaflet-control-attribution a { @apply text-fg-muted; }
+
+/* Dark swaps the basemap for CARTO's night cartography; imagery is only
+   provider and no API key — and it keeps the map honest with the theme
+   instead of leaving a colour photograph inside a greyscale interface. */
+/* The plan basemap swaps to CARTO's dark cartography in the dark theme — a
+   real nighttime map, not the day map with a filter over it. See BASEMAPS in
+   CampusMap.jsx. Satellite imagery cannot be re-authored, so it is dimmed just
+   enough to sit in a dark page instead of blazing out of it. Grayscale is
+   deliberately NOT used: aerial imagery without colour is unreadable, and the
+   point of the satellite view is telling a field from a roof. */
+[data-theme='dark'] .leaflet-tile-pane { filter: brightness(0.88); }
+[data-theme='dark'] [data-basemap='satellite'] .leaflet-tile-pane {
+  filter: brightness(0.78) saturate(0.88) contrast(1.04);
+}
+
+/* Leaflet paints its own white ground behind the tiles while they load. */
+[data-theme='dark'] .leaflet-container { background: rgb(var(--bg-sunken)); }
+
+/* The docked assistant sits bottom-right, where Leaflet puts its attribution.
+   The attribution is a licence obligation, not decoration, so the map yields
+   the corner rather than the notice getting covered. Scoped to the screen that
+   has a dock — the landing page's mini-map has none. */
+[data-dock] .leaflet-control-attribution { padding-right: 5.5rem; }
+[data-dock] .leaflet-bottom.leaflet-right { max-width: calc(100% - 1rem); }
+
+/* =====================================================================
+   MOTION PREFERENCES
+   ===================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* =====================================================================
+   MICRO-INTERACTIONS
+   ---------------------------------------------------------------------
+   Every rule below communicates state, hierarchy or feedback. Nothing
+   here is ornament, and nothing runs unprompted.
+   ===================================================================== */
+
+@layer components {
+
+  /* Primary lifts slightly and compresses on press — the two cues that
+     make a control feel physical without any decoration. */
+  .btn-primary {
+    box-shadow: 0 1px 2px rgb(20 22 26 / .10);
+    transition:
+      background-color var(--dur-state) var(--ease-in),
+      box-shadow var(--dur-state) var(--ease-in),
+      transform var(--dur-state) var(--ease-in);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 3px 8px -1px rgb(20 22 26 / .18);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0) scale(.985);
+    box-shadow: 0 1px 1px rgb(20 22 26 / .12);
+  }
+
+  .btn-secondary:active:not(:disabled),
+  .btn-destructive:active:not(:disabled),
+  .btn-tertiary:active:not(:disabled) { transform: scale(.985); }
+
+  /* Text links carry a directional arrow that advances on hover. */
+  .link-arrow > svg {
+    transition: transform var(--dur-state) var(--ease-in);
+  }
+  .link-arrow:hover > svg { transform: translateX(3px); }
+
+  /* Underline that grows from the leading edge rather than fading in. */
+  .link-rule {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1px;
+    transition: background-size var(--dur-menu) var(--ease-in);
+  }
+  .link-rule:hover, .link-rule[data-active='true'] { background-size: 100% 1px; }
+
+  /* Rows that respond without moving their neighbours. */
+  .row-interactive {
+    transition: background-color var(--dur-state) var(--ease-in),
+                box-shadow var(--dur-state) var(--ease-in);
+    box-shadow: inset 2px 0 0 transparent;
+  }
+  .row-interactive:hover,
+  .row-interactive[data-active='true'] {
+    background-color: rgb(var(--bg-sunken));
+    box-shadow: inset 2px 0 0 rgb(var(--accent));
+  }
+}
+
+/* =====================================================================
+   GRAPHIC ANIMATION
+   ---------------------------------------------------------------------
+   Driven by class toggles from IntersectionObserver, so nothing runs
+   until its section is on screen.
+   ===================================================================== */
+
+/* Route drawing. The path carries its own length in --len. */
+.draw-path {
+  stroke-dasharray: var(--len, 1000);
+  stroke-dashoffset: var(--len, 1000);
+}
+.is-drawn .draw-path {
+  animation: draw 1600ms var(--ease-in) forwards;
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Flow along an already-drawn path — direction of travel, not decoration. */
+.flow-path {
+  stroke-dasharray: 4 7;
+  animation: flow 1.4s linear infinite;
+}
+@keyframes flow { to { stroke-dashoffset: -22; } }
+
+/* Marker pulse. Two rings, offset, slow. */
+.pulse-ring { transform-origin: center; opacity: 0; }
+.is-active .pulse-ring { animation: pulse 3.4s var(--ease-out) infinite; }
+.is-active .pulse-ring:nth-child(2) { animation-delay: 1.7s; }
+@keyframes pulse {
+  0%   { transform: scale(.55); opacity: .5; }
+  70%  { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+/* Marker arrival — a survey pin being placed. */
+.drop-in { animation: drop 520ms var(--ease-in) backwards; }
+@keyframes drop {
+  from { transform: translateY(-8px) scale(.7); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* Staggered label reveal on a drawn diagram. */
+.label-reveal { opacity: 0; }
+.is-drawn .label-reveal { animation: fadeIn 500ms var(--ease-in) forwards; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+/* Contour drift for the environmental layer. Very slow, very small. */
+.contour-drift { animation: contour 90s linear infinite; }
+@keyframes contour { to { transform: translate3d(-40px, -24px, 0); } }
+
+/* A newly-appended row announces itself once, then settles. */
+.row-enter { animation: rowEnter 900ms var(--ease-out) both; }
+@keyframes rowEnter {
+  0%   { background-color: rgb(var(--accent-subtle)); }
+  100% { background-color: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-drawn .draw-path { animation: none; stroke-dashoffset: 0; }
+  .flow-path, .is-active .pulse-ring, .contour-drift,
+  .drop-in, .row-enter { animation: none !important; }
+  .label-reveal, .is-drawn .label-reveal { opacity: 1; animation: none; }
+  .btn-primary:hover:not(:disabled) { transform: none; }
+}
+
+/* =====================================================================
+   MAP PINS
+   ---------------------------------------------------------------------
+   Styled by class rather than inline, because a Leaflet divIcon's inline
+   styles win over any :hover rule. Three states, and each is legible
+   without colour: rest is outlined, hover gains a ring, active inverts.
+   ===================================================================== */
+
+@layer components {
+  .map-pin {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid rgb(var(--fg));
+    background: rgb(var(--surface));
+    color: rgb(var(--fg));
+    box-shadow: var(--shadow-sm);
+    font: 600 10px/1 Inter, system-ui, sans-serif;
+    letter-spacing: .02em;
+    outline: 0 solid rgb(var(--accent) / 0);
+    outline-offset: 2px;
+    transition:
+      outline-width var(--dur-state) var(--ease-in),
+      outline-color var(--dur-state) var(--ease-in),
+      border-color var(--dur-state) var(--ease-in),
+      background-color var(--dur-state) var(--ease-in),
+      color var(--dur-state) var(--ease-in),
+      transform var(--dur-state) var(--ease-in);
+  }
+
+  /* Hover and keyboard focus get the same treatment — a pointer affordance
+     that a keyboard user cannot reach is not an affordance. */
+  .leaflet-marker-icon:hover .map-pin,
+  .leaflet-marker-icon:focus-visible .map-pin {
+    border-color: rgb(var(--accent));
+    color: rgb(var(--accent));
+    outline-width: 4px;
+    outline-color: rgb(var(--accent) / .18);
+    transform: scale(1.08);
+    z-index: 1;
+  }
+
+  .map-pin[data-state='active'] {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+    background: rgb(var(--accent));
+    border-color: rgb(var(--accent));
+    color: rgb(var(--accent-contrast));
+    outline-width: 6px;
+    outline-color: rgb(var(--accent) / .16);
+  }
+  .leaflet-marker-icon:hover .map-pin[data-state='active'] {
+    outline-width: 8px;
+    outline-color: rgb(var(--accent) / .22);
+    transform: scale(1.04);
+  }
+
+  /* Smaller variant for the landing-page mini map. */
+  .map-pin[data-size='sm'] { width: 18px; height: 18px; font-size: 9px; }
+  .map-pin[data-size='sm'][data-state='active'] { width: 24px; height: 24px; font-size: 10px; }
+
+  /* -------------------------------------------------------------------
+     Teardrop pins (mapPinIconBuilder.js)
+     -------------------------------------------------------------------
+     The wrapper exists only to raise z-index on hover. Leaflet positions
+     markers with `transform: translate3d(...)` on that same element, so
+     the lift has to be applied to the INNER span — animating the wrapper
+     would fight Leaflet for the transform and make the pin jump to the
+     top-left of the map.
+     ------------------------------------------------------------------- */
+  .campus-pin-wrapper,
+  .draft-pin-wrapper { transition: z-index 0s ease; }
+  .campus-pin-wrapper:hover,
+  .draft-pin-wrapper:hover { z-index: 1000 !important; }
+
+  .campus-pin {
+    display: block;
+    transform-origin: 50% 100%;   /* the tip, so a lift does not leave the coordinate */
+    transition:
+      transform var(--dur-state) cubic-bezier(.34, 1.56, .64, 1),
+      filter var(--dur-state) ease,
+      opacity var(--dur-state) ease;
+    filter: drop-shadow(0 3px 4px rgb(0 0 0 / .34)) drop-shadow(0 1px 1px rgb(0 0 0 / .22));
+    will-change: transform, filter;
+    cursor: pointer;
+  }
+
+  .campus-pin-wrapper:hover .campus-pin,
+  .campus-pin-wrapper:focus-visible .campus-pin {
+    transform: translateY(-8px) scale(1.18);
+    filter:
+      drop-shadow(0 12px 18px rgb(0 0 0 / .5))
+      drop-shadow(0 4px 6px rgb(0 0 0 / .3))
+      drop-shadow(0 0 10px rgb(var(--accent) / .5));
+    /* A dimmed context pin becomes fully legible while pointed at. */
+    opacity: 1 !important;
+  }
+
+  .campus-pin-wrapper:active .campus-pin {
+    transform: translateY(-2px) scale(1.06);
+    transition-duration: 80ms;
+  }
+
+  .draft-pin {
+    display: block;
+    transition:
+      transform var(--dur-state) cubic-bezier(.34, 1.56, .64, 1),
+      box-shadow var(--dur-state) ease;
+    will-change: transform, box-shadow;
+    cursor: grab;
+  }
+  .draft-pin-wrapper:hover .draft-pin {
+    transform: scale(1.28);
+    box-shadow:
+      0 0 0 6px rgb(var(--accent) / .4),
+      0 0 16px rgb(var(--accent) / .5),
+      var(--shadow-lg) !important;
+  }
+  .draft-pin-wrapper:active .draft-pin {
+    cursor: grabbing;
+    transform: scale(1.12);
+  }
+
+  /* Leaflet paints a white card with a tail behind every popup. The editor
+     popup supplies its own surface, so the default chrome is removed rather
+     than themed — two stacked cards read as a rendering bug. */
+  .editor-popup .leaflet-popup-content-wrapper,
+  .editor-popup .leaflet-popup-tip {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
+  }
+  .editor-popup .leaflet-popup-content { margin: 0; width: auto !important; }
+
+  /* A scrollbar for panels that scroll inside a fixed-height column. */
+  .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgb(var(--fg) / .18) transparent; }
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--fg) / .18);
+    border-radius: var(--radius-pill);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--fg) / .35); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaflet-marker-icon:hover .map-pin,
+  .leaflet-marker-icon:focus-visible .map-pin { transform: none; }
+  .campus-pin, .draft-pin { transition: none; }
+  .campus-pin-wrapper:hover .campus-pin,
+  .campus-pin-wrapper:focus-visible .campus-pin,
+  .campus-pin-wrapper:active .campus-pin,
+  .draft-pin-wrapper:hover .draft-pin,
+  .draft-pin-wrapper:active .draft-pin { transform: none; }
+}
+
+
+/* =====================================================================
+   LANDING — cinematic
+   ---------------------------------------------------------------------
+   Used only by the dark-only landing route.
+   ===================================================================== */
+
+/* Two-tone display headings: the sans line states, the italic serif line
+   answers. The gradient runs accent -> gold, which is the only place in the
+   system those two meet. */
+.text-gradient-accent {
+  background-image: linear-gradient(
+    100deg,
+    rgb(var(--accent)) 0%,
+    rgb(var(--accent-hover)) 38%,
+    rgb(201 155 86) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* A gradient clipped to text has no background of its own to paint on, and
+     some engines will render the descenders clipped without this. */
+  -webkit-text-fill-color: transparent;
+  padding-bottom: 0.06em;
+}
+
+/* The track marquee. Each row is duplicated once and travels exactly -50%, so
+   the second copy is sitting where the first began at the moment it resets —
+   which is what makes the loop seamless rather than a visible jump. */
+@keyframes marquee-ltr { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+@keyframes marquee-rtl { from { transform: translate3d(-50%, 0, 0); } to { transform: translate3d(0, 0, 0); } }
+
+.marquee-ltr { animation: marquee-ltr 46s linear infinite; }
+.marquee-rtl { animation: marquee-rtl 52s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-ltr, .marquee-rtl { animation: none; transform: none; }
+}
+
+
+/* The scroll hint: a short bar falling down a hairline track, on a long pause.
+   A bouncing chevron is the default everywhere; a falling indicator reads as an
+   instrument and repeats rarely enough not to nag. */
+@keyframes scroll-hint {
+  0%        { transform: translateY(-100%); opacity: 0; }
+  18%, 55%  { opacity: 1; }
+  100%      { transform: translateY(800%); opacity: 0; }
+}
+.animate-scroll-hint { animation: scroll-hint 2.8s cubic-bezier(.4, 0, .2, 1) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scroll-hint { animation: none; opacity: 1; transform: none; }
+}

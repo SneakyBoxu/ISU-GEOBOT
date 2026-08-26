@@ -1,0 +1,41 @@
+# ISU-GeoBot — Python ML & Embedding microservice
+# Thesis §3.7 pins Python 3.11 / scikit-learn 1.4 / all-MiniLM-L6-v2.
+# Do not float these versions without recording the deviation.
+
+flask==3.0.3
+waitress==3.0.0                 # production WSGI server (Windows-friendly)
+python-dotenv==1.0.1
+
+scikit-learn==1.4.2
+numpy==1.26.4
+pandas==2.2.2
+joblib==1.4.2
+
+sentence-transformers==2.7.0    # all-MiniLM-L6-v2, 384-d
+torch==2.2.2                    # CPU wheel is sufficient (thesis §3.7: no GPU)
+
+psycopg2-binary==2.9.9
+pgvector==0.2.5
+
+# Evaluation only (STEP 5 harness) — imported by evaluate_rag_quality.py
+ragas==0.1.9
+datasets==2.19.0
+
+# ragas 0.1.9 predates the langchain 1.x reorganisation and imports symbols
+# that moved. Installed unpinned it fails at import with, in order:
+#   ModuleNotFoundError: langchain_community.chat_models.vertexai
+#   ImportError: cannot import name 'ContextOverflowError'
+# Both surface only when scoring starts, which is after a full evaluation run
+# has already been generated — the worst moment to discover a dependency
+# problem. Pinned to the line ragas 0.1.9 was built against.
+langchain==0.2.17
+langchain-core==0.2.43
+langchain-community==0.2.19
+langchain-openai==0.1.25
+
+# The RAGAS judge. Without this, evaluate() has no llm= argument, falls back to
+# ragas.llms.llm_factory(), builds a ChatOpenAI and dies asking for
+# OPENAI_API_KEY -- so eval_run.judge_model said llama-3.3-70b-versatile while
+# the scorer was reaching for GPT. Pinned to the 0.1.x line, which is what
+# langchain-core 0.2.43 supports.
+langchain-groq==0.1.10
