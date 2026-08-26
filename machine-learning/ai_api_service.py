@@ -64,16 +64,21 @@ _max_seq = getattr(_embedder, "max_seq_length", 256)
 log.info("embedder ready (dim=%d, max_seq_length=%d)", EMBED_DIM, _max_seq)
 
 _rf_bundle: dict | None = None
-if RF_ARTIFACT.exists():
-    _rf_bundle = joblib.load(RF_ARTIFACT)
-    log.info("random forest loaded: version=%s", _rf_bundle.get("version"))
-else:
-    log.warning(
-        "no Random Forest artifact at %s. /predict will return 503 until "
-        "train_rf.py has been run. This is the correct state before training "
-        "— do NOT ship a placeholder model.",
-        RF_ARTIFACT,
-    )
+_rf_mtime: float = 0.0
+
+
+def _get_rf_bundle() -> dict | None:
+    global _rf_bundle, _rf_mtime
+    if RF_ARTIFACT.exists():
+        try:
+            mtime = RF_ARTIFACT.stat().st_mtime
+            if _rf_bundle is None or mtime > _rf_mtime:
+                _rf_bundle = joblib.load(RF_ARTIFACT)
+                _rf_mtime = mtime
+                log.info("random forest loaded: version=%s", _rf_bundle.get("version"))
+        except Exception as e:
+            log.error("failed to load random forest: %s", e)
+    return _rf_bundle
 
 
 def _embed(texts: list[str]) -> np.ndarray:
@@ -99,11 +104,12 @@ def _embed(texts: list[str]) -> np.ndarray:
 
 @app.get("/healthz")
 def healthz():
+    bundle = _get_rf_bundle()
     return jsonify(
         status="ok",
         embedder=EMBED_MODEL_NAME,
         embedder_ready=True,
-        rf_ready=_rf_bundle is not None,
+        rf_ready=bundle is not None,
     )
 
 
@@ -115,7 +121,8 @@ def model_info():
     When a number is reported in Chapter 4 you must be able to say which
     artifact produced it. eval_run.rf_model_version_id is populated from here.
     """
-    if _rf_bundle is None:
+    bundle = _get_rf_bundle()
+    if bundle is None:
         return (
             jsonify(
                 rf_ready=False,
@@ -128,15 +135,15 @@ def model_info():
         )
     return jsonify(
         rf_ready=True,
-        version=_rf_bundle["version"],
-        trained_at=_rf_bundle["trained_at"],
-        sklearn_version=_rf_bundle["sklearn_version"],
-        class_order=_rf_bundle["class_order"],
-        feature_list=_rf_bundle["feature_list"],
-        split_strategy=_rf_bundle["split_strategy"],
-        label_source=_rf_bundle["label_source"],
-        include_attendance=_rf_bundle["include_attendance"],
-        training_row_count=_rf_bundle["training_row_count"],
+        version=bundle["version"],
+        trained_at=bundle["trained_at"],
+        sklearn_version=bundle["sklearn_version"],
+        class_order=bundle["class_order"],
+        feature_list=bundle["feature_list"],
+        split_strategy=bundle["split_strategy"],
+        label_source=bundle["label_source"],
+        include_attendance=bundle["include_attendance"],
+        training_row_count=bundle["training_row_count"],
         embed_model=EMBED_MODEL_NAME,
         embed_dim=EMBED_DIM,
         max_seq_length=_max_seq,
@@ -221,7 +228,8 @@ def predict():
     service must not make the mistake easy either, which is why the response is
     explicitly labelled internal.
     """
-    if _rf_bundle is None:
+    bundle = _get_rf_bundle()
+    if bundle is None:
         return (
             jsonify(
                 error="model_unavailable",
@@ -259,11 +267,11 @@ def predict():
         hist_early_departure_rate=float(ctx.get("hist_early_departure_rate", 0.0)),
     )
 
-    include_attendance = _rf_bundle["include_attendance"]
-    vec = build_vector(row, _rf_bundle["encoder"], include_attendance)
-
+    include_attendance = bundle["include_attendance"]
+    vec = build_vector(row, bundle["encoder"], include_attendance)
+    clf = bundle["model"]
+    classes = list(bundle["class_order"])
     t0 = _time.perf_counter()
-    clf = _rf_bundle["model"]
     proba = clf.predict_proba(np.array([vec]))[0]
     order = list(clf.classes_)
     idx = int(np.argmax(proba))
@@ -271,8 +279,8 @@ def predict():
     return jsonify(
         predicted_class=order[idx],
         probabilities={cls: float(p) for cls, p in zip(order, proba)},
-        model_version=_rf_bundle["version"],
-        label_source=_rf_bundle["label_source"],
+        model_version=bundle["version"],
+        label_source=bundle["label_source"],
         feature_list=feature_names(include_attendance),
         internal_only=True,
         took_ms=round((_time.perf_counter() - t0) * 1000, 2),

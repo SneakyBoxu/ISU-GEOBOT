@@ -28,12 +28,21 @@ async function mlFetch(path, body, timeoutMs = config.ml.timeoutMs) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(`${config.ml.baseUrl}${path}`, {
-      method: body ? 'POST' : 'GET',
-      headers: body ? { 'content-type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-      signal: ctrl.signal,
-    });
+    let res;
+    try {
+      res = await fetch(`${config.ml.baseUrl}${path}`, {
+        method: body ? 'POST' : 'GET',
+        headers: body ? { 'content-type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal,
+      });
+    } catch (networkErr) {
+      const err = new Error(`ML microservice is offline or unreachable (${config.ml.baseUrl}).`);
+      err.status = 503;
+      err.cause = networkErr;
+      throw err;
+    }
+
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       const err = new Error(json.message ?? `ML ${path} failed (${res.status})`);

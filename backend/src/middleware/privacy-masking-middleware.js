@@ -141,13 +141,22 @@ export function maskOverride() {
  * filter's trigger rate is measurable — which is itself defense evidence that
  * the protocol does something.
  */
-export function filterEgress(answer, { facultyName, statusLabel } = {}) {
+export function filterEgress(answer, { facultyName, statusLabel, courseCode } = {}) {
   if (typeof answer !== 'string' || !answer) {
     return { text: answer ?? '', hit: false, pattern: null };
   }
 
+  // If a scheduled course code is provided (e.g. "DSA 213", "LIS 411"), strip it temporarily
+  // from the test string so it is not misidentified as a room pattern (e.g. /[A-Z]{2,4}[-\s]?\d{3}/)
+  let testAnswer = answer;
+  if (courseCode) {
+    const tokens = String(courseCode).trim().split(/\s+/).map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const pattern = tokens.join('[\\s\\u202F\\u00A0]*');
+    testAnswer = testAnswer.replace(new RegExp(`\\b${pattern}\\b`, 'gi'), 'COURSE_CODE');
+  }
+
   const all = [...LOCATION_PATTERNS, ...SPECULATION_PATTERNS];
-  const matched = all.find((re) => re.test(answer));
+  const matched = all.find((re) => re.test(testAnswer));
 
   if (!matched) return { text: answer, hit: false, pattern: null };
 

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../frontend-utilities/appConstants.js';
 import { useTheme } from '../../frontend-utilities/themeContext.jsx';
@@ -93,7 +93,16 @@ export default function CampusMiniMap({
                 mouseover: () => onHover?.(p.id),
                 mouseout: () => onHover?.(null),
               }}
-            />
+            >
+              <Tooltip
+                direction="top"
+                offset={[0, -14]}
+                opacity={1}
+                className="campus-map-tooltip"
+              >
+                {p.name}
+              </Tooltip>
+            </Marker>
           );
         })}
       </MapContainer>

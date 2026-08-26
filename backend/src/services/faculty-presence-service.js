@@ -40,6 +40,19 @@ export async function resolvePresence(facultyId, at = new Date()) {
   };
 }
 
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function formatClock(timeStr) {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
 /**
  * Schedule context for the feature vector. Uses the same SQL function that
  * backs baseline_rule.py, so the forest and the baseline see the same view of
@@ -60,9 +73,68 @@ async function scheduleContext(facultyId, at) {
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   const matchedBlock = row?.matched_block ?? null;
+
+  let courseCode = null;
+  let currentEndTime = null;
+  let nextAvailable = null;
+
+  try {
+    const local = new Date(at.toLocaleString('en-US', { timeZone: config.presence.timezone }));
+    const dow = local.getDay();
+    const timeStr = local.toTimeString().slice(0, 8);
+
+    const { data: allSched } = await db
+      .from('faculty_schedule')
+      .select('day_of_week, start_time, end_time, block_kind, course_code, campus')
+      .eq('faculty_id', facultyId)
+      .order('day_of_week')
+      .order('start_time');
+
+    if (allSched?.length) {
+      const current = allSched.find(
+        (s) => s.day_of_week === dow && s.start_time <= timeStr && s.end_time > timeStr,
+      );
+
+      if (current) {
+        currentEndTime = formatClock(current.end_time);
+        if (current.block_kind === 'class') {
+          courseCode = current.course_code ?? null;
+        }
+      }
+
+      // Find next consultation block
+      // 1. Later today
+      let next = allSched.find(
+        (s) =>
+          s.day_of_week === dow
+          && s.start_time >= (current ? current.end_time : timeStr)
+          && s.block_kind === 'consultation',
+      );
+
+      if (next) {
+        nextAvailable = `today from ${formatClock(next.start_time)} to ${formatClock(next.end_time)}`;
+      } else {
+        // 2. Look across next 6 days
+        for (let offset = 1; offset <= 6; offset++) {
+          const nextDow = (dow + offset) % 7;
+          next = allSched.find(
+            (s) => s.day_of_week === nextDow && s.block_kind === 'consultation',
+          );
+          if (next) {
+            nextAvailable = `${DAY_NAMES[nextDow]} from ${formatClock(next.start_time)} to ${formatClock(next.end_time)}`;
+            break;
+          }
+        }
+      }
+    }
+  } catch { /* non-critical */ }
+
   return {
     ruleStatus: row?.status_code ?? 'unavailable_off_schedule',
     matchedBlock,
+    courseCode,
+    currentEndTime,
+    nextAvailable,
     isEventDay: Boolean(row?.is_event_day),
     eventType: row?.event_type ?? null,
     /**

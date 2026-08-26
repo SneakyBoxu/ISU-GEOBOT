@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Maximize, Minus, Plus } from 'lucide-react';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../frontend-utilities/appConstants.js';
@@ -285,6 +285,16 @@ export default function CampusMap({
               ref={(m) => { if (m) markerRefs.current.set(poi.id, m); else markerRefs.current.delete(poi.id); }}
               eventHandlers={{ click: () => onSelect?.(poi.id) }}
             >
+              {poi.id !== focusId && (
+                <Tooltip
+                  direction="top"
+                  offset={[0, -38]}
+                  opacity={1}
+                  className="campus-map-tooltip"
+                >
+                  {poi.name}
+                </Tooltip>
+              )}
               {/* The detail floats ON the pin rather than in a corner panel.
                   A card in the bottom-left states which building it describes;
                   a card on the pin SHOWS it, and the eye does not have to

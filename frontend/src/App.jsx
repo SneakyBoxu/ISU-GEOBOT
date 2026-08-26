@@ -9,6 +9,7 @@ const MainAssistantWorkspace = lazy(() => import('./components/main-assistant/Ma
 const SecurityGuardAttendanceDashboard = lazy(() => import('./components/security-guard-portal/SecurityGuardAttendanceDashboard.jsx'));
 const FacultyAnswerValidationList = lazy(() => import('./components/faculty-validation-portal/FacultyAnswerValidationList.jsx'));
 const CampusLocationManager = lazy(() => import('./components/admin-portal/CampusLocationManager.jsx'));
+const AdminDashboard = lazy(() => import('./components/admin-portal/AdminDashboard.jsx'));
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/guard" element={<SecurityGuardAttendanceDashboard />} />
         <Route path="/validate" element={<FacultyAnswerValidationList />} />
         <Route path="/admin" element={<CampusLocationManager />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="*" element={<LandingMainPage />} />
       </Routes>
     </Suspense>

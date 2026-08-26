@@ -73,15 +73,36 @@ async function loadRoster() {
     .select('faculty_id, alias');
 
   const byId = new Map(
-    (faculty ?? []).map((f) => [
-      f.id,
-      {
-        facultyId: f.id,
-        fullName: f.full_name,
-        department: f.department?.name ?? null,
-        needles: new Set([f.full_name.toLowerCase()]),
-      },
-    ]),
+    (faculty ?? []).map((f) => {
+      const needles = new Set([f.full_name.toLowerCase()]);
+      const parts = f.full_name.split(/[,.]+/).map((s) => s.trim());
+      if (parts.length >= 2) {
+        const surname = parts[0];
+        const givenParts = parts[1].split(/\s+/).filter(Boolean);
+        const given = givenParts.join(' ');
+        const firstName = givenParts[0];
+
+        if (surname && surname.length >= 3) needles.add(surname.toLowerCase());
+        if (given) {
+          needles.add(`${given} ${surname}`.toLowerCase());
+          needles.add(`${surname} ${given}`.toLowerCase());
+        }
+        if (firstName && firstName.length >= 3) {
+          needles.add(firstName.toLowerCase());
+          needles.add(`${firstName} ${surname}`.toLowerCase());
+        }
+      }
+
+      return [
+        f.id,
+        {
+          facultyId: f.id,
+          fullName: f.full_name,
+          department: f.department?.name ?? null,
+          needles,
+        },
+      ];
+    }),
   );
   for (const a of aliases ?? []) {
     byId.get(a.faculty_id)?.needles.add(a.alias.toLowerCase());

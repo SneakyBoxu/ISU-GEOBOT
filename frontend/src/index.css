@@ -210,6 +210,25 @@
 }
 .leaflet-popup-close-button { @apply text-fg-subtle hover:text-fg; }
 
+/* Tooltip on marker hover */
+.leaflet-tooltip.campus-map-tooltip {
+  @apply rounded-lg border border-line bg-surface/95 px-2.5 py-1 text-label font-medium text-fg shadow-md backdrop-blur-sm;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.leaflet-tooltip-top.campus-map-tooltip::before {
+  border-top-color: rgb(var(--line));
+}
+.leaflet-tooltip-bottom.campus-map-tooltip::before {
+  border-bottom-color: rgb(var(--line));
+}
+.leaflet-tooltip-left.campus-map-tooltip::before {
+  border-left-color: rgb(var(--line));
+}
+.leaflet-tooltip-right.campus-map-tooltip::before {
+  border-right-color: rgb(var(--line));
+}
+
 .leaflet-bar,
 .leaflet-bar a {
   @apply border-line bg-surface text-fg-muted;

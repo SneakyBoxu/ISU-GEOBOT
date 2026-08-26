@@ -258,7 +258,7 @@ api.get('/faculty/search', limit(config.rateLimit.generalMax), async (req, res, 
 // Guard portal
 // ---------------------------------------------------------------------------
 
-api.get('/guard/roster', requireAuth, requireRole('guard', 'researcher'),
+api.get('/guard/roster', requireAuth, requireRole('guard', 'admin', 'researcher'),
   async (_req, res, next) => {
     try {
       const { data, error } = await db.rpc('resolve_presence_roster', {
@@ -290,17 +290,34 @@ const eventSchema = z.object({
   supersedesId: z.string().min(1).max(64).optional(),
 });
 
-api.post('/guard/events', requireAuth, requireRole('guard'),
+api.post('/guard/events', requireAuth, requireRole('guard', 'admin', 'researcher'),
   async (req, res, next) => {
     try {
       const body = eventSchema.parse(req.body);
 
-      const { data: guard } = await db
+      let { data: guard } = await db
         .from('guard_user')
         .select('id')
         .eq('auth_user_id', req.user.id)
         .eq('is_active', true)
         .maybeSingle();
+
+      // If user is admin/researcher and does not have a guard_user record yet, auto-provision one
+      if (!guard && req.user.roles.some((r) => ['admin', 'researcher', 'guard'].includes(r))) {
+        const { data: newGuard, error: guardErr } = await db
+          .from('guard_user')
+          .upsert({
+            auth_user_id: req.user.id,
+            display_name: req.user.email ? req.user.email.split('@')[0] : 'Administrator',
+            is_active: true,
+          }, { onConflict: 'auth_user_id' })
+          .select('id')
+          .single();
+        if (!guardErr && newGuard) {
+          guard = newGuard;
+        }
+      }
+
       if (!guard) return res.status(403).json({ error: 'no active guard record' });
 
       // Audit W3 (IDOR): consented roster only.
@@ -338,20 +355,31 @@ api.post('/guard/events', requireAuth, requireRole('guard'),
 // Faculty validation portal (thesis §3.8.2)
 // ---------------------------------------------------------------------------
 
-api.get('/validate/context', requireAuth, requireRole('validator'),
+api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'researcher'),
   async (req, res, next) => {
     try {
       // In-system capture (audit C14): the system records its OWN prediction,
       // so a validator cannot misremember what it said. That removes a
       // transcription-error attack on the results.
+      let targetFacultyId = req.user.facultyId;
+      if (!targetFacultyId && req.user.roles.some((r) => ['admin', 'researcher'].includes(r))) {
+        const { data: anyFaculty } = await db
+          .from('faculty')
+          .select('id')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        targetFacultyId = anyFaculty?.id ?? null;
+      }
+
       const { data: faculty } = await db
         .from('faculty')
         .select('id, full_name')
-        .eq('id', req.user.facultyId)
+        .eq('id', targetFacultyId)
         .maybeSingle();
 
       const result = await runPipeline({
-        query: `Is ${faculty?.full_name} available right now?`,
+        query: `Is ${faculty?.full_name ?? 'faculty'} available right now?`,
         mode: 'enhanced',
         allowAvailability: true,
       });
@@ -373,6 +401,7 @@ api.get('/validate/context', requireAuth, requireRole('validator'),
   });
 
 const validationSchema = z.object({
+  facultyId: z.string().uuid().optional().nullable(),
   systemStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
   actualStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
   correctness: z.enum(['correct', 'partially_correct', 'incorrect']),
@@ -380,14 +409,30 @@ const validationSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
-api.post('/validate/entries', requireAuth, requireRole('validator'),
+api.post('/validate/entries', requireAuth, requireRole('validator', 'admin', 'researcher'),
   async (req, res, next) => {
     try {
       const body = validationSchema.parse(req.body);
+
+      let targetFacultyId = body.facultyId || req.user.facultyId;
+      if (!targetFacultyId && req.user.roles.some((r) => ['admin', 'researcher'].includes(r))) {
+        const { data: defaultFaculty } = await db
+          .from('faculty')
+          .select('id')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        targetFacultyId = defaultFaculty?.id;
+      }
+
+      if (!targetFacultyId) {
+        return res.status(400).json({ error: 'No active faculty member found to attach validation entry to.' });
+      }
+
       const { data, error } = await db
         .from('faculty_validation')
         .insert({
-          faculty_id: req.user.facultyId,
+          faculty_id: targetFacultyId,
           system_status: body.systemStatus,
           actual_status: body.actualStatus,
           correctness: body.correctness,
@@ -402,19 +447,26 @@ api.post('/validate/entries', requireAuth, requireRole('validator'),
     } catch (err) { next(err); }
   });
 
-api.get('/validate/entries', requireAuth, requireRole('validator'),
+api.get('/validate/entries', requireAuth, requireRole('validator', 'admin', 'researcher'),
   async (req, res, next) => {
     try {
-      const { data, error } = await db
+      // Admins and researchers see all entries; validators see only their own.
+      let query = db
         .from('faculty_validation')
         .select('id, queried_at, system_status, actual_status, correctness, include_in_matrix')
-        .eq('faculty_id', req.user.facultyId)
         .order('queried_at', { ascending: false })
-        .limit(100);
+        .limit(200);
+
+      if (req.user.facultyId) {
+        query = query.eq('faculty_id', req.user.facultyId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       res.json({ entries: data ?? [] });
     } catch (err) { next(err); }
   });
+
 
 // ---------------------------------------------------------------------------
 // Research
@@ -492,10 +544,10 @@ api.get('/me', requireAuth, (req, res) => {
     can: {
       askAvailability: true,
       manageLocations: req.user.roles.some((r) => ['admin', 'researcher'].includes(r)),
-      logPresence: req.user.roles.includes('guard'),
-      validate: req.user.roles.includes('validator'),
-      controlOwnVisibility: req.user.roles.some((r) => ['faculty', 'validator'].includes(r)),
-      runEvaluation: req.user.roles.includes('researcher'),
+      logPresence: req.user.roles.some((r) => ['guard', 'admin', 'researcher'].includes(r)),
+      validate: req.user.roles.some((r) => ['validator', 'admin', 'researcher'].includes(r)),
+      controlOwnVisibility: req.user.roles.some((r) => ['faculty', 'validator', 'admin', 'researcher'].includes(r)),
+      runEvaluation: req.user.roles.some((r) => ['researcher', 'admin'].includes(r)),
     },
   });
 });

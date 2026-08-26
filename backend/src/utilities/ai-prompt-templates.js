@@ -89,12 +89,19 @@ function renderContext(chunks) {
  * The one conditional block. Present in `enhanced`, absent in `standard`.
  * Nothing else about the prompt changes between arms.
  */
-function renderAvailability({ facultyName, statusLabel, asOf }) {
+function renderAvailability({ facultyName, statusLabel, asOf, courseCode, currentEndTime, nextAvailable }) {
+  const courseLine = courseCode ? `\nScheduled subject/class: ${courseCode}` : '';
+  const endLine = currentEndTime ? `\nCurrent scheduled period ends at: ${currentEndTime}` : '';
+  const nextLine = nextAvailable ? `\nNext available/consultation schedule: ${nextAvailable}` : '';
   return `AVAILABILITY (real-time estimate from the Random Forest classifier, privacy-masked):
 Faculty member: ${facultyName}
-Estimated status: ${statusLabel}
+Estimated status: ${statusLabel}${courseLine}${endLine}${nextLine}
 Estimated at: ${asOf}
-This is a generalized status. No location information is available to you, and you must not infer any.`;
+Guidance:
+- If asked what time or when they will be free/available, answer directly using the current period end time and next available/consultation schedule provided above.
+- If in scheduled class and a subject is given, mention the course code/subject (e.g. "${courseCode || ''}").
+- If currently available for consultation, mention they are available now until ${currentEndTime || 'their current period ends'}.
+- You must NEVER guess, state, or infer any physical room number, floor, or building location.`;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, ClipboardCheck, Menu, Settings2, ShieldCheck, X } from 'lucide-react';
+import { ChevronDown, ClipboardCheck, LayoutDashboard, Menu, Settings2, ShieldCheck, X } from 'lucide-react';
 import ISULogoBrand from './ISULogoBrand.jsx';
 import Button from '../ui-primitives/ActionButton.jsx';
 import ThemeToggle from '../ui-primitives/DarkModeToggleSwitch.jsx';
@@ -19,21 +19,28 @@ import ThemeToggle from '../ui-primitives/DarkModeToggleSwitch.jsx';
  */
 const PORTALS = [
   {
+    to: '/admin-dashboard',
+    label: 'Admin Dashboard',
+    hint: 'Unified management: campus locations, security presence & validation.',
+    icon: LayoutDashboard,
+    primary: true,
+  },
+  {
     to: '/validate',
     label: 'Faculty validation',
-    detail: 'Score availability estimates against your real attendance log.',
+    hint: 'Score availability estimates against your real attendance log.',
     icon: ClipboardCheck,
   },
   {
     to: '/guard',
     label: 'Security presence',
-    detail: 'Log faculty check-ins at campus gates and stations.',
+    hint: 'Log faculty check-ins at campus gates and stations.',
     icon: ShieldCheck,
   },
   {
     to: '/admin',
     label: 'Campus locations',
-    detail: 'Manage published campus locations, buildings and coordinates.',
+    hint: 'Manage published campus locations, buildings and coordinates.',
     icon: Settings2,
   },
 ];

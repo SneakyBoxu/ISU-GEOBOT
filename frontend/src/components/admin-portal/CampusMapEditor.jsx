@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
   Check, Copy, Crosshair, Edit3, ExternalLink, Maximize2, Minimize2,
@@ -345,6 +345,14 @@ export default function EditorMap({
               title={`${p.name} — right-click for options`}
               eventHandlers={{ contextmenu: (e) => openMarkerMenu(e, p) }}
             >
+              <Tooltip
+                direction="top"
+                offset={[0, -32]}
+                opacity={1}
+                className="campus-map-tooltip"
+              >
+                {p.name}
+              </Tooltip>
               <Popup className="editor-popup" closeButton={false}>
                 <div className="w-[min(18rem,calc(100vw-6rem))] rounded-xl border border-line bg-surface p-3.5 text-left text-fg shadow-lg">
                   <p className="truncate font-serif text-meta font-semibold leading-tight text-fg">{p.name}</p>

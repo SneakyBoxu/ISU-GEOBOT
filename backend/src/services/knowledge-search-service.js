@@ -343,6 +343,9 @@ export async function runPipeline({
       facultyName: faculty?.fullName ?? 'the faculty member',
       statusLabel,
       asOf: availability.masked.maskedAt,
+      courseCode: availability.scheduleContext?.courseCode ?? null,
+      currentEndTime: availability.scheduleContext?.currentEndTime ?? null,
+      nextAvailable: availability.scheduleContext?.nextAvailable ?? null,
     };
   }
 
@@ -374,6 +377,7 @@ export async function runPipeline({
     const filtered = filterEgress(answer, {
       facultyName: availabilityBlock.facultyName,
       statusLabel,
+      courseCode: availabilityBlock.courseCode,
     });
     answer = filtered.text;
     egressHit = filtered.hit;
