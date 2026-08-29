@@ -319,3 +319,62 @@ export async function unpublishPoi(poiId, userId, note) {
   await audit('unpublish', poiId, before, null, userId, note);
   return { unpublished: true };
 }
+
+/**
+ * Republish a previously unpublished location.
+ */
+export async function republishPoi(poiId, userId, note) {
+  const { data: before } = await db.from('poi').select('*').eq('id', poiId).maybeSingle();
+  if (!before) {
+    const err = new Error('Location not found');
+    err.status = 404;
+    throw err;
+  }
+
+  await db.from('poi').update({
+    is_published: true,
+    updated_by: userId,
+    updated_at: new Date().toISOString(),
+  }).eq('id', poiId);
+
+  const index = await reindexPoi(poiId);
+  await audit('republish', poiId, before, { ...before, is_published: true }, userId, note);
+  return { poi: { ...before, is_published: true }, indexed: index.chunks };
+}
+
+/**
+ * Hard delete a location, removing its place card, chunks, audit records, and POI record.
+ */
+export async function deletePoi(poiId, userId, note) {
+  const { data: before } = await db.from('poi').select('*').eq('id', poiId).maybeSingle();
+  if (!before) {
+    const err = new Error('Location not found');
+    err.status = 404;
+    throw err;
+  }
+
+  // Remove place card document and its chunks
+  const { data: current } = await db
+    .from('document')
+    .select('id')
+    .eq('doc_type', 'poi_place_card')
+    .eq('source_origin', `generated:poi:${poiId}`);
+  const { data: legacy } = await db
+    .from('document')
+    .select('id')
+    .eq('doc_type', 'poi_place_card')
+    .eq('source_origin', 'generated:poi')
+    .eq('title', `Place card — ${before.name}`);
+
+  for (const d of [...(current ?? []), ...(legacy ?? [])]) {
+    await db.from('document_chunk').delete?.().eq?.('document_id', d.id);
+    await db.from('document').delete?.().eq?.('id', d.id);
+  }
+
+  await db.from('poi_document').delete?.().eq?.('poi_id', poiId);
+  await db.from('poi_audit').delete?.().eq?.('poi_id', poiId);
+  await db.from('poi').delete?.().eq?.('id', poiId);
+
+  log.info({ poiId, name: before.name, by: userId }, 'POI permanently deleted');
+  return { deleted: true, name: before.name };
+}

@@ -103,20 +103,52 @@ async function scheduleContext(facultyId, at) {
       }
 
       // Find next consultation block
-      // 1. Later today
-      let next = allSched.find(
-        (s) =>
-          s.day_of_week === dow
-          && s.start_time >= (current ? current.end_time : timeStr)
-          && s.block_kind === 'consultation',
-      );
+      // 1. Later today (only if today is not a disrupted event day)
+      let next = null;
+      if (!row?.is_event_day) {
+        next = allSched.find(
+          (s) =>
+            s.day_of_week === dow
+            && s.start_time >= (current ? current.end_time : timeStr)
+            && s.block_kind === 'consultation',
+        );
+      }
 
       if (next) {
         nextAvailable = `today from ${formatClock(next.start_time)} to ${formatClock(next.end_time)}`;
       } else {
-        // 2. Look across next 6 days
-        for (let offset = 1; offset <= 6; offset++) {
-          const nextDow = (dow + offset) % 7;
+        // Fetch upcoming institutional events for the next 14 days
+        const startIso = local.toISOString().slice(0, 10);
+        const endLimit = new Date(local);
+        endLimit.setDate(local.getDate() + 14);
+        const endIso = endLimit.toISOString().slice(0, 10);
+
+        let disruptedDates = new Set();
+        try {
+          const { data: upcomingEvents } = await db
+            .from('institutional_event')
+            .select('event_date, title, disrupts_schedule')
+            .gte('event_date', startIso)
+            .lte('event_date', endIso);
+
+          disruptedDates = new Set(
+            (upcomingEvents ?? [])
+              .filter((e) => e.disrupts_schedule)
+              .map((e) => typeof e.event_date === 'string' ? e.event_date.slice(0, 10) : new Date(e.event_date).toISOString().slice(0, 10))
+          );
+        } catch { /* fallback to normal calendar if query fails */ }
+
+        // 2. Look across next 14 days, skipping dates with disruptive events / holidays
+        for (let offset = 1; offset <= 14; offset++) {
+          const candidate = new Date(local);
+          candidate.setDate(local.getDate() + offset);
+          const candidateDateStr = candidate.toISOString().slice(0, 10);
+          const nextDow = candidate.getDay();
+
+          if (disruptedDates.has(candidateDateStr)) {
+            continue; // Skip holiday or disruptive campus event
+          }
+
           next = allSched.find(
             (s) => s.day_of_week === nextDow && s.block_kind === 'consultation',
           );

@@ -1,52 +1,27 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { Maximize, Minus, Plus } from 'lucide-react';
+import {
+  AlertCircle, ChevronDown, ChevronUp, Clock, Compass, CornerUpRight,
+  ExternalLink, Footprints, Locate, MapPin, Maximize, Minus, Navigation2,
+  Plus, Route, Sparkles, X,
+} from 'lucide-react';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../frontend-utilities/appConstants.js';
 import { usePrefersReducedMotion } from '../../custom-react-hooks/useReducedMotionPreference.js';
 import { useTheme } from '../../frontend-utilities/themeContext.jsx';
 import { categoryColor } from './mapMarkerGlyphs.js';
 import { PoiGlyph, teardropIcon } from './mapPinIconBuilder.js';
 import LocationCard from './PlaceDetailCard.jsx';
+import {
+  CAMPUS_PRESET_GATES, formatDistance, formatDuration,
+} from '../../frontend-utilities/campusRoutingService.js';
 
-/**
- * Interactive campus map (thesis §3.5.1).
- *
- * Markers are teardrop pins: category colour in the body, a white disc at the
- * centre, and the category LETTER in that disc. The colour is the fast read
- * across a screen of 28 pins; the letter is what survives greyscale, colour
- * blindness and a printed appendix. Neither is load-bearing alone, which is
- * the only way to put colour on a map without excluding the people it
- * excludes. A legend states the mapping rather than leaving it to be inferred.
- *
- * The pin points at its coordinate rather than sitting on it — that is the
- * whole reason the shape exists, and it is why `iconAnchor` is the tip.
- *
- * Searching and filtering live in the campus index beside this map, not in a
- * toolbar above it. They were here first; they moved when the index arrived,
- * because two search boxes on one screen is a question about which one is the
- * real one. This component now renders what it is given.
- *
- * Two basemaps, and SATELLITE IS THE DEFAULT. The campus is 355 hectares of
- * largely unlabelled ground: on a plan tile most of it is empty polygons, and
- * imagery is how you tell the oval from the rice fields that surround it. The
- * plan view stays one click away for when the labels matter more than the
- * ground truth.
- *
- * The plan basemap is theme-aware — CARTO publish a genuine dark cartography,
- * so the dark theme gets a real nighttime map rather than the day map with a
- * filter dropped over it.
- */
 const CARTO_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 const BASEMAPS = {
   satellite: {
     label: 'Satellite',
     url: () => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    // Roads and place names, drawn over the imagery. Esri publish this as a
-    // companion to World_Imagery, which is the licensed way to get the hybrid
-    // view — the reference project pulled Google's `lyrs=y` tiles straight off
-    // an undocumented endpoint, which is not something to put in a thesis.
     reference: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
     maxZoom: 19,
@@ -61,31 +36,55 @@ const BASEMAPS = {
 
 const CTRL = 'grid h-7 w-8 place-items-center text-fg-muted transition-colors duration-state hover:bg-bg-sunken hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus';
 
+function originIcon(isGps, name = 'Start') {
+  if (isGps) {
+    return L.divIcon({
+      className: 'isu-origin-marker-container',
+      iconSize: [160, 48],
+      iconAnchor: [80, 40],
+      html: `
+        <div style="display:flex; flex-direction:column; align-items:center; pointer-events:none;">
+          <div style="background:rgba(15,23,42,0.85); color:#ffffff; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; box-shadow:0 2px 6px rgba(0,0,0,0.3); margin-bottom:4px; white-space:nowrap; border:1px solid rgba(255,255,255,0.2);">
+            📍 My Location
+          </div>
+          <div style="position:relative; width:22px; height:22px; display:flex; align-items:center; justify-content:center;">
+            <span style="position:absolute; width:22px; height:22px; border-radius:9999px; background:rgba(59,130,246,0.4); animation:ping 1.5s cubic-bezier(0,0,0.2,1) infinite;"></span>
+            <span style="position:relative; width:14px; height:14px; border-radius:9999px; background:#2563eb; border:2px solid #ffffff; box-shadow:0 2px 6px rgba(0,0,0,0.35);"></span>
+          </div>
+        </div>
+      `,
+    });
+  }
+  return L.divIcon({
+    className: 'isu-origin-marker-container',
+    iconSize: [180, 56],
+    iconAnchor: [90, 52],
+    html: `
+      <div style="display:flex; flex-direction:column; align-items:center; pointer-events:none;">
+        <div style="background:rgba(15,23,42,0.88); color:#ffffff; padding:2px 8px; border-radius:9999px; font-size:11px; font-weight:600; box-shadow:0 2px 6px rgba(0,0,0,0.3); margin-bottom:3px; white-space:nowrap; border:1px solid rgba(255,255,255,0.2); max-width:170px; overflow:hidden; text-overflow:ellipsis;">
+          🟢 Start: ${name.length > 22 ? name.slice(0, 20) + '…' : name}
+        </div>
+        <div style="width:24px; height:24px; border-radius:9999px; background:#059669; border:2px solid #ffffff; color:#ffffff; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.35); font-weight:700;">
+          <svg style="width:13px; height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div style="width:2px; height:5px; background:#059669;"></div>
+      </div>
+    `,
+  });
+}
 
-/**
- * Clicking the map background clears the selection.
- *
- * Leaflet stops click propagation on markers, so this fires only for the
- * background — selecting a marker does not immediately deselect it. Without
- * this the selection ring is a one-way door: you can turn it on and never off,
- * which reads as a stuck highlight rather than as state.
- */
-function BackgroundClick({ onClear }) {
-  useMapEvents({ click: () => onClear?.() });
+function BackgroundClick({ onClear, navActive }) {
+  useMapEvents({
+    click: () => {
+      // Don't deselect destination while navigating
+      if (!navActive) onClear?.();
+    },
+  });
   return null;
 }
 
-/**
- * Frames the whole campus, once, from the locations actually loaded.
- *
- * A hardcoded centre goes stale the moment the data moves — this map spent the
- * whole integration opening on the town of San Fabian because its centre was
- * still the synthetic placeholder's. Bounds derived from the markers cannot
- * drift: correct a coordinate in the GPS survey and the opening view corrects
- * itself.
- *
- * Runs once. A user who has panned somewhere has not asked to be sent back.
- */
 function FitCampus({ bounds, offsetX, skip }) {
   const map = useMap();
   const done = useRef(false);
@@ -101,33 +100,43 @@ function FitCampus({ bounds, offsetX, skip }) {
   return null;
 }
 
-function FocusController({ target, offsetX = 0 }) {
+function FocusController({ target, offsetX = 0, navActive }) {
   const map = useMap();
   const reduced = usePrefersReducedMotion();
   useEffect(() => {
-    if (!target) return;
-
-    // The campus index overlays the left of the map, so the geometric centre
-    // is not the visible centre. Flying to the raw coordinate puts the pin
-    // behind the panel that asked for it. Shifting the destination by half the
-    // panel width lands it in the middle of what the user can actually see.
+    if (!target || navActive) return;
     const zoom = 18;
     const point = map.project([target.lat, target.lng], zoom).subtract([offsetX / 2, 0]);
     const dest = map.unproject(point, zoom);
-
-    // Map focus is meaningful motion — it carries the user from where they
-    // were to where they asked about. Reduced motion still moves, instantly.
     if (reduced) map.setView(dest, zoom);
     else map.flyTo(dest, zoom, { duration: 0.6 });
-  }, [target, map, reduced, offsetX]);
+  }, [target, map, reduced, offsetX, navActive]);
   return null;
 }
 
-/**
- * Hands the Leaflet instance up to the component so the toolbar can drive it.
- * `useMap` only works inside MapContainer, and the zoom controls deliberately
- * live outside it — see the toolbar comment below.
- */
+function RouteBoundsController({ routeCoordinates, offsetX = 0 }) {
+  const map = useMap();
+  const prevCoordsRef = useRef(null);
+
+  useEffect(() => {
+    if (!routeCoordinates || routeCoordinates.length < 2) return;
+    // Prevent duplicate fits
+    const coordStr = JSON.stringify(routeCoordinates);
+    if (prevCoordsRef.current === coordStr) return;
+    prevCoordsRef.current = coordStr;
+
+    const b = L.latLngBounds(routeCoordinates);
+    map.fitBounds(b, {
+      paddingTopLeft: [offsetX + 80, 80],
+      paddingBottomRight: [80, 80],
+      animate: true,
+      duration: 0.6,
+    });
+  }, [routeCoordinates, map, offsetX]);
+
+  return null;
+}
+
 function MapHandle({ onReady }) {
   const map = useMap();
   useEffect(() => { onReady(map); }, [map, onReady]);
@@ -135,43 +144,61 @@ function MapHandle({ onReady }) {
 }
 
 export default function CampusMap({
-  pois = [], visible = [], focusId, onSelect, onClear, onAsk, focusOffsetX = 0,
+  pois = [],
+  visible = [],
+  focusId,
+  onSelect,
+  onClear,
+  onAsk,
+  onDirections,
+  focusOffsetX = 0,
+  navDestination = null,
+  navOrigin = null,
+  navRoute = null,
+  navLoading = false,
+  navError = null,
+  onClearNavigation,
+  onSetOrigin,
+  onUseGpsOrigin,
 }) {
   const [basemap, setBasemap] = useState('satellite');
   const [map, setMap] = useState(null);
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const [originPickerOpen, setOriginPickerOpen] = useState(false);
   const { theme } = useTheme();
   const initialFocus = useRef(Boolean(focusId)).current;
 
-  // Escape clears the selection too — the same affordance a keyboard user
-  // reaches for, and the only way to clear it without a pointer.
+  // Escape clears selection or navigation
   useEffect(() => {
-    if (!focusId) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClear?.(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        if (navDestination) onClearNavigation?.();
+        else if (focusId) onClear?.();
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [focusId, onClear]);
+  }, [focusId, navDestination, onClear, onClearNavigation]);
 
-  // Looked up in the FULL set, not the filtered one. An answer that focuses a
-  // library while the filter reads "Colleges" should still move the map — the
-  // alternative is a focus request that silently does nothing.
-  const focus = useMemo(() => pois.find((p) => p.id === focusId), [pois, focusId]);
+  const focus = useMemo(
+    () => pois.find((p) => p.id === focusId || p.slug === focusId),
+    [pois, focusId],
+  );
   const legend = useMemo(
     () => [...new Set(visible.map((p) => p.type))].slice(0, 7),
     [visible],
   );
 
-  // Selection can come from the index, an answer, or a deep link, none of which
-  // go through Leaflet. Holding the marker instances is what lets those open
-  // the same popup a click would.
   const markerRefs = useRef(new Map());
   useEffect(() => {
-    if (!focusId) {
+    if (!focusId || navDestination) {
       markerRefs.current.forEach((m) => m.closePopup());
       return;
     }
-    const m = markerRefs.current.get(focusId);
+    const targetPoi = pois.find((p) => p.id === focusId || p.slug === focusId);
+    const m = targetPoi ? markerRefs.current.get(targetPoi.id) : markerRefs.current.get(focusId);
     if (m) m.openPopup();
-  }, [focusId, visible]);
+  }, [focusId, visible, navDestination, pois]);
 
   const bounds = useMemo(
     () => (pois.length ? L.latLngBounds(pois.map((p) => [p.lat, p.lng])) : null),
@@ -180,6 +207,7 @@ export default function CampusMap({
 
   function fitCampus() {
     onClear?.();
+    if (navDestination) onClearNavigation?.();
     if (bounds && map) {
       map.fitBounds(bounds, {
         paddingTopLeft: [focusOffsetX + 48, 48],
@@ -190,8 +218,16 @@ export default function CampusMap({
     }
   }
 
+  const googleMapsUrl = useMemo(() => {
+    if (!navDestination) return null;
+    const dest = `${navDestination.lat},${navDestination.lng}`;
+    const orig = navOrigin ? `${navOrigin.lat},${navOrigin.lng}` : '';
+    return `https://www.google.com/maps/dir/?api=1&origin=${orig}&destination=${dest}&travelmode=walking`;
+  }, [navDestination, navOrigin]);
+
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col bg-bg" data-dock data-basemap={basemap}>
+      {/* Map top toolbar */}
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface px-3 py-2">
         <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Base map">
           {Object.entries(BASEMAPS).map(([key, b]) => (
@@ -209,12 +245,14 @@ export default function CampusMap({
           ))}
         </div>
 
-        {/* Zoom and reset live in the toolbar rather than floating over the
-            map. On the map they sat top-right, which is exactly where the
-            docked assistant opens — so on a 768px-tall laptop the chat covered
-            the only way to zoom out. A control that a second control can hide
-            is not a control. Here nothing overlaps them at any size. */}
         <div className="flex items-center gap-3">
+          {navDestination && (
+            <div className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent-subtle px-2.5 py-0.5 text-label font-medium text-accent">
+              <Footprints className="h-3.5 w-3.5 animate-pulse" aria-hidden />
+              <span>Route navigation active</span>
+            </div>
+          )}
+
           <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Zoom">
             <button
               type="button"
@@ -256,9 +294,6 @@ export default function CampusMap({
           className="h-full w-full"
           zoomControl={false}
         >
-          {/* Keying on the basemap forces a fresh layer rather than a URL swap,
-              which otherwise leaves the previous provider's tiles cached in
-              place at zoom levels the new one does not serve. */}
           <TileLayer
             key={`${basemap}-${theme}`}
             attribution={BASEMAPS[basemap].attribution}
@@ -272,20 +307,84 @@ export default function CampusMap({
               maxZoom={BASEMAPS[basemap].maxZoom}
             />
           )}
-          <FitCampus bounds={bounds} offsetX={focusOffsetX} skip={initialFocus} />
-          <FocusController target={focus} offsetX={focusOffsetX} />
-          <BackgroundClick onClear={onClear} />
+
+          <FitCampus bounds={bounds} offsetX={focusOffsetX} skip={initialFocus || Boolean(navDestination)} />
+          <FocusController target={focus} offsetX={focusOffsetX} navActive={Boolean(navDestination)} />
+          {navRoute?.coordinates && (
+            <RouteBoundsController routeCoordinates={navRoute.coordinates} offsetX={focusOffsetX} />
+          )}
+          <BackgroundClick onClear={onClear} navActive={Boolean(navDestination)} />
           <MapHandle onReady={setMap} />
 
+          {/* Render Walking Route Polylines */}
+          {navRoute?.coordinates && (
+            <>
+              {/* Outer Glow / Halo */}
+              <Polyline
+                positions={navRoute.coordinates}
+                pathOptions={{
+                  color: '#38bdf8',
+                  weight: 8,
+                  opacity: 0.45,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+              {/* Vibrant Inner Route Line */}
+              <Polyline
+                positions={navRoute.coordinates}
+                pathOptions={{
+                  color: '#1d4ed8',
+                  weight: 4.5,
+                  opacity: 0.95,
+                  dashArray: '8, 8',
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+            </>
+          )}
+
+          {/* Origin Marker */}
+          {navOrigin && navDestination && (
+            <Marker
+              key={`origin-${navOrigin.lat}-${navOrigin.lng}-${navOrigin.isGps ? 'gps' : 'gate'}`}
+              position={[navOrigin.lat, navOrigin.lng]}
+              icon={originIcon(navOrigin.isGps, navOrigin.name)}
+            />
+          )}
+
+          {/* Campus POI Markers */}
           {visible.map((poi, i) => (
             <Marker
               key={poi.id}
               position={[poi.lat, poi.lng]}
-              icon={teardropIcon({ type: poi.type, active: poi.id === focusId, index: i })}
-              ref={(m) => { if (m) markerRefs.current.set(poi.id, m); else markerRefs.current.delete(poi.id); }}
-              eventHandlers={{ click: () => onSelect?.(poi.id) }}
+              icon={teardropIcon({
+                type: poi.type,
+                active: poi.id === (navDestination?.id ?? focusId),
+                index: i,
+              })}
+              ref={(m) => {
+                if (m) markerRefs.current.set(poi.id, m);
+                else markerRefs.current.delete(poi.id);
+              }}
+              eventHandlers={{
+                click: () => {
+                  if (navDestination && poi.id !== navDestination.id) {
+                    onSetOrigin?.({
+                      id: poi.id,
+                      name: poi.name,
+                      lat: poi.lat,
+                      lng: poi.lng,
+                      type: poi.type,
+                    });
+                  } else {
+                    onSelect?.(poi.id);
+                  }
+                },
+              }}
             >
-              {poi.id !== focusId && (
+              {poi.id !== focusId && !navDestination && (
                 <Tooltip
                   direction="top"
                   offset={[0, -38]}
@@ -295,10 +394,7 @@ export default function CampusMap({
                   {poi.name}
                 </Tooltip>
               )}
-              {/* The detail floats ON the pin rather than in a corner panel.
-                  A card in the bottom-left states which building it describes;
-                  a card on the pin SHOWS it, and the eye does not have to
-                  carry a name across the screen to check. */}
+
               <Popup
                 closeButton={false}
                 keepInView
@@ -310,6 +406,7 @@ export default function CampusMap({
                   poi={poi}
                   onClose={onClear}
                   onAsk={onAsk}
+                  onDirections={onDirections}
                   onZoom={(p) => map?.flyTo([p.lat, p.lng], 19, { duration: 0.5 })}
                 />
               </Popup>
@@ -317,7 +414,178 @@ export default function CampusMap({
           ))}
         </MapContainer>
 
-        {legend.length > 0 && (
+        {/* In-Map Walking Navigation Card (Floating HUD) */}
+        {navDestination && (
+          <div
+            className="animate-enter pointer-events-auto absolute left-3 top-3 z-[450] max-h-[calc(100%-1.5rem)] w-[min(22.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-xl border border-line bg-surface/95 shadow-xl backdrop-blur-md transition-all duration-300"
+          >
+            {/* Nav Card Header */}
+            <div className="flex items-start justify-between border-b border-line px-3.5 pb-2.5 pt-3">
+              <div className="min-w-0 flex-1 pr-2">
+                <div className="flex items-center gap-1.5 text-label font-medium text-accent">
+                  <Navigation2 className="h-3.5 w-3.5 fill-accent stroke-none" />
+                  <span>Walking Directions</span>
+                </div>
+                <h3 className="mt-0.5 truncate text-body font-semibold text-fg">
+                  {navDestination.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClearNavigation}
+                aria-label="Exit navigation"
+                className="btn-icon -mr-1 -mt-0.5 shrink-0 text-fg-subtle hover:text-fg"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+
+            {/* Nav Stats & ETA Bar */}
+            <div className="max-h-[min(20rem,calc(100vh-14rem))] overflow-y-auto px-3.5 py-2.5">
+              {navLoading ? (
+                <div className="flex items-center gap-2.5 py-3 text-meta text-fg-muted">
+                  <Footprints className="h-4 w-4 animate-bounce text-accent" />
+                  <span>Calculating best campus walking path...</span>
+                </div>
+              ) : navError ? (
+                <div className="flex items-center gap-2 rounded-lg border border-error/30 bg-error/10 p-2.5 text-label text-error">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{navError}</span>
+                </div>
+              ) : navRoute ? (
+                <>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent-subtle px-2.5 py-1.5">
+                      <Clock className="h-4 w-4 text-accent" />
+                      <span className="font-mono text-meta font-bold text-accent" data-numeric>
+                        {formatDuration(navRoute.durationSeconds)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 rounded-lg border border-line bg-bg-sunken px-2.5 py-1.5">
+                      <Compass className="h-4 w-4 text-fg-muted" />
+                      <span className="font-mono text-meta font-medium text-fg" data-numeric>
+                        {formatDistance(navRoute.distanceMeters)}
+                      </span>
+                    </div>
+                    {navRoute.isFallback && (
+                      <span className="rounded border border-warning/30 bg-warning-subtle px-1.5 py-0.5 text-label text-warning">
+                        direct path
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Origin Selector & Switcher */}
+                  <div className="mt-3 rounded-lg border border-line bg-bg-sunken/60 p-2.5">
+                    <div className="flex items-center justify-between text-label">
+                      <span className="font-medium text-fg-subtle">Starting from:</span>
+                      <button
+                        type="button"
+                        onClick={() => setOriginPickerOpen((v) => !v)}
+                        className="flex items-center gap-1 font-semibold text-accent hover:underline"
+                      >
+                        Change
+                        {originPickerOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                    </div>
+                    <p className="mt-1 truncate text-meta font-medium text-fg">
+                      {navOrigin?.name || 'Main Campus Gate'}
+                    </p>
+
+                    {/* Collapsible Origin Options */}
+                    {originPickerOpen && (
+                      <div className="mt-2 space-y-1 border-t border-line pt-2 text-label">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOriginPickerOpen(false);
+                            onUseGpsOrigin?.();
+                          }}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-accent transition-colors hover:bg-accent-subtle"
+                        >
+                          <Locate className="h-3.5 w-3.5 shrink-0" />
+                          <span className="font-medium">Use My Current GPS Location</span>
+                        </button>
+                        <div className="pt-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-fg-subtle">
+                          Campus Gates & Landmarks
+                        </div>
+                        {CAMPUS_PRESET_GATES.map((gate) => (
+                          <button
+                            key={gate.id}
+                            type="button"
+                            onClick={() => {
+                              setOriginPickerOpen(false);
+                              onSetOrigin?.(gate);
+                            }}
+                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left transition-colors ${
+                              navOrigin?.id === gate.id ? 'bg-accent-subtle font-medium text-accent' : 'text-fg-muted hover:bg-bg hover:text-fg'
+                            }`}
+                          >
+                            <span className="truncate">{gate.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step-by-Step Directions Accordion */}
+                  {navRoute.steps?.length > 0 && (
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={() => setStepsOpen((v) => !v)}
+                        className="flex w-full items-center justify-between rounded-md border border-line px-2.5 py-1.5 text-label font-medium text-fg transition-colors hover:bg-bg-sunken"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <Route className="h-3.5 w-3.5 text-accent" />
+                          Turn-by-turn guidance ({navRoute.steps.length} steps)
+                        </span>
+                        {stepsOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                      </button>
+
+                      {stepsOpen && (
+                        <ol className="mt-2 space-y-1.5 rounded-lg border border-line bg-surface p-2.5 text-label">
+                          {navRoute.steps.map((step, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-fg-muted">
+                              <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-bg-sunken font-mono text-[0.625rem] font-bold text-fg">
+                                {idx + 1}
+                              </span>
+                              <span className="leading-snug text-fg">{step.instruction}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            {/* Nav Card Footer */}
+            <div className="flex items-center justify-between border-t border-line bg-bg-sunken/40 px-3.5 py-2 text-label">
+              <button
+                type="button"
+                onClick={onClearNavigation}
+                className="font-medium text-fg-subtle transition-colors hover:text-fg"
+              >
+                Exit Navigation
+              </button>
+              {googleMapsUrl && (
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="flex items-center gap-1 font-medium text-accent transition-colors hover:text-accent-hover hover:underline"
+                >
+                  <span>Google Maps</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Legend */}
+        {legend.length > 0 && !navDestination && (
           <dl className="absolute bottom-3 left-3 z-[400] flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line bg-surface px-3 py-2 shadow-sm">
             {legend.map((t) => (
               <div key={t} className="flex items-center gap-1.5">

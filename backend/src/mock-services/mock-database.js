@@ -177,6 +177,7 @@ class Query {
     return this;
   }
   gte(col, val) { this.rows = this.rows.filter((r) => r[col] >= val); return this; }
+  lte(col, val) { this.rows = this.rows.filter((r) => r[col] <= val); return this; }
   order(col, { ascending = true } = {}) {
     this.rows.sort((a, b) => {
       const x = a[col], y = b[col];

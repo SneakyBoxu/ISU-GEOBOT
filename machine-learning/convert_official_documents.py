@@ -243,6 +243,19 @@ CALENDAR_2026_27_FIRST = """\
 - Start and end of Vacation for faculty on Teachers Leave: December 19, 2026 to January 2, 2027 (14 days)
 - Resumption of Faculty on Teachers' Leave: January 4, 2027
 
+### Official Philippine Holidays and Class Suspensions (2026)
+- August 21, 2026 (Friday): Ninoy Aquino Day (Special Non-Working Holiday)
+- August 31, 2026 (Monday): National Heroes Day / Araw ng mga Bayani (Regular National Holiday — No Classes and University Offices Closed)
+- November 1, 2026 (Sunday): All Saints' Day (Special Non-Working Holiday)
+- November 2, 2026 (Monday): All Souls' Day (Special Non-Working Holiday — No Classes)
+- November 30, 2026 (Monday): Bonifacio Day (Regular National Holiday — No Classes and University Offices Closed)
+- December 8, 2026 (Tuesday): Feast of the Immaculate Conception (Special Non-Working Holiday — No Classes)
+- December 24, 2026 (Thursday): Christmas Eve (Special Non-Working Holiday)
+- December 25, 2026 (Friday): Christmas Day (Regular National Holiday — No Classes)
+- December 30, 2026 (Wednesday): Rizal Day (Regular National Holiday — No Classes)
+- December 31, 2026 (Thursday): Last Day of the Year (Special Non-Working Holiday)
+Classes and regular university operations are suspended on all national regular and special non-working holidays. Regular classes resume on the next scheduled school day.
+
 ### Academic Council Meeting
 - College: November 30, December 1-2, 2026
 - Campus: December 9, 2026

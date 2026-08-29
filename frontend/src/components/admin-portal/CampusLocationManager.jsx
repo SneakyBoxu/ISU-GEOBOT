@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, List, Map as MapIcon, MapPin, Plus, RefreshCw, Save, Search, Settings2 } from 'lucide-react';
+import { Building2, EyeOff, List, Map as MapIcon, MapPin, Plus, RefreshCw, RotateCcw, Save, Search, Settings2, Trash2 } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { currentSession, signOut } from '../../frontend-utilities/supabaseClient.js';
 import PortalShell, { SignOutButton } from '../layout-patterns/PortalLayoutFrame.jsx';
@@ -118,30 +118,58 @@ export default function LocationManager() {
     finally { setBusy(false); }
   }
 
+  const clearDraftPin = () => {
+    setForm((f) => ({ ...f, lat: '', lng: '' }));
+  };
+
   /**
-   * Retire a location, from the map rather than from the form.
-   *
-   * UNPUBLISH, NOT DELETE. A hard delete removes a row an earlier evaluation
-   * run may have retrieved against, which would make that run unreproducible.
-   * The server enforces the same thing — there is no delete endpoint to call —
-   * so the wording here says "unpublish" rather than promising a deletion the
-   * system will not perform.
-   *
-   * The confirm step is deliberate. This is reachable from a right-click menu,
-   * which is a much easier thing to hit by accident than a button in a form.
+   * Retire a location, hiding it from the public map and RAG while preserving records.
    */
   async function removePoi(poi) {
     const ok = window.confirm(
       `Unpublish "${poi.name}"?\n\n`
-      + 'It will be removed from the campus map, the landing page and the '
-      + "assistant's answers. The record is kept, and it can be republished.",
+      + 'It will be hidden from the public campus map and the '
+      + "assistant's answers. The record is kept, and it can be republished anytime.",
     );
     if (!ok) return;
 
     setBusy(true); setMsg(null);
     try {
-      await api.adminUnpublishPoi(session.access_token, poi.id, 'Unpublished from the map editor');
+      await api.adminUnpublishPoi(session.access_token, poi.id, 'Unpublished from location manager');
       setMsg({ kind: 'ok', text: `"${poi.name}" is no longer published.` });
+      if (editingId === poi.id) cancel();
+      await load();
+    } catch (err) { setMsg({ kind: 'error', text: err.message }); }
+    finally { setBusy(false); }
+  }
+
+  /**
+   * Republish a previously unpublished location.
+   */
+  async function republishPoi(poi) {
+    setBusy(true); setMsg(null);
+    try {
+      await api.adminRepublishPoi(session.access_token, poi.id, 'Republished from location manager');
+      setMsg({ kind: 'ok', text: `"${poi.name}" has been republished and re-embedded into the assistant.` });
+      await load();
+    } catch (err) { setMsg({ kind: 'error', text: err.message }); }
+    finally { setBusy(false); }
+  }
+
+  /**
+   * Hard delete a location permanently from the database.
+   */
+  async function deletePoiPermanently(poi) {
+    const ok = window.confirm(
+      `Permanently delete "${poi.name}"?\n\n`
+      + 'WARNING: This will permanently remove the marker, all coordinates, and its retrieval place card from the database. This action cannot be undone.',
+    );
+    if (!ok) return;
+
+    setBusy(true); setMsg(null);
+    try {
+      await api.adminDeletePoi(session.access_token, poi.id, 'Deleted permanently from location manager');
+      setMsg({ kind: 'ok', text: `"${poi.name}" has been permanently deleted.` });
       if (editingId === poi.id) cancel();
       await load();
     } catch (err) { setMsg({ kind: 'error', text: err.message }); }
@@ -282,19 +310,30 @@ export default function LocationManager() {
                 )}
               </Field>
             </div>
-            <p className="field-hint">
-              {form.lat && form.lng
-                ? 'Set. Drag the pin on the map to adjust, and check it against a landmark before saving.'
-                : 'Not set yet.'}{' '}
-              <button
-                type="button"
-                onClick={() => setView('map')}
-                className="rounded underline decoration-line-strong underline-offset-4 transition-colors duration-state hover:text-fg"
-              >
-                Place it on the map
-              </button>{' '}
-              &mdash; every other location is shown there for reference.
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-label">
+              <p className="field-hint mb-0">
+                {form.lat && form.lng
+                  ? 'Set. Drag the pin on the map to adjust, and check it against a landmark before saving.'
+                  : 'Not set yet.'}{' '}
+                <button
+                  type="button"
+                  onClick={() => setView('map')}
+                  className="rounded underline decoration-line-strong underline-offset-4 transition-colors duration-state hover:text-fg"
+                >
+                  Place it on the map
+                </button>{' '}
+                &mdash; every other location is shown there for reference.
+              </p>
+              {form.lat && form.lng && (
+                <button
+                  type="button"
+                  onClick={clearDraftPin}
+                  className="flex items-center gap-1 rounded border border-error/30 bg-error/10 px-2.5 py-1 text-label font-medium text-error transition-colors hover:bg-error hover:text-bg"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Clear pin
+                </button>
+              )}
+            </div>
           </Fieldset>
 
           <Fieldset legend="Description">
@@ -419,7 +458,10 @@ export default function LocationManager() {
                 name={form.name}
                 onPick={(a, b) => { set('lat', a.toFixed(6)); set('lng', b.toFixed(6)); }}
                 onEdit={startEdit}
-                onDelete={removePoi}
+                onUnpublish={removePoi}
+                onRepublish={republishPoi}
+                onDelete={deletePoiPermanently}
+                onClearDraft={clearDraftPin}
               />
             </div>
           )}
@@ -441,7 +483,7 @@ export default function LocationManager() {
                         <span className="border border-line px-1.5 py-px text-label text-fg-subtle">estimated</span>
                       )}
                       {p.is_published === false && (
-                        <span className="border border-line px-1.5 py-px text-label text-fg-subtle">unpublished</span>
+                        <span className="border border-warning/40 bg-warning-subtle px-1.5 py-px text-label text-warning">unpublished</span>
                       )}
                     </p>
                     <p className="mt-0.5 font-mono text-data text-fg-subtle" data-numeric>
@@ -449,7 +491,39 @@ export default function LocationManager() {
                       {p.department?.name ? ` · ${p.department.name}` : ''}
                     </p>
                   </div>
-                  <Button variant="secondary" size="sm" onClick={() => startEdit(p)}>Edit</Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => startEdit(p)}>Edit</Button>
+                    {p.is_published !== false ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={EyeOff}
+                        title="Unpublish (hide from public map)"
+                        onClick={() => removePoi(p)}
+                      >
+                        Unpublish
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={RotateCcw}
+                        title="Republish to map"
+                        onClick={() => republishPoi(p)}
+                      >
+                        Republish
+                      </Button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => deletePoiPermanently(p)}
+                      title={`Permanently delete ${p.name}`}
+                      className="grid h-8 w-8 place-items-center rounded-md text-fg-subtle transition-colors hover:bg-error/10 hover:text-error focus-visible:outline-focus"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                      <span className="sr-only">Delete {p.name}</span>
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

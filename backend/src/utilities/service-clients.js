@@ -1,3 +1,4 @@
+import https from 'node:https';
 import { createClient } from '@supabase/supabase-js';
 import { config, DEMO_MODE } from './configuration.js';
 import { log } from './logger.js';
@@ -72,10 +73,57 @@ export const ml = DEMO_MODE ? demoMl : {
 };
 
 /**
+ * Native HTTPS helper forcing IPv4.
+ *
+ * Crucial on Windows systems where IPv6 routes can be flaky and cause intermittent
+ * ECONNRESET / wsarecv socket drops.
+ */
+function httpsPostJson(urlStr, headers, payload, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlStr);
+    const bodyStr = JSON.stringify(payload);
+    const req = https.request({
+      protocol: url.protocol,
+      hostname: url.hostname,
+      port: url.port || 443,
+      path: url.pathname + url.search,
+      method: 'POST',
+      family: 4, // Force IPv4 to eliminate IPv6 network socket drops
+      timeout: timeoutMs,
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(bodyStr),
+      },
+    }, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        resolve({ status: res.statusCode, headers: res.headers, body: data });
+      });
+    });
+
+    req.on('timeout', () => {
+      req.destroy(new Error(`Request timed out after ${timeoutMs}ms`));
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+
+    req.write(bodyStr);
+    req.end();
+  });
+}
+
+/**
  * Groq. Called ONLY from here (audit W6) — the API key never leaves the server.
  * Non-streaming on purpose: "Response Time" is a reported thesis metric and
  * streaming makes it ambiguous between first-token and completion (audit F-17).
  */
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = [0, 1000, 2000];
+
 export async function generate(messages) {
   if (DEMO_MODE) return demoGenerate(messages);
   if (!config.groq.apiKey) {
@@ -83,39 +131,47 @@ export async function generate(messages) {
     err.status = 503;
     throw err;
   }
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), config.groq.timeoutMs);
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${config.groq.apiKey}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: config.groq.model,
-        messages,
-        temperature: config.groq.temperature,
-        max_tokens: config.groq.maxTokens,
-        stream: false,
-      }),
-      signal: ctrl.signal,
-    });
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      const err = new Error(`Groq request failed (${res.status})`);
-      err.status = res.status === 429 ? 429 : 502;
-      err.detail = detail.slice(0, 500);
-      // Surfaced for the offline evaluation harness, which paces itself
-      // against the upstream quota. Nothing here retries: a retry inside the
-      // request path would fold the wait into t_llm_ms, and Response Time is
-      // a reported thesis metric (audit F-17).
-      err.retryAfterMs = Number(res.headers.get('retry-after')) * 1000 || null;
-      throw err;
+
+  let lastErr;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS[attempt]));
+      log.warn({ attempt, model: config.groq.model }, 'Groq request retry');
     }
-    const json = await res.json();
-    return json.choices?.[0]?.message?.content?.trim() ?? '';
-  } finally {
-    clearTimeout(timer);
+
+    try {
+      const res = await httpsPostJson(
+        'https://api.groq.com/openai/v1/chat/completions',
+        { Authorization: `Bearer ${config.groq.apiKey}` },
+        {
+          model: config.groq.model,
+          messages,
+          temperature: config.groq.temperature,
+          max_tokens: config.groq.maxTokens,
+          stream: false,
+        },
+        config.groq.timeoutMs,
+      );
+
+      if (res.status < 200 || res.status >= 300) {
+        const err = new Error(`Groq request failed (${res.status})`);
+        err.status = res.status === 429 ? 429 : 502;
+        err.detail = res.body.slice(0, 500);
+        err.retryAfterMs = Number(res.headers?.['retry-after']) * 1000 || null;
+        throw err;
+      }
+
+      const json = JSON.parse(res.body);
+      const raw = json.choices?.[0]?.message?.content ?? '';
+      const afterThink = raw.split(/<\/think>/i);
+      return (afterThink.length > 1 ? afterThink[afterThink.length - 1] : raw).trim();
+    } catch (err) {
+      if (err.status && err.status !== 502) {
+        // 4xx errors should not be retried
+        throw err;
+      }
+      lastErr = err;
+    }
   }
+  throw lastErr;
 }

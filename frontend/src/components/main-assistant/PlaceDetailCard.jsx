@@ -33,7 +33,7 @@ function coord(lat, lng) {
   return `${Math.abs(lat).toFixed(5)}°${ns}, ${Math.abs(lng).toFixed(5)}°${ew}`;
 }
 
-export default function LocationCard({ poi, onClose, onAsk, onZoom }) {
+export default function LocationCard({ poi, onClose, onAsk, onZoom, onDirections }) {
   if (!poi) return null;
   const Icon = iconFor(poi.type, poi.icon);
 
@@ -112,18 +112,30 @@ export default function LocationCard({ poi, onClose, onAsk, onZoom }) {
         >
           Ask
         </Button>
-        <Button
-          as="a"
-          variant="tertiary"
-          size="sm"
-          icon={CornerUpRight}
-          href={`https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}`}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="flex-1 justify-center"
-        >
-          Directions
-        </Button>
+        {onDirections ? (
+          <Button
+            variant="primary"
+            size="sm"
+            icon={CornerUpRight}
+            onClick={() => onDirections(poi)}
+            className="flex-1 justify-center"
+          >
+            Directions
+          </Button>
+        ) : (
+          <Button
+            as="a"
+            variant="tertiary"
+            size="sm"
+            icon={CornerUpRight}
+            href={`https://www.google.com/maps/dir/?api=1&destination=${poi.lat},${poi.lng}`}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="flex-1 justify-center"
+          >
+            Directions
+          </Button>
+        )}
         <Button
           variant="tertiary"
           size="sm"

@@ -97,7 +97,15 @@ function shift(hhmm, hours) {
   return `${String((h + hours) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-export const institutionalEvent = [];   // none today, so the demo runs normally
+export const institutionalEvent = [
+  { id: 'ie0', event_date: '2026-08-31', event_type: 'holiday', title: 'National Heroes Day (Araw ng mga Bayani)', disrupts_schedule: true, data_origin: 'real' },
+  { id: 'ie1', event_date: '2026-11-01', event_type: 'holiday', title: 'All Saints\' Day (Todos los Santos)', disrupts_schedule: true, data_origin: 'real' },
+  { id: 'ie2', event_date: '2026-11-02', event_type: 'holiday', title: 'All Souls\' Day', disrupts_schedule: true, data_origin: 'real' },
+  { id: 'ie3', event_date: '2026-11-30', event_type: 'holiday', title: 'Bonifacio Day', disrupts_schedule: true, data_origin: 'real' },
+  { id: 'ie4', event_date: '2026-12-08', event_type: 'holiday', title: 'Feast of the Immaculate Conception', disrupts_schedule: true, data_origin: 'real' },
+  { id: 'ie5', event_date: '2026-12-25', event_type: 'holiday', title: 'Christmas Day', disrupts_schedule: true, data_origin: 'real' },
+  { id: 'ie6', event_date: '2026-12-30', event_type: 'holiday', title: 'Rizal Day', disrupts_schedule: true, data_origin: 'real' },
+];
 
 const POI_ROWS = [
   ['p01', 'admin-building', 'Administrative Building', 'administrative', 16.72086, 121.68961,
@@ -291,6 +299,12 @@ export const documents = [
     title: 'Demo Campus Facilities Overview',
     doc_type: 'handbook',
     text: `The Echague Main Campus includes academic buildings for the colleges, a main library, computing and engineering laboratories, a university gymnasium, and central administrative offices. The main library provides reference collections, periodicals and study areas. The gymnasium serves as the venue for convocations, assemblies and physical education classes. Building locations are shown on the interactive campus map.`,
+  },
+  {
+    id: 'doc5',
+    title: 'Philippine National Holidays and Class Suspensions Policy (2026)',
+    doc_type: 'memorandum',
+    text: `In accordance with nationwide regular and special non-working holiday declarations, classes and university administrative offices are suspended on designated national holidays. Key holidays for the First Semester include National Heroes Day (Araw ng mga Bayani) on August 31, 2026 (Monday), All Saints' Day on November 1, 2026, All Souls' Day on November 2, 2026, and Bonifacio Day on November 30, 2026. No physical or online lectures or consultation hours take place on regular national holidays. Normal campus operations and academic schedules resume on the following regular working day.`,
   },
 ];
 

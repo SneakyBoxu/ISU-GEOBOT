@@ -23,7 +23,7 @@ import ChatbotMessagePanel from './ChatbotMessagePanel.jsx';
  * 768px laptop it stops short of the map toolbar instead of covering the zoom
  * controls. A control another control can hide is not a control.
  */
-export default function ChatDock({ open, onToggle, onPoiFocus, draft, unread }) {
+export default function ChatDock({ open, onToggle, onPoiFocus, onDirections, draft, unread, autoPan = true }) {
   const panelRef = useRef(null);
 
   // Escape closes the dock — but only when focus is inside it, so pressing
@@ -54,7 +54,9 @@ export default function ChatDock({ open, onToggle, onPoiFocus, draft, unread }) 
           compact
           onClose={onToggle}
           onPoiFocus={onPoiFocus}
+          onDirections={onDirections}
           draft={draft}
+          autoPan={autoPan}
         />
       </div>
 

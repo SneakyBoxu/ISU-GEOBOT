@@ -34,7 +34,7 @@ import { z } from 'zod';
 
 import { db, log } from '../utilities/service-clients.js';
 import { requireAuth, requireRole } from '../middleware/authentication.js';
-import { createPoi, reindexPoi, unpublishPoi, updatePoi } from '../services/campus-places-service.js';
+import { createPoi, deletePoi, reindexPoi, republishPoi, unpublishPoi, updatePoi } from '../services/campus-places-service.js';
 import { clearRosterCache } from '../services/intent-query-router.js';
 
 export const admin = Router();
@@ -134,6 +134,22 @@ admin.post('/pois/:id/unpublish', requireAuth, requireRole('admin', 'researcher'
     try {
       await unpublishPoi(req.params.id, req.user.id, req.body?.note);
       res.json({ unpublished: true });
+    } catch (err) { next(err); }
+  });
+
+admin.post('/pois/:id/republish', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const result = await republishPoi(req.params.id, req.user.id, req.body?.note);
+      res.json(result);
+    } catch (err) { next(err); }
+  });
+
+admin.delete('/pois/:id', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const result = await deletePoi(req.params.id, req.user.id, req.body?.note);
+      res.json(result);
     } catch (err) { next(err); }
   });
 

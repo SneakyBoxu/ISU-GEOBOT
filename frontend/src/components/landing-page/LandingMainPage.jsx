@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TopNavigationBar from '../shared-components/TopNavigationBar.jsx';
 import DemoModeNotificationBanner from '../shared-components/DemoModeNotificationBanner.jsx';
 import PageFooter from '../shared-components/PageFooter.jsx';
@@ -44,6 +45,7 @@ import LandingResearchInstruments from './LandingResearchInstruments.jsx';
  * the document theme like every other route.
  */
 export default function Landing() {
+  const navigate = useNavigate();
   const stageRef = useRef(null);
   // One fetch for the page. Every count on it is derived from this.
   const { pois, count, categories } = useCampusLocations();
@@ -64,6 +66,16 @@ export default function Landing() {
   function openAssistant() {
     setMounted(true);
     setChatOpen(true);
+  }
+
+  function handlePoiFocus(poiId) {
+    if (!poiId) return;
+    navigate(`/app?poi=${encodeURIComponent(poiId)}`);
+  }
+
+  function handleDirections(poiId) {
+    if (!poiId) return;
+    navigate(`/app?poi=${encodeURIComponent(poiId)}&directions=true`);
   }
 
   return (
@@ -98,7 +110,13 @@ export default function Landing() {
           and reopening the panel. */}
       {mounted && (
         <Suspense fallback={null}>
-          <ChatDock open={chatOpen} onToggle={() => setChatOpen((v) => !v)} />
+          <ChatDock
+            open={chatOpen}
+            onToggle={() => setChatOpen((v) => !v)}
+            autoPan={false}
+            onPoiFocus={handlePoiFocus}
+            onDirections={handleDirections}
+          />
         </Suspense>
       )}
     </div>

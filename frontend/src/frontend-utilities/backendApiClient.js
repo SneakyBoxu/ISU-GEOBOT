@@ -66,13 +66,18 @@ export const api = {
     request(`/admin/pois/${id}`, { method: 'PATCH', body, token }),
   adminUnpublishPoi: (token, id, note) =>
     request(`/admin/pois/${id}/unpublish`, { method: 'POST', body: { note }, token }),
+  adminRepublishPoi: (token, id, note) =>
+    request(`/admin/pois/${id}/republish`, { method: 'POST', body: { note }, token }),
+  adminDeletePoi: (token, id, note) =>
+    request(`/admin/pois/${id}`, { method: 'DELETE', body: { note }, token }),
 
   // Faculty self-service (RA 10173 right to object)
   myFaculty: (token) => request('/admin/me/faculty', { token }),
   setMyVisibility: (token, body) =>
     request('/admin/me/faculty/visibility', { method: 'POST', body, token }),
 
-  validateContext: (token) => request('/validate/context', { token }),
+  validateContext: (token, facultyId) =>
+    request(facultyId ? `/validate/context?facultyId=${encodeURIComponent(facultyId)}` : '/validate/context', { token }),
   validateSubmit: (token, body) =>
     request('/validate/entries', { method: 'POST', body, token }),
   validateEntries: (token) => request('/validate/entries', { token }),

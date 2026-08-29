@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import {
-  Check, Copy, Crosshair, Edit3, ExternalLink, Maximize2, Minimize2,
-  Minus, Move, Plus, Trash2,
+  Check, Copy, Crosshair, Edit3, ExternalLink, Eye, EyeOff, Maximize2, Minimize2,
+  Minus, Move, Plus, RotateCcw, Trash2, X,
 } from 'lucide-react';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../frontend-utilities/appConstants.js';
 import { useTheme } from '../../frontend-utilities/themeContext.jsx';
@@ -183,13 +183,14 @@ function Controls({ bounds, onLocate, hasDraft }) {
 }
 
 export default function EditorMap({
-  pois = [], editingId, lat, lng, onPick, name, onEdit, onDelete,
+  pois = [], editingId, lat, lng, onPick, name, onEdit, onUnpublish, onRepublish, onDelete, onClearDraft,
 }) {
   const [basemap, setBasemap] = useState('satellite');
   const [full, setFull] = useState(false);
+  const [showUnpublished, setShowUnpublished] = useState(false);
   const [recentre, setRecentre] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [menu, setMenu] = useState(null);   // { x, y, poi, lat, lng }
+  const [menu, setMenu] = useState(null);   // { x, y, poi, isDraft, lat, lng }
   const menuRef = useRef(null);
   const { theme } = useTheme();
   const base = BASEMAPS[basemap];
@@ -199,18 +200,24 @@ export default function EditorMap({
   const hasDraft = Number.isFinite(a) && Number.isFinite(b);
   const draft = hasDraft ? [a, b] : null;
 
+  const unpublishedCount = useMemo(
+    () => pois.filter((p) => p.is_published === false).length,
+    [pois],
+  );
+
   // Everything except the one being edited — it is drawn from the form's live
   // coordinate instead, so dragging the pin and typing in the field agree.
+  // Unpublished locations are filtered out unless explicitly toggled on.
   const context = useMemo(
-    () => pois.filter((p) => p.id !== editingId && Number.isFinite(Number(p.lat))),
-    [pois, editingId],
+    () => pois.filter((p) => (p.is_published !== false || showUnpublished) && p.id !== editingId && Number.isFinite(Number(p.lat))),
+    [pois, editingId, showUnpublished],
   );
 
   const bounds = useMemo(() => {
-    const pts = pois.filter((p) => Number.isFinite(Number(p.lat)))
+    const pts = pois.filter((p) => (p.is_published !== false || showUnpublished) && Number.isFinite(Number(p.lat)))
       .map((p) => [Number(p.lat), Number(p.lng)]);
     return pts.length ? L.latLngBounds(pts) : null;
-  }, [pois]);
+  }, [pois, showUnpublished]);
 
   useEffect(() => {
     if (!full) return undefined;
@@ -244,14 +251,9 @@ export default function EditorMap({
 
   /**
    * Place the menu against the VIEWPORT, not the map container.
-   *
-   * It is `position: fixed`, so viewport coordinates are the ones that apply,
-   * and it is allowed to overhang the map. Clamping on both ends matters:
-   * clamping only the far edge lets a right-click near the left or top of the
-   * screen position the menu at a negative offset, off-screen.
    */
   const placeMenu = useCallback((clientX, clientY, kind) => {
-    const h = MENU_H[kind];
+    const h = MENU_H[kind] ?? 200;
     return {
       x: Math.max(8, Math.min(clientX, window.innerWidth - MENU_W - 8)),
       y: Math.max(8, Math.min(clientY, window.innerHeight - h - 8)),
@@ -260,7 +262,7 @@ export default function EditorMap({
 
   const handleCopy = async (y, x) => {
     const ok = await copyText(`${Number(y).toFixed(6)}, ${Number(x).toFixed(6)}`);
-    if (!ok) return;                       // no tick for a copy that did not happen
+    if (!ok) return;
     setCopied(true);
     setTimeout(() => { setCopied(false); setMenu(null); }, 900);
   };
@@ -269,12 +271,19 @@ export default function EditorMap({
     e.originalEvent.preventDefault();
     e.originalEvent.stopPropagation();
     const { x, y } = placeMenu(e.originalEvent.clientX, e.originalEvent.clientY, 'poi');
-    setMenu({ x, y, poi: p, lat: Number(p.lat), lng: Number(p.lng) });
+    setMenu({ x, y, poi: p, isDraft: false, lat: Number(p.lat), lng: Number(p.lng) });
+  };
+
+  const openDraftMenu = (e) => {
+    e.originalEvent.preventDefault();
+    e.originalEvent.stopPropagation();
+    const { x, y } = placeMenu(e.originalEvent.clientX, e.originalEvent.clientY, 'poi');
+    setMenu({ x, y, poi: null, isDraft: true, lat: a, lng: b });
   };
 
   const openPointMenu = (y, x, clientX, clientY) => {
     const pos = placeMenu(clientX, clientY, 'point');
-    setMenu({ x: pos.x, y: pos.y, poi: null, lat: y, lng: x });
+    setMenu({ x: pos.x, y: pos.y, poi: null, isDraft: false, lat: y, lng: x });
   };
 
   const item = 'flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-label text-fg transition-colors duration-state hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:outline-none';
@@ -284,24 +293,53 @@ export default function EditorMap({
       ? 'fixed inset-0 z-[1100] flex flex-col bg-bg p-3'
       : 'flex h-full min-h-[22rem] flex-col'}
     >
-      <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
-        <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Base map">
-          {Object.entries(BASEMAPS).map(([key, m]) => (
+      <div className="mb-2 flex flex-wrap shrink-0 items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Base map">
+            {Object.entries(BASEMAPS).map(([key, m]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setBasemap(key)}
+                aria-pressed={basemap === key}
+                className={`px-2.5 py-1 text-label transition-colors duration-state ${
+                  basemap === key ? 'bg-fg text-bg' : 'text-fg-muted hover:text-fg'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
+          {unpublishedCount > 0 && (
             <button
-              key={key}
               type="button"
-              onClick={() => setBasemap(key)}
-              aria-pressed={basemap === key}
-              className={`px-2.5 py-1 text-label transition-colors duration-state ${
-                basemap === key ? 'bg-fg text-bg' : 'text-fg-muted hover:text-fg'
+              onClick={() => setShowUnpublished((v) => !v)}
+              aria-pressed={showUnpublished}
+              title={showUnpublished ? 'Hide unpublished locations from map' : 'Show unpublished locations on map'}
+              className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-label transition-colors duration-state ${
+                showUnpublished
+                  ? 'border-accent bg-accent/15 text-accent'
+                  : 'border-line text-fg-muted hover:border-line-strong hover:text-fg'
               }`}
             >
-              {m.label}
+              {showUnpublished ? <Eye className="h-3.5 w-3.5" aria-hidden /> : <EyeOff className="h-3.5 w-3.5" aria-hidden />}
+              <span>{unpublishedCount} unpublished</span>
             </button>
-          ))}
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {hasDraft && onClearDraft && (
+            <button
+              type="button"
+              onClick={onClearDraft}
+              title="Remove draft marker from map"
+              className="flex items-center gap-1 rounded border border-error/40 bg-error/10 px-2 py-0.5 text-label font-medium text-error transition-colors hover:bg-error hover:text-bg"
+            >
+              <Trash2 className="h-3 w-3" aria-hidden /> Clear pin
+            </button>
+          )}
           <p className="font-mono text-data text-fg-subtle" data-numeric>
             {hasDraft ? `${a.toFixed(5)}, ${b.toFixed(5)}` : 'no coordinate set'}
           </p>
@@ -337,76 +375,131 @@ export default function EditorMap({
           <Controller target={draft} fitTo={draft ? null : bounds} resizeKey={`${full}-${recentre}`} />
           <Controls bounds={bounds} hasDraft={hasDraft} onLocate={() => setRecentre((n) => n + 1)} />
 
-          {context.map((p, i) => (
-            <Marker
-              key={p.id}
-              position={[Number(p.lat), Number(p.lng)]}
-              icon={teardropIcon({ type: p.poi_type, icon: p.icon, dim: true, index: i })}
-              title={`${p.name} — right-click for options`}
-              eventHandlers={{ contextmenu: (e) => openMarkerMenu(e, p) }}
-            >
-              <Tooltip
-                direction="top"
-                offset={[0, -32]}
-                opacity={1}
-                className="campus-map-tooltip"
+          {context.map((p, i) => {
+            const isUnpublished = p.is_published === false;
+            return (
+              <Marker
+                key={p.id}
+                position={[Number(p.lat), Number(p.lng)]}
+                icon={teardropIcon({ type: p.poi_type, icon: p.icon, dim: isUnpublished || true, index: i })}
+                title={`${p.name}${isUnpublished ? ' (unpublished)' : ''} — right-click for options`}
+                eventHandlers={{ contextmenu: (e) => openMarkerMenu(e, p) }}
               >
-                {p.name}
-              </Tooltip>
-              <Popup className="editor-popup" closeButton={false}>
-                <div className="w-[min(18rem,calc(100vw-6rem))] rounded-xl border border-line bg-surface p-3.5 text-left text-fg shadow-lg">
-                  <p className="truncate font-serif text-meta font-semibold leading-tight text-fg">{p.name}</p>
-                  <span className="mt-1 inline-block rounded-sm bg-accent-subtle px-1.5 py-0.5 text-label font-medium uppercase tracking-wider text-accent">
-                    {p.poi_type ?? 'location'}
-                  </span>
-                  <p className="mt-1.5 font-mono text-label text-fg-subtle" data-numeric>
-                    {Number(p.lat).toFixed(5)}, {Number(p.lng).toFixed(5)}
-                  </p>
-                  {p.description && (
-                    <p className="mt-2 line-clamp-2 border-t border-line pt-1.5 text-label leading-relaxed text-fg-muted">
-                      {p.description}
+                <Tooltip
+                  direction="top"
+                  offset={[0, -32]}
+                  opacity={1}
+                  className="campus-map-tooltip"
+                >
+                  {p.name}{isUnpublished ? ' (unpublished)' : ''}
+                </Tooltip>
+                <Popup className="editor-popup" closeButton={false}>
+                  <div className="w-[min(18rem,calc(100vw-6rem))] rounded-xl border border-line bg-surface p-3.5 text-left text-fg shadow-lg">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="truncate font-serif text-meta font-semibold leading-tight text-fg">{p.name}</p>
+                      {isUnpublished && (
+                        <span className="shrink-0 rounded border border-warning/40 bg-warning-subtle px-1 py-0.5 text-label font-medium text-warning">
+                          unpublished
+                        </span>
+                      )}
+                    </div>
+                    <span className="mt-1 inline-block rounded-sm bg-accent-subtle px-1.5 py-0.5 text-label font-medium uppercase tracking-wider text-accent">
+                      {p.poi_type ?? 'location'}
+                    </span>
+                    <p className="mt-1.5 font-mono text-label text-fg-subtle" data-numeric>
+                      {Number(p.lat).toFixed(5)}, {Number(p.lng).toFixed(5)}
                     </p>
-                  )}
-                  <div className="mt-3 flex items-center gap-2 border-t border-line pt-2.5">
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(p)}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-accent px-2 py-1.5 text-label font-medium text-accent-contrast transition-colors duration-state hover:bg-accent-hover"
-                      >
-                        <Edit3 className="h-3.5 w-3.5" aria-hidden /> Edit
-                      </button>
+                    {p.description && (
+                      <p className="mt-2 line-clamp-2 border-t border-line pt-1.5 text-label leading-relaxed text-fg-muted">
+                        {p.description}
+                      </p>
                     )}
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(p)}
-                        title={`Unpublish ${p.name}`}
-                        className="flex items-center justify-center rounded-md bg-error/10 px-2.5 py-1.5 text-error transition-colors duration-state hover:bg-error hover:text-bg"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                        <span className="sr-only">Unpublish {p.name}</span>
-                      </button>
-                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-line pt-2.5">
+                      {onEdit && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(p)}
+                          className="flex flex-1 items-center justify-center gap-1 rounded-md bg-accent px-2 py-1.5 text-label font-medium text-accent-contrast transition-colors duration-state hover:bg-accent-hover"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" aria-hidden /> Edit
+                        </button>
+                      )}
+                      {!isUnpublished && onUnpublish && (
+                        <button
+                          type="button"
+                          onClick={() => onUnpublish(p)}
+                          title={`Unpublish ${p.name}`}
+                          className="flex items-center justify-center rounded-md border border-line bg-surface px-2 py-1.5 text-label text-fg-muted transition-colors duration-state hover:border-warning hover:bg-warning-subtle hover:text-warning"
+                        >
+                          <EyeOff className="h-3.5 w-3.5" aria-hidden />
+                          <span className="sr-only">Unpublish</span>
+                        </button>
+                      )}
+                      {isUnpublished && onRepublish && (
+                        <button
+                          type="button"
+                          onClick={() => onRepublish(p)}
+                          title={`Republish ${p.name}`}
+                          className="flex items-center justify-center rounded-md border border-accent/40 bg-accent-subtle px-2 py-1.5 text-label text-accent transition-colors duration-state hover:bg-accent hover:text-accent-contrast"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                          <span className="sr-only">Republish</span>
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(p)}
+                          title={`Delete ${p.name} permanently`}
+                          className="flex items-center justify-center rounded-md bg-error/10 px-2 py-1.5 text-label font-medium text-error transition-colors duration-state hover:bg-error hover:text-bg"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                          <span className="sr-only">Delete {p.name}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                </Popup>
+              </Marker>
+            );
+          })}
 
           {draft && (
             <Marker
               position={draft}
               icon={draftIcon()}
               draggable
-              title={name || 'New location — drag to reposition'}
+              title={name || 'New location — drag to reposition (right click for options)'}
               eventHandlers={{
                 dragend: (e) => {
                   const { lat: y, lng: x } = e.target.getLatLng();
                   onPick(y, x);
                 },
+                contextmenu: openDraftMenu,
               }}
-            />
+            >
+              <Tooltip direction="top" offset={[0, -32]} opacity={1}>
+                {name || 'New Pin (drag to move)'}
+              </Tooltip>
+              <Popup className="editor-popup" closeButton={false}>
+                <div className="w-[14rem] rounded-xl border border-line bg-surface p-3 text-left text-fg shadow-lg">
+                  <p className="font-serif text-meta font-semibold text-fg">{name || 'New Pin'}</p>
+                  <p className="mt-1 font-mono text-label text-fg-subtle" data-numeric>
+                    {a.toFixed(5)}, {b.toFixed(5)}
+                  </p>
+                  <p className="mt-1 text-label text-fg-muted">Drag to adjust position.</p>
+                  {onClearDraft && (
+                    <button
+                      type="button"
+                      onClick={onClearDraft}
+                      className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-md bg-error/10 px-2 py-1.5 text-label font-medium text-error hover:bg-error hover:text-bg transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove draft pin
+                    </button>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
           )}
         </MapContainer>
 
@@ -425,18 +518,44 @@ export default function EditorMap({
         <div
           ref={menuRef}
           role="menu"
-          aria-label={menu.poi ? `Options for ${menu.poi.name}` : 'Map point options'}
+          aria-label={menu.poi ? `Options for ${menu.poi.name}` : menu.isDraft ? 'Draft pin options' : 'Map point options'}
           style={{ top: menu.y, left: menu.x, width: MENU_W }}
           className="animate-pop fixed z-[2000] rounded-lg border border-line bg-surface/95 p-1.5 shadow-lg backdrop-blur-md"
         >
           <div className="mb-1 border-b border-line px-2.5 py-1.5">
-            <p className="truncate text-label font-medium text-fg">{menu.poi ? menu.poi.name : 'Map point'}</p>
+            <p className="truncate text-label font-medium text-fg">
+              {menu.poi ? menu.poi.name : menu.isDraft ? (name || 'New Draft Pin') : 'Map point'}
+            </p>
             <p className="truncate font-mono text-label text-fg-subtle" data-numeric>
               {Number(menu.lat).toFixed(5)}, {Number(menu.lng).toFixed(5)}
             </p>
           </div>
 
-          {menu.poi ? (
+          {menu.isDraft ? (
+            <>
+              {onClearDraft && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${item} text-error hover:bg-error/10 focus-visible:bg-error/10`}
+                  onClick={() => { onClearDraft(); setMenu(null); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove draft pin
+                </button>
+              )}
+              <button
+                type="button"
+                role="menuitem"
+                className={item}
+                onClick={() => handleCopy(menu.lat, menu.lng)}
+              >
+                {copied
+                  ? <Check className="h-3.5 w-3.5 text-success" aria-hidden />
+                  : <Copy className="h-3.5 w-3.5 text-fg-muted" aria-hidden />}
+                {copied ? 'Coordinates copied' : 'Copy coordinates'}
+              </button>
+            </>
+          ) : menu.poi ? (
             <>
               {onEdit && (
                 <button type="button" role="menuitem" className={item}
@@ -465,6 +584,26 @@ export default function EditorMap({
               >
                 <ExternalLink className="h-3.5 w-3.5 text-fg-muted" aria-hidden /> View on public map
               </a>
+              {menu.poi.is_published !== false && onUnpublish && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${item} text-warning hover:bg-warning-subtle focus-visible:bg-warning-subtle`}
+                  onClick={() => { onUnpublish(menu.poi); setMenu(null); }}
+                >
+                  <EyeOff className="h-3.5 w-3.5" aria-hidden /> Unpublish location
+                </button>
+              )}
+              {menu.poi.is_published === false && onRepublish && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${item} text-accent hover:bg-accent-subtle focus-visible:bg-accent-subtle`}
+                  onClick={() => { onRepublish(menu.poi); setMenu(null); }}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Republish location
+                </button>
+              )}
               {onDelete && (
                 <>
                   <div className="my-1 border-t border-line" />
@@ -474,7 +613,7 @@ export default function EditorMap({
                     className={`${item} text-error hover:bg-error/10 focus-visible:bg-error/10`}
                     onClick={() => { onDelete(menu.poi); setMenu(null); }}
                   >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Unpublish location
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete permanently
                   </button>
                 </>
               )}
@@ -492,6 +631,16 @@ export default function EditorMap({
                   : <Copy className="h-3.5 w-3.5 text-fg-muted" aria-hidden />}
                 {copied ? 'Coordinates copied' : 'Copy coordinates'}
               </button>
+              {hasDraft && onClearDraft && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`${item} text-error hover:bg-error/10 focus-visible:bg-error/10`}
+                  onClick={() => { onClearDraft(); setMenu(null); }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove draft pin
+                </button>
+              )}
             </>
           )}
         </div>
@@ -499,8 +648,8 @@ export default function EditorMap({
 
       <p className="mt-1.5 shrink-0 text-label text-fg-subtle">
         {hasDraft
-          ? 'Drag the pin, or right-click any location for options. Check it against a landmark on the satellite view before saving.'
-          : 'Right-click a pin to edit, reposition or unpublish it. Nothing is saved until you use the form.'}
+          ? 'Drag the pin, click "Clear pin" to remove it, or right-click any location for options. Check against satellite imagery before saving.'
+          : 'Click anywhere to place a pin, or right-click any marker to edit, unpublish or delete it.'}
       </p>
     </div>
   );

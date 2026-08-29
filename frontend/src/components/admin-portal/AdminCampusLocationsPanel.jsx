@@ -4,7 +4,7 @@
  * Reuses the same UI logic as the standalone CampusLocationManager.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Building2, List, Map as MapIcon, Plus, RefreshCw, Save, Search } from 'lucide-react';
+import { Building2, EyeOff, List, Map as MapIcon, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import EditorMap from './CampusMapEditor.jsx';
 import { ICON_CHOICES } from '../main-assistant/mapMarkerGlyphs.js';
@@ -73,6 +73,10 @@ export default function AdminCampusLocationsPanel({ session }) {
 
   const cancel = () => { setEditingId(null); setForm(EMPTY); setMsg(null); };
 
+  const clearDraftPin = () => {
+    setForm((f) => ({ ...f, lat: '', lng: '' }));
+  };
+
   async function submit(e) {
     e.preventDefault();
     setBusy(true); setMsg(null);
@@ -97,11 +101,33 @@ export default function AdminCampusLocationsPanel({ session }) {
   }
 
   async function removePoi(poi) {
-    if (!window.confirm(`Unpublish "${poi.name}"?\n\nIt will be removed from the campus map and the assistant's answers. The record is kept.`)) return;
+    if (!window.confirm(`Unpublish "${poi.name}"?\n\nIt will be hidden from the public campus map and the assistant's answers. The record is kept and can be republished anytime.`)) return;
     setBusy(true); setMsg(null);
     try {
       await api.adminUnpublishPoi(session.access_token, poi.id, 'Unpublished via admin dashboard');
       setMsg({ kind: 'ok', text: `"${poi.name}" is no longer published.` });
+      if (editingId === poi.id) cancel();
+      await load();
+    } catch (err) { setMsg({ kind: 'error', text: err.message }); }
+    finally { setBusy(false); }
+  }
+
+  async function republishPoi(poi) {
+    setBusy(true); setMsg(null);
+    try {
+      await api.adminRepublishPoi(session.access_token, poi.id, 'Republished via admin dashboard');
+      setMsg({ kind: 'ok', text: `"${poi.name}" has been republished and re-embedded into the assistant.` });
+      await load();
+    } catch (err) { setMsg({ kind: 'error', text: err.message }); }
+    finally { setBusy(false); }
+  }
+
+  async function deletePoiPermanently(poi) {
+    if (!window.confirm(`Permanently delete "${poi.name}"?\n\nWARNING: This will permanently remove the marker, coordinates, and retrieval place card. This action cannot be undone.`)) return;
+    setBusy(true); setMsg(null);
+    try {
+      await api.adminDeletePoi(session.access_token, poi.id, 'Deleted permanently via admin dashboard');
+      setMsg({ kind: 'ok', text: `"${poi.name}" has been permanently deleted.` });
       if (editingId === poi.id) cancel();
       await load();
     } catch (err) { setMsg({ kind: 'error', text: err.message }); }
@@ -206,13 +232,24 @@ export default function AdminCampusLocationsPanel({ session }) {
                 )}
               </Field>
             </div>
-            <p className="field-hint">
-              {form.lat && form.lng ? 'Set. Drag the pin on the map to adjust.' : 'Not set yet.'}{' '}
-              <button type="button" onClick={() => setView('map')}
-                className="rounded underline decoration-line-strong underline-offset-4 transition-colors hover:text-fg">
-                Place it on the map
-              </button>
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-label">
+              <p className="field-hint mb-0">
+                {form.lat && form.lng ? 'Set. Drag the pin on the map to adjust.' : 'Not set yet.'}{' '}
+                <button type="button" onClick={() => setView('map')}
+                  className="rounded underline decoration-line-strong underline-offset-4 transition-colors hover:text-fg">
+                  Place it on the map
+                </button>
+              </p>
+              {form.lat && form.lng && (
+                <button
+                  type="button"
+                  onClick={clearDraftPin}
+                  className="flex items-center gap-1 rounded border border-error/30 bg-error/10 px-2.5 py-1 text-label font-medium text-error transition-colors hover:bg-error hover:text-bg"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Clear pin
+                </button>
+              )}
+            </div>
           </PanelFieldset>
 
           <PanelFieldset legend="Description">
@@ -310,7 +347,11 @@ export default function AdminCampusLocationsPanel({ session }) {
                 pois={pois} editingId={editingId}
                 lat={form.lat} lng={form.lng} name={form.name}
                 onPick={(a, b) => { set('lat', a.toFixed(6)); set('lng', b.toFixed(6)); }}
-                onEdit={startEdit} onDelete={removePoi}
+                onEdit={startEdit}
+                onUnpublish={removePoi}
+                onRepublish={republishPoi}
+                onDelete={deletePoiPermanently}
+                onClearDraft={clearDraftPin}
               />
             </div>
           )}
@@ -329,7 +370,7 @@ export default function AdminCampusLocationsPanel({ session }) {
                             <span className="border border-warning/40 px-1.5 py-px text-label text-warning">placeholder</span>
                           )}
                           {p.is_published === false && (
-                            <span className="border border-line px-1.5 py-px text-label text-fg-subtle">unpublished</span>
+                            <span className="border border-warning/40 bg-warning-subtle px-1.5 py-px text-label text-warning">unpublished</span>
                           )}
                         </p>
                         <p className="mt-0.5 font-mono text-data text-fg-subtle" data-numeric>
@@ -337,7 +378,39 @@ export default function AdminCampusLocationsPanel({ session }) {
                           {p.department?.name ? ` · ${p.department.name}` : ''}
                         </p>
                       </div>
-                      <Button variant="secondary" size="sm" onClick={() => startEdit(p)}>Edit</Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => startEdit(p)}>Edit</Button>
+                        {p.is_published !== false ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={EyeOff}
+                            title="Unpublish (hide from public map)"
+                            onClick={() => removePoi(p)}
+                          >
+                            Unpublish
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={RotateCcw}
+                            title="Republish to map"
+                            onClick={() => republishPoi(p)}
+                          >
+                            Republish
+                          </Button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => deletePoiPermanently(p)}
+                          title={`Permanently delete ${p.name}`}
+                          className="grid h-8 w-8 place-items-center rounded-md text-fg-subtle transition-colors hover:bg-error/10 hover:text-error focus-visible:outline-focus"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden />
+                          <span className="sr-only">Delete {p.name}</span>
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>

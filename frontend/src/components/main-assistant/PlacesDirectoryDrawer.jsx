@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { ChevronRight, PanelLeftClose, Search, X } from 'lucide-react';
+import { ChevronRight, CornerUpRight, PanelLeftClose, Search, X } from 'lucide-react';
 import { POI_CATEGORIES } from '../../frontend-utilities/appConstants.js';
 import { categoryColor } from './mapMarkerGlyphs.js';
 import { PoiGlyph } from './mapPinIconBuilder.js';
@@ -64,15 +64,15 @@ function CategoryChips({ value, onChange, pois }) {
   );
 }
 
-function LocationRow({ poi, active, onSelect }) {
+function LocationRow({ poi, active, isNavigating, onSelect, onDirections }) {
   return (
-    <li>
+    <li className="group relative border-b border-line">
       <button
         type="button"
         onClick={() => onSelect(poi.id)}
         aria-current={active ? 'true' : undefined}
-        className={`group flex w-full items-start gap-3 border-b border-line px-4 py-3 text-left transition-colors duration-state ${
-          active ? 'bg-accent-subtle' : 'hover:bg-bg-sunken'
+        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-state ${
+          isNavigating ? 'bg-accent-subtle/80 font-medium' : active ? 'bg-accent-subtle' : 'hover:bg-bg-sunken'
         }`}
       >
         <span
@@ -83,7 +83,7 @@ function LocationRow({ poi, active, onSelect }) {
           <PoiGlyph type={poi.type} icon={poi.icon} size={14} />
         </span>
 
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 pr-7">
           <span className="block truncate text-meta font-medium text-fg">{poi.name}</span>
           {poi.buildingFunction && (
             <span className="mt-0.5 block truncate text-label text-fg-muted">
@@ -91,12 +91,22 @@ function LocationRow({ poi, active, onSelect }) {
             </span>
           )}
         </span>
-
-        <ChevronRight
-          className="mt-1 h-3.5 w-3.5 shrink-0 text-fg-subtle opacity-0 transition-opacity duration-state group-hover:opacity-100"
-          aria-hidden
-        />
       </button>
+
+      {onDirections && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDirections(poi);
+          }}
+          title={`Get walking directions to ${poi.name}`}
+          aria-label={`Get walking directions to ${poi.name}`}
+          className="absolute right-2.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-fg-subtle transition-all hover:bg-accent hover:text-accent-contrast focus-visible:opacity-100"
+        >
+          <CornerUpRight className="h-3.5 w-3.5" aria-hidden />
+        </button>
+      )}
     </li>
   );
 }
@@ -139,7 +149,7 @@ function Stats({ count, categories }) {
 }
 
 export default function LocationPanel({
-  pois = [], visible = [], focusId, onSelect, open, onToggle,
+  pois = [], visible = [], focusId, navDestinationId, onSelect, onDirections, open, onToggle,
   query = '', onQueryChange, category = 'all', onCategoryChange,
 }) {
   const categories = useMemo(
@@ -169,14 +179,13 @@ export default function LocationPanel({
           aria-label={open ? 'Hide campus index' : 'Show campus index'}
           className="btn-icon"
         >
-          <Search className="h-4 w-4" aria-hidden />
+          <PanelLeftClose
+            className={`h-4 w-4 transition-transform duration-state ${
+              open ? 'rotate-0' : 'rotate-180'
+            }`}
+            aria-hidden
+          />
         </button>
-        <span
-          className="mt-3 select-none font-mono text-data text-fg-subtle [writing-mode:vertical-rl]"
-          data-numeric
-        >
-          {pois.length} locations
-        </span>
       </div>
 
       <div
@@ -252,8 +261,10 @@ export default function LocationPanel({
                 <LocationRow
                   key={p.id}
                   poi={p}
-                  active={p.id === focusId}
+                  active={p.id === focusId || p.slug === focusId}
+                  isNavigating={p.id === navDestinationId || p.slug === navDestinationId}
                   onSelect={onSelect}
+                  onDirections={onDirections}
                 />
               ))}
             </ul>

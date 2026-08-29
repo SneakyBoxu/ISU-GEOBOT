@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Compass, Copy, FileText, RotateCcw, Send, User, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, Compass, Copy, CornerUpRight, FileText, Footprints, RotateCcw, Send, User, X, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { currentSession } from '../../frontend-utilities/supabaseClient.js';
 import { Alert, Button, StatusIndicator } from '../ui-primitives/index.js';
@@ -41,20 +42,51 @@ const GREETING = {
  * place makes the link explicit — and makes it reversible, since the row is a
  * button that takes them back to it.
  */
-function MapFocusNote({ focus, onFocus }) {
+function MapFocusNote({ focus, onFocus, onDirections }) {
+  const navigate = useNavigate();
   if (!focus?.name) return null;
+
+  const handleFocus = () => {
+    if (onFocus) {
+      onFocus(focus.poiId);
+    } else if (focus.poiId) {
+      navigate(`/app?poi=${encodeURIComponent(focus.poiId)}`);
+    }
+  };
+
+  const handleDirections = () => {
+    if (onDirections) {
+      onDirections(focus.poiId);
+    } else if (focus.poiId) {
+      navigate(`/app?poi=${encodeURIComponent(focus.poiId)}&directions=true`);
+    }
+  };
+
   return (
-    <button
-      type="button"
-      onClick={() => onFocus?.(focus.poiId)}
-      className="group mt-3 inline-flex items-center gap-2 border border-line bg-bg-sunken px-2.5 py-1.5 text-label text-fg-muted transition-colors duration-state hover:border-line-strong hover:text-fg"
-    >
-      <Compass className="h-3.5 w-3.5 text-accent" aria-hidden />
-      <span>
-        Shown on the map:{' '}
-        <span className="font-medium text-fg">{focus.name}</span>
-      </span>
-    </button>
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={handleFocus}
+        className="group inline-flex items-center gap-1.5 rounded-lg border border-line bg-bg-sunken px-2.5 py-1.5 text-label text-fg-muted transition-colors duration-state hover:border-line-strong hover:text-fg"
+      >
+        <Compass className="h-3.5 w-3.5 text-accent" aria-hidden />
+        <span>
+          View on map:{' '}
+          <span className="font-medium text-fg">{focus.name}</span>
+        </span>
+      </button>
+
+      {(onDirections || focus.poiId) && (
+        <button
+          type="button"
+          onClick={handleDirections}
+          className="group inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-subtle px-2.5 py-1.5 text-label font-medium text-accent transition-colors duration-state hover:bg-accent hover:text-accent-contrast"
+        >
+          <CornerUpRight className="h-3.5 w-3.5" aria-hidden />
+          <span>Get directions</span>
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -64,17 +96,51 @@ function MapFocusNote({ focus, onFocus }) {
  * down one size — at that width, body-lg wraps every seven words and the
  * measure fights the content instead of serving it.
  */
-export default function ChatInterface({ onPoiFocus, draft, compact = false, onClose }) {
+export default function ChatInterface({ onPoiFocus, onDirections, draft, compact = false, onClose, autoPan = true }) {
   const [messages, setMessages] = useState([GREETING]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(null);
   const [stage, setStage] = useState(0);
+  const [serviceStatus, setServiceStatus] = useState('checking'); // 'checking' | 'ready' | 'ml_loading' | 'offline'
   const endRef = useRef(null);
   const inputRef = useRef(null);
   const [token, setToken] = useState(null);
 
   useEffect(() => { currentSession().then((s) => setToken(s?.access_token ?? null)); }, []);
+
+  // Poll backend health to verify Python ML microservice readiness
+  useEffect(() => {
+    let cancelled = false;
+    let timer = null;
+
+    async function checkHealth() {
+      try {
+        const res = await api.health();
+        if (cancelled) return;
+        if (res.status === 'ok' && res.ml) {
+          setServiceStatus('ready');
+        } else if (res.status === 'ok' && !res.ml) {
+          setServiceStatus('ml_loading');
+          timer = setTimeout(checkHealth, 2500);
+        } else {
+          setServiceStatus('offline');
+          timer = setTimeout(checkHealth, 3500);
+        }
+      } catch {
+        if (!cancelled) {
+          setServiceStatus('offline');
+          timer = setTimeout(checkHealth, 3500);
+        }
+      }
+    }
+
+    checkHealth();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
 
@@ -91,7 +157,7 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
 
   async function send(text) {
     const query = (text ?? input).trim();
-    if (!query || busy) return;
+    if (!query || busy || serviceStatus !== 'ready') return;
     setMessages((m) => [...m, { role: 'user', answer: query }]);
     setInput('');
     setBusy(true);
@@ -116,7 +182,7 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
       setMessages((m) => [...m, { role: 'assistant', ...res }]);
       // Let the answer land first, then move the map. Doing both at once
       // splits attention; 180ms is enough to read as consequence.
-      if (res.poiFocus?.poiId) setTimeout(() => onPoiFocus?.(res.poiFocus.poiId), 180);
+      if (autoPan && res.poiFocus?.poiId) setTimeout(() => onPoiFocus?.(res.poiFocus.poiId), 180);
     } catch (err) {
       setMessages((m) => [...m, {
         role: 'assistant',
@@ -146,6 +212,8 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
     } catch { /* clipboard unavailable */ }
   }
 
+  const isReady = serviceStatus === 'ready';
+
   return (
     <div className="flex h-full flex-col bg-bg">
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface px-3 py-2.5 sm:px-4">
@@ -157,7 +225,27 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
             <span className="font-serif text-[13px] leading-none">G</span>
           </span>
           <div className="min-w-0">
-            <p className="truncate text-meta font-semibold text-fg">Campus Assistant</p>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-meta font-semibold text-fg">Campus Assistant</p>
+              {serviceStatus === 'ready' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Online
+                </span>
+              )}
+              {serviceStatus === 'ml_loading' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                  ML Booting
+                </span>
+              )}
+              {serviceStatus === 'offline' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-1.5 py-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                  Connecting
+                </span>
+              )}
+            </div>
             <p className="truncate font-mono text-data text-fg-subtle">
               {compact ? 'Enhanced RAG' : 'Enhanced RAG · grounded in university documents'}
             </p>
@@ -228,7 +316,7 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
                     {m.answer}
                   </p>
 
-                  <MapFocusNote focus={m.poiFocus} onFocus={onPoiFocus} />
+                  <MapFocusNote focus={m.poiFocus} onFocus={onPoiFocus} onDirections={onDirections} />
 
                   {m.clarification?.options?.length > 0 && (
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -294,7 +382,7 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
         </div>
       </div>
 
-      {messages.length <= 1 && (
+      {messages.length <= 1 && isReady && (
         <div className={`shrink-0 border-t border-line pt-3 ${compact ? 'px-3' : 'px-4 sm:px-6'}`}>
           <p className="eyebrow">Try</p>
           <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 pb-1">
@@ -310,18 +398,53 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
         </div>
       )}
 
+      {/* Service Loading Banner */}
+      {serviceStatus === 'ml_loading' && (
+        <div className="mx-3 my-2 sm:mx-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-700 dark:text-amber-300">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-amber-500" />
+            <span className="font-medium">ML Service Initializing</span>
+          </div>
+          <p className="mt-1 text-[11px] text-fg-muted leading-relaxed">
+            Loading sentence transformer embeddings & presence classifier into memory. Chat will unlock automatically once ready (~15–30s).
+          </p>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-amber-500/20">
+            <div className="h-full w-full bg-amber-500 animate-pulse origin-left" />
+          </div>
+        </div>
+      )}
+
+      {serviceStatus === 'offline' && (
+        <div className="mx-3 my-2 sm:mx-4 rounded-lg border border-rose-500/30 bg-rose-500/10 p-2.5 text-xs text-rose-700 dark:text-rose-300">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+            <span className="font-medium">Backend Connecting...</span>
+          </div>
+          <p className="mt-1 text-[11px] text-fg-muted leading-relaxed">
+            Connecting to the API server on port 4000. Retrying automatically...
+          </p>
+        </div>
+      )}
+
       <div className={`shrink-0 border-t border-line bg-surface ${compact ? 'p-3' : 'p-4 sm:px-6'}`}>
         <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex items-end gap-2">
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about a building, an office, or a faculty member…"
+            disabled={!isReady || busy}
+            placeholder={
+              serviceStatus === 'ml_loading'
+                ? 'Initializing ML embeddings model...'
+                : serviceStatus === 'offline'
+                ? 'Connecting to server...'
+                : 'Ask about a building, an office, or a faculty member…'
+            }
             aria-label="Ask ISU-GeoBot"
             maxLength={500}
-            className="input flex-1"
+            className="input flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
           />
-          <Button type="submit" variant="primary" disabled={busy || !input.trim()}
+          <Button type="submit" variant="primary" disabled={!isReady || busy || !input.trim()}
                   aria-label="Send question" className="!px-3">
             <Send className="h-4 w-4" aria-hidden />
           </Button>
@@ -342,3 +465,4 @@ export default function ChatInterface({ onPoiFocus, draft, compact = false, onCl
     </div>
   );
 }
+

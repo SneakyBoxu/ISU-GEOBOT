@@ -114,13 +114,34 @@ describe('Campus Location portal — authorized user', () => {
     assert.equal(res.status, 200, JSON.stringify(res.body));
   });
 
+  it('republishes a location', async () => {
+    const res = await call('POST', `/admin/pois/${createdId}/republish`, {
+      token: AS_ADMIN,
+      body: { note: 'authorization test' },
+    });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+  });
+
   it('records every mutation in the audit trail', async () => {
     const res = await call('GET', `/admin/pois/${createdId}/audit`, { token: AS_ADMIN });
     assert.equal(res.status, 200);
     const actions = res.body.audit.map((e) => e.action);
-    for (const expected of ['create', 'update', 'unpublish']) {
+    for (const expected of ['create', 'update', 'unpublish', 'republish']) {
       assert.ok(actions.includes(expected), `missing audit entry: ${expected}`);
     }
+  });
+
+  it('deletes a location permanently', async () => {
+    const res = await call('DELETE', `/admin/pois/${createdId}`, {
+      token: AS_ADMIN,
+      body: { note: 'authorization test delete' },
+    });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.deleted, true);
+
+    const listRes = await call('GET', '/admin/pois', { token: AS_ADMIN });
+    const found = listRes.body.pois.find((p) => p.id === createdId);
+    assert.equal(found, undefined, 'deleted POI still present in list');
   });
 });
 
@@ -149,7 +170,17 @@ describe('Map editing is denied to everyone else', () => {
 
     it(`refuses deletion (unpublish) by ${who}`, async () => {
       const res = await call('POST', '/admin/pois/p01/unpublish', { token, body: {} });
-      assert.equal(res.status, 403, `${who} was able to remove a location`);
+      assert.equal(res.status, 403, `${who} was able to unpublish a location`);
+    });
+
+    it(`refuses permanent deletion by ${who}`, async () => {
+      const res = await call('DELETE', '/admin/pois/p01', { token, body: {} });
+      assert.equal(res.status, 403, `${who} was able to permanently delete a location`);
+    });
+
+    it(`refuses republish by ${who}`, async () => {
+      const res = await call('POST', '/admin/pois/p01/republish', { token, body: {} });
+      assert.equal(res.status, 403, `${who} was able to republish a location`);
     });
 
     it(`refuses the location list to ${who}`, async () => {
@@ -170,6 +201,8 @@ describe('Direct API access without a session', () => {
     ['POST', '/admin/pois', NEW_POI],
     ['PATCH', '/admin/pois/p01', { name: 'Renamed anonymously' }],
     ['POST', '/admin/pois/p01/unpublish', {}],
+    ['POST', '/admin/pois/p01/republish', {}],
+    ['DELETE', '/admin/pois/p01', {}],
     ['POST', '/admin/pois/p01/reindex', {}],
   ];
 

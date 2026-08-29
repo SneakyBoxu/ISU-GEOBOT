@@ -361,7 +361,7 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
       // In-system capture (audit C14): the system records its OWN prediction,
       // so a validator cannot misremember what it said. That removes a
       // transcription-error attack on the results.
-      let targetFacultyId = req.user.facultyId;
+      let targetFacultyId = req.query.facultyId || req.user.facultyId;
       if (!targetFacultyId && req.user.roles.some((r) => ['admin', 'researcher'].includes(r))) {
         const { data: anyFaculty } = await db
           .from('faculty')
@@ -401,7 +401,7 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
   });
 
 const validationSchema = z.object({
-  facultyId: z.string().uuid().optional().nullable(),
+  facultyId: z.string().min(1).max(64).optional().nullable(),
   systemStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
   actualStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
   correctness: z.enum(['correct', 'partially_correct', 'incorrect']),
@@ -453,7 +453,7 @@ api.get('/validate/entries', requireAuth, requireRole('validator', 'admin', 'res
       // Admins and researchers see all entries; validators see only their own.
       let query = db
         .from('faculty_validation')
-        .select('id, queried_at, system_status, actual_status, correctness, include_in_matrix')
+        .select('id, queried_at, faculty_id, system_status, actual_status, correctness, include_in_matrix, notes, faculty:faculty_id (full_name)')
         .order('queried_at', { ascending: false })
         .limit(200);
 
