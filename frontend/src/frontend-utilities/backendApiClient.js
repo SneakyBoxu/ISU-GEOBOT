@@ -87,6 +87,8 @@ export const api = {
     request('/validate/offline-preload', { token }),
   validateBatchSync: (token, entries) =>
     request('/validate/batch-sync', { method: 'POST', body: { entries }, token }),
+  validateDeleteEntry: (token, id) =>
+    request(`/validate/entries/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
 
   // Availability-event ingestion. OCR remains in the browser; extraction,
   // publication, and withdrawal cross the authenticated Express boundary.

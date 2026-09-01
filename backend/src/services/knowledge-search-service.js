@@ -147,12 +147,29 @@ export function sanitiseHistory(raw) {
 
 export async function labelFor(code) {
   if (!statusLabels) {
-    const { data } = await db
-      .from('availability_status')
-      .select('code, display_label, thesis_label');
-    statusLabels = Object.fromEntries(
-      (data ?? []).map((r) => [r.code, r.display_label]),
-    );
+    try {
+      const { data } = await db
+        .from('availability_status')
+        .select('code, display_label, thesis_label');
+      if (data?.length) {
+        statusLabels = Object.fromEntries(
+          data.map((r) => [r.code, r.display_label]),
+        );
+      }
+    } catch {
+      statusLabels = {
+        available_consultation: 'Available for Consultation',
+        in_scheduled_class: 'In Scheduled Class',
+        unavailable_off_schedule: 'Unavailable / Off Schedule',
+      };
+    }
+    if (!statusLabels) {
+      statusLabels = {
+        available_consultation: 'Available for Consultation',
+        in_scheduled_class: 'In Scheduled Class',
+        unavailable_off_schedule: 'Unavailable / Off Schedule',
+      };
+    }
   }
   return statusLabels[code] ?? code;
 }

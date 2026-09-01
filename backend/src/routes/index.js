@@ -613,6 +613,28 @@ api.get('/validate/entries', requireAuth, requireRole('validator', 'admin', 'res
     } catch (err) { next(err); }
   });
 
+api.delete('/validate/entries/:id', requireAuth, requireRole('validator', 'admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ error: 'invalid_id', message: 'Validation entry ID is required.' });
+      }
+
+      let query = db.from('faculty_validation').delete().eq('id', id);
+
+      const isAdminOrResearcher = req.user.roles?.some((r) => ['admin', 'researcher'].includes(r));
+      if (!isAdminOrResearcher && req.user.facultyId) {
+        query = db.from('faculty_validation').delete().eq('id', id).eq('faculty_id', req.user.facultyId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      res.json({ success: true, deletedId: id });
+    } catch (err) { next(err); }
+  });
+
 
 // ---------------------------------------------------------------------------
 // Research

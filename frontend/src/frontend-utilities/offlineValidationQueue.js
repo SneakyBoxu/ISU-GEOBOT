@@ -7,6 +7,63 @@
 
 const STORAGE_KEY = 'geobot_offline_validation_queue_v1';
 const PRELOAD_KEY = 'geobot_offline_snapshot_meta_v1';
+const ROSTER_KEY = 'geobot_cached_faculty_roster_v1';
+const ENTRIES_KEY = 'geobot_cached_validation_entries_v1';
+const MODE_KEY = 'geobot_offline_mode_active_v1';
+
+export function getOfflineModeState() {
+  try {
+    return localStorage.getItem(MODE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function saveOfflineModeState(isActive) {
+  try {
+    localStorage.setItem(MODE_KEY, String(Boolean(isActive)));
+  } catch {
+    // ignore
+  }
+}
+
+export function getOfflineFacultyRoster() {
+  try {
+    const raw = localStorage.getItem(ROSTER_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveOfflineFacultyRoster(roster) {
+  try {
+    if (Array.isArray(roster) && roster.length > 0) {
+      localStorage.setItem(ROSTER_KEY, JSON.stringify(roster));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export function getOfflineCachedEntries() {
+  try {
+    const raw = localStorage.getItem(ENTRIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveOfflineCachedEntries(entries) {
+  try {
+    if (Array.isArray(entries)) {
+      localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
+    }
+  } catch {
+    // ignore
+  }
+}
 
 export function getPendingEntries() {
   try {

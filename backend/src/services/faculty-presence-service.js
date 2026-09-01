@@ -50,27 +50,53 @@ export function getMemorySnapshot() {
   return memorySnapshot;
 }
 
+async function fetchAllTableRows(tableName, selectFields, filterFn = (q) => q) {
+  const PAGE_SIZE = 1000;
+  let all = [];
+  let from = 0;
+  while (true) {
+    let query = db.from(tableName).select(selectFields);
+    query = filterFn(query);
+    if (query.range) {
+      query = query.range(from, from + PAGE_SIZE - 1);
+    }
+    const { data, error } = await query;
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+
+export function normalizeTime(t) {
+  if (!t) return '';
+  const parts = String(t).split(':');
+  const h = (parts[0] || '0').padStart(2, '0');
+  const m = (parts[1] || '00').padStart(2, '0');
+  const s = (parts[2] || '00').padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+
 export async function preloadOfflineSnapshot() {
   log.info('Preloading offline schedule snapshot from database...');
   try {
-    const [facRes, deptRes, schedRes, pseudoRes, eventRes] = await Promise.all([
-      db.from('faculty').select('id, full_name, department_id, is_active, is_consented').eq('is_active', true),
-      db.from('department').select('id, name'),
-      db.from('faculty_schedule').select('id, faculty_id, day_of_week, start_time, end_time, block_kind, course_code, campus, semester'),
-      db.from('faculty_pseudonym_map').select('faculty_id, pseudonym_id'),
-      db.from('institutional_event').select('id, event_date, title, event_type, disrupts_schedule'),
+    const [facData, deptData, schedData, pseudoData, eventData] = await Promise.all([
+      fetchAllTableRows('faculty', 'id, full_name, department_id, is_active, is_consented', (q) => q.eq('is_active', true)),
+      fetchAllTableRows('department', 'id, name'),
+      fetchAllTableRows('faculty_schedule', 'id, faculty_id, day_of_week, start_time, end_time, block_kind, course_code, campus, semester'),
+      fetchAllTableRows('faculty_pseudonym_map', 'faculty_id, pseudonym_id'),
+      fetchAllTableRows('institutional_event', 'id, event_date, title, event_type, disrupts_schedule'),
     ]);
 
-    if (facRes.error) throw facRes.error;
-    if (schedRes.error) throw schedRes.error;
-
     const deptMap = {};
-    (deptRes.data ?? []).forEach((d) => {
+    (deptData ?? []).forEach((d) => {
       deptMap[d.id] = d.name;
     });
 
     const pseudoMap = {};
-    (pseudoRes.data ?? []).forEach((p) => {
+    (pseudoData ?? []).forEach((p) => {
       pseudoMap[p.faculty_id] = p.pseudonym_id;
     });
 
@@ -78,15 +104,15 @@ export async function preloadOfflineSnapshot() {
       cachedAt: new Date().toISOString(),
       campus: config.presence.campus,
       timezone: config.presence.timezone,
-      faculty: (facRes.data ?? []).map((f) => ({
+      faculty: (facData ?? []).map((f) => ({
         id: f.id,
         full_name: f.full_name,
         department: deptMap[f.department_id] || 'General Faculty',
         is_consented: Boolean(f.is_consented),
       })),
-      schedules: schedRes.data ?? [],
+      schedules: schedData ?? [],
       pseudonymMap: pseudoMap,
-      events: eventRes.data ?? [],
+      events: eventData ?? [],
     };
 
     if (!fs.existsSync(SNAPSHOT_DIR)) {
@@ -103,6 +129,7 @@ export async function preloadOfflineSnapshot() {
       facultyCount: snapshot.faculty.length,
       scheduleCount: snapshot.schedules.length,
       eventsCount: snapshot.events.length,
+      faculty: snapshot.faculty,
     };
   } catch (err) {
     log.error({ err: err.message }, 'Failed to preload offline snapshot from database');
@@ -138,19 +165,19 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 function formatClock(timeStr) {
   if (!timeStr) return '';
-  const [hStr, mStr] = timeStr.split(':');
-  let h = parseInt(hStr, 10);
-  const m = mStr || '00';
+  const [hh, mm] = timeStr.split(':');
+  const h = parseInt(hh, 10);
+  if (Number.isNaN(h)) return timeStr;
   const ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${h}:${m} ${ampm}`;
+  const h12 = h % 12 || 12;
+  return `${h12}:${mm} ${ampm}`;
 }
 
 async function scheduleContext(facultyId, at) {
   const local = new Date(at.toLocaleString('en-US', { timeZone: config.presence.timezone }));
   const dow = local.getDay();
   const timeStr = local.toTimeString().slice(0, 8);
+  const normTime = normalizeTime(timeStr);
   const dateIso = local.toISOString().slice(0, 10);
 
   let row = null;
@@ -193,7 +220,20 @@ async function scheduleContext(facultyId, at) {
           event_type: eventToday.event_type,
         };
       } else {
-        const curBlock = allSched.find((s) => s.day_of_week === dow && s.start_time <= timeStr && s.end_time > timeStr);
+        const matchingBlocks = allSched
+          .filter((s) => {
+            if (s.day_of_week !== dow) return false;
+            const start = normalizeTime(s.start_time);
+            const end = normalizeTime(s.end_time);
+            return start <= normTime && end > normTime;
+          })
+          .sort((a, b) => {
+            const rank = (k) => (k === 'class' ? 1 : k === 'consultation' ? 2 : 3);
+            return rank(a.block_kind) - rank(b.block_kind);
+          });
+
+        const curBlock = matchingBlocks[0] || null;
+
         if (!curBlock) {
           row = { status_code: 'unavailable_off_schedule', matched_block: null, is_event_day: false, event_type: null };
         } else if (curBlock.campus && curBlock.campus !== config.presence.campus) {
@@ -452,7 +492,13 @@ export async function getAvailability(facultyId, at = new Date()) {
     };
   }
 
-  const officialEvent = await findCurrentAvailabilityEvent(facultyId, at);
+  let officialEvent = null;
+  try {
+    officialEvent = await findCurrentAvailabilityEvent(facultyId, at);
+  } catch (eventErr) {
+    // Offline / database unreachable: proceed without official event override
+  }
+
   if (availabilityOverrideSource(presence, officialEvent)) {
     // Do not return or log the event. maskOverride derives the only explanation
     // allowed to enter response phrasing, without event details.

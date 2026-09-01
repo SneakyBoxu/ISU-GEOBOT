@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ClipboardCheck, RefreshCw, UserCheck, Sparkles, Loader2, ArrowRight,
   Search, X, User, Check, Wifi, WifiOff, UploadCloud, Download, Database,
-  AlertCircle, FileDown, ShieldCheck
+  AlertCircle, FileDown, ShieldCheck, Trash2
 } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { Alert, Button, EmptyState, Field, Input, Select, SkeletonRows, StatusIndicator, Textarea } from '../ui-primitives/index.js';
@@ -21,6 +21,12 @@ import {
   exportPendingEntriesAsCsv,
   getOfflineSnapshotMeta,
   saveOfflineSnapshotMeta,
+  getOfflineFacultyRoster,
+  saveOfflineFacultyRoster,
+  getOfflineCachedEntries,
+  saveOfflineCachedEntries,
+  getOfflineModeState,
+  saveOfflineModeState,
 } from '../../frontend-utilities/offlineValidationQueue.js';
 
 const PAGE = 15;
@@ -38,14 +44,17 @@ const CORRECTNESS = [
 ];
 
 export default function AdminFacultyValidationPanel({ session }) {
-  const [facultyList, setFacultyList] = useState([]);
-  const [selectedFacultyId, setSelectedFacultyId] = useState('');
+  const [facultyList, setFacultyList] = useState(() => getOfflineFacultyRoster());
+  const [selectedFacultyId, setSelectedFacultyId] = useState(() => {
+    const cached = getOfflineFacultyRoster();
+    return cached.length > 0 ? cached[0].facultyId : '';
+  });
   const [facultyLoading, setFacultyLoading] = useState(false);
   const [estimateCtx, setEstimateCtx] = useState(null);
   const [ctxLoading, setCtxLoading] = useState(false);
 
-  // Offline Mode & Sync states
-  const [offlineMode, setOfflineMode] = useState(false);
+  // Offline Mode & Sync states (persisted to localStorage)
+  const [offlineMode, setOfflineMode] = useState(() => getOfflineModeState());
   const [pendingEntries, setPendingEntries] = useState(() => getPendingEntries());
   const [syncing, setSyncing] = useState(false);
   const [preloading, setPreloading] = useState(false);
@@ -56,10 +65,15 @@ export default function AdminFacultyValidationPanel({ session }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
 
-  const [entries, setEntries] = useState([]);
+  const [entries, setEntries] = useState(() => getOfflineCachedEntries());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
+
+  // Deletion state
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
   // Submit form state
   const [systemStatus, setSystemStatus] = useState('available_consultation');
@@ -68,6 +82,14 @@ export default function AdminFacultyValidationPanel({ session }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  const handleToggleOfflineMode = () => {
+    setOfflineMode((prev) => {
+      const nextMode = !prev;
+      saveOfflineModeState(nextMode);
+      return nextMode;
+    });
+  };
 
   // Listen to queue changes across tabs/components
   useEffect(() => {
@@ -94,33 +116,61 @@ export default function AdminFacultyValidationPanel({ session }) {
     });
   }, [facultyList, searchQuery, deptFilter]);
 
-  // 1. Load Faculty Roster
+  // 1. Load Faculty Roster (with persistent offline fallback)
   const loadRoster = useCallback(async () => {
-    if (!session) return;
+    if (!session) {
+      const cached = getOfflineFacultyRoster();
+      if (cached.length > 0) {
+        setFacultyList(cached);
+        if (!selectedFacultyId) setSelectedFacultyId(cached[0].facultyId);
+      }
+      return;
+    }
     setFacultyLoading(true);
     try {
       const res = await api.guardRoster(session.access_token);
       const list = res.roster ?? [];
-      setFacultyList(list);
-      if (list.length > 0 && !selectedFacultyId) {
-        setSelectedFacultyId(list[0].facultyId);
+      if (list.length > 0) {
+        setFacultyList(list);
+        saveOfflineFacultyRoster(list);
+        if (!selectedFacultyId) {
+          setSelectedFacultyId(list[0].facultyId);
+        }
+      } else {
+        const cached = getOfflineFacultyRoster();
+        if (cached.length > 0) setFacultyList(cached);
       }
     } catch (err) {
-      console.warn('Could not fetch online roster; checking fallback', err);
+      console.warn('Could not fetch online roster; loading cached offline roster', err);
+      const cached = getOfflineFacultyRoster();
+      if (cached.length > 0) {
+        setFacultyList(cached);
+        if (!selectedFacultyId) setSelectedFacultyId(cached[0].facultyId);
+      }
     } finally {
       setFacultyLoading(false);
     }
   }, [session, selectedFacultyId]);
 
-  // 2. Load Validation Entries
+  // 2. Load Validation Entries (with persistent offline fallback)
   const loadEntries = useCallback(async () => {
-    if (!session) return;
+    if (!session) {
+      const cached = getOfflineCachedEntries();
+      if (cached.length > 0) setEntries(cached);
+      return;
+    }
     setLoading(true); setError(null);
     try {
       const e = await api.validateEntries(session.access_token);
-      setEntries(e.entries ?? []);
+      const loaded = e.entries ?? [];
+      setEntries(loaded);
+      saveOfflineCachedEntries(loaded);
     } catch (err) {
-      if (!offlineMode) setError(err.message);
+      const cached = getOfflineCachedEntries();
+      if (cached.length > 0) {
+        setEntries(cached);
+      }
+      if (!offlineMode && cached.length === 0) setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -128,22 +178,33 @@ export default function AdminFacultyValidationPanel({ session }) {
 
   // 3. Load Real-Time Estimate for Selected Faculty
   const loadEstimate = useCallback(async (fId) => {
-    if (!session || !fId) return;
+    if (!fId) return;
     setCtxLoading(true);
+
     try {
-      const ctx = await api.validateContext(session.access_token, fId);
+      const ctx = await api.validateContext(session?.access_token, fId);
       setEstimateCtx(ctx);
       if (ctx?.systemStatus) {
         setSystemStatus(ctx.systemStatus);
         setActualStatus(ctx.systemStatus);
       }
     } catch (err) {
-      console.warn('Could not load estimate context', err);
-      setEstimateCtx(null);
+      console.warn('Could not load estimate context from server, using local fallback', err);
+      const target = facultyList.find((f) => f.facultyId === fId);
+      const offlineEst = {
+        faculty: { id: fId, name: target?.name || 'Selected Faculty' },
+        systemStatus: 'unavailable_off_schedule',
+        systemStatusLabel: 'Unavailable / Off Schedule (Offline Fallback)',
+        overrideApplied: false,
+        estimatedAt: new Date().toISOString(),
+      };
+      setEstimateCtx(offlineEst);
+      setSystemStatus(offlineEst.systemStatus);
+      setActualStatus(offlineEst.systemStatus);
     } finally {
       setCtxLoading(false);
     }
-  }, [session]);
+  }, [session, facultyList]);
 
   useEffect(() => {
     loadRoster();
@@ -170,7 +231,20 @@ export default function AdminFacultyValidationPanel({ session }) {
       };
       saveOfflineSnapshotMeta(meta);
       setSnapshotMeta(meta);
-      setSyncMsg({ kind: 'ok', text: `Offline snapshot ready (${res.facultyCount} faculty, ${res.scheduleCount} schedules cached).` });
+
+      if (Array.isArray(res.faculty) && res.faculty.length > 0) {
+        const formattedRoster = res.faculty.map((f) => ({
+          facultyId: f.id,
+          name: f.full_name,
+          department: f.department || 'General Faculty',
+          presenceState: 'unknown',
+        }));
+        saveOfflineFacultyRoster(formattedRoster);
+        setFacultyList(formattedRoster);
+        if (!selectedFacultyId) setSelectedFacultyId(formattedRoster[0].facultyId);
+      }
+
+      setSyncMsg({ kind: 'ok', text: `Offline snapshot ready (${res.facultyCount} faculty, ${res.scheduleCount} schedules cached permanently in browser).` });
       await loadRoster();
     } catch (err) {
       setSyncMsg({ kind: 'error', text: `Preload failed: ${err.message}` });
@@ -196,6 +270,29 @@ export default function AdminFacultyValidationPanel({ session }) {
     } finally {
       setSyncing(false);
     }
+  };
+
+  // Delete individual cloud validation entry
+  const handleDeleteCloudEntry = async (id) => {
+    if (!session || !id) return;
+    setDeletingId(id);
+    setDeleteError(null);
+    try {
+      await api.validateDeleteEntry(session.access_token, id);
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      setConfirmDeleteId(null);
+    } catch (err) {
+      console.error('Delete validation entry failed:', err);
+      setDeleteError(`Could not delete entry: ${err.message}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Delete individual pending offline entry
+  const handleDeleteOfflineEntry = (clientTempId) => {
+    removePendingEntries([clientTempId]);
+    setPendingEntries(getPendingEntries());
   };
 
   async function submit(e) {
@@ -327,7 +424,7 @@ export default function AdminFacultyValidationPanel({ session }) {
               variant={offlineMode ? 'secondary' : 'outline'}
               size="sm"
               icon={offlineMode ? Wifi : WifiOff}
-              onClick={() => setOfflineMode((prev) => !prev)}
+              onClick={handleToggleOfflineMode}
             >
               {offlineMode ? 'Switch to Online' : 'Force Offline Mode'}
             </Button>
@@ -731,6 +828,7 @@ export default function AdminFacultyValidationPanel({ session }) {
                   <th scope="col" className="py-2 px-3 font-medium">Observed</th>
                   <th scope="col" className="py-2 px-3 font-medium">Result</th>
                   <th scope="col" className="py-2 px-3 font-medium">Status</th>
+                  <th scope="col" className="py-2 px-3 font-medium text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -754,6 +852,17 @@ export default function AdminFacultyValidationPanel({ session }) {
                         📦 Pending Sync
                       </span>
                     </td>
+                    <td className="py-2 px-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteOfflineEntry(pe.clientTempId)}
+                        className="inline-flex items-center rounded p-1 text-fg-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                        title="Remove offline draft"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span className="sr-only">Remove</span>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -771,6 +880,15 @@ export default function AdminFacultyValidationPanel({ session }) {
             </div>
           ))}
         </dl>
+      )}
+
+      {deleteError && (
+        <Alert tone="error" title="Could not remove entry" className="mb-4">
+          <div className="flex items-center justify-between gap-2">
+            <span>{deleteError}</span>
+            <button type="button" onClick={() => setDeleteError(null)} className="text-xs underline hover:opacity-80">Dismiss</button>
+          </div>
+        </Alert>
       )}
 
       {error && <Alert tone="error" title="Could not load entries" className="mb-4">{error}</Alert>}
@@ -794,6 +912,7 @@ export default function AdminFacultyValidationPanel({ session }) {
                   <th scope="col" className="py-2.5 px-4 font-medium">Actual observed</th>
                   <th scope="col" className="py-2.5 px-4 font-medium">Result</th>
                   <th scope="col" className="py-2.5 px-4 font-medium">Matrix</th>
+                  <th scope="col" className="py-2.5 px-4 font-medium text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -811,7 +930,7 @@ export default function AdminFacultyValidationPanel({ session }) {
                       </td>
                       <td className="py-3 px-4 text-meta text-fg-muted">
                         <span className="inline-block rounded bg-surface px-2 py-0.5 border border-line">
-                          {statusLabel(e.system_status)}
+                           {statusLabel(e.system_status)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-meta text-fg-muted">
@@ -837,6 +956,39 @@ export default function AdminFacultyValidationPanel({ session }) {
                           <span className="text-fg-subtle opacity-70">Excluded</span>
                         ) : (
                           <span className="text-accent font-medium">Included</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {confirmDeleteId === e.id ? (
+                          <div className="inline-flex items-center justify-end gap-1.5">
+                            <span className="text-xs text-rose-500 font-medium mr-0.5">Delete?</span>
+                            <button
+                              type="button"
+                              disabled={deletingId === e.id}
+                              onClick={() => handleDeleteCloudEntry(e.id)}
+                              className="inline-flex items-center justify-center rounded px-2 py-0.5 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition-colors disabled:opacity-50"
+                            >
+                              {deletingId === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Yes'}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={deletingId === e.id}
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="inline-flex items-center justify-center rounded px-2 py-0.5 text-xs font-medium border border-line bg-surface hover:bg-surface-elevated text-fg transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(e.id)}
+                            title="Remove validation entry"
+                            className="inline-flex items-center justify-center rounded p-1.5 text-fg-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Remove</span>
+                          </button>
                         )}
                       </td>
                     </tr>
