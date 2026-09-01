@@ -5,10 +5,10 @@
  * view the system's live real-time estimate for them, and record observed
  * ground-truth validation entries.
  */
-import React, { useCallback, useEffect, useState } from 'react';
-import { ClipboardCheck, RefreshCw, UserCheck, Sparkles, Loader2, ArrowRight } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ClipboardCheck, RefreshCw, UserCheck, Sparkles, Loader2, ArrowRight, Search, X, User, Check } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
-import { Alert, Button, EmptyState, Field, Select, SkeletonRows, StatusIndicator, Textarea } from '../ui-primitives/index.js';
+import { Alert, Button, EmptyState, Field, Input, Select, SkeletonRows, StatusIndicator, Textarea } from '../ui-primitives/index.js';
 
 const PAGE = 15;
 
@@ -31,6 +31,10 @@ export default function AdminFacultyValidationPanel({ session }) {
   const [estimateCtx, setEstimateCtx] = useState(null);
   const [ctxLoading, setCtxLoading] = useState(false);
 
+  // Search & Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [deptFilter, setDeptFilter] = useState('all');
+
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -43,6 +47,22 @@ export default function AdminFacultyValidationPanel({ session }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  const departments = useMemo(() => {
+    return ['all', ...new Set(facultyList.map((f) => f.department).filter(Boolean))];
+  }, [facultyList]);
+
+  const filteredFaculty = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return facultyList.filter((f) => {
+      const matchDept = deptFilter === 'all' || f.department === deptFilter;
+      const matchQuery =
+        !q ||
+        f.name.toLowerCase().includes(q) ||
+        (f.department && f.department.toLowerCase().includes(q));
+      return matchDept && matchQuery;
+    });
+  }, [facultyList, searchQuery, deptFilter]);
 
   // 1. Load Faculty Roster
   const loadRoster = useCallback(async () => {
@@ -158,24 +178,146 @@ export default function AdminFacultyValidationPanel({ session }) {
           </Button>
         </div>
 
-        {/* 1. Select Faculty Member */}
-        <div className="mb-6 max-w-xl">
-          <Field label="Faculty Member to Validate" required>
-            {({ id }) => (
-              <Select
-                id={id}
-                value={selectedFacultyId}
-                onChange={(e) => setSelectedFacultyId(e.target.value)}
-                disabled={facultyLoading || facultyList.length === 0}
-              >
-                {facultyList.map((f) => (
-                  <option key={f.facultyId} value={f.facultyId}>
-                    {f.name} {f.department ? `(${f.department})` : ''}
-                  </option>
-                ))}
-              </Select>
+        {/* 1. Searchable Faculty Selection */}
+        <div className="mb-6 max-w-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <label className="text-label font-medium text-fg">
+              Faculty Member to Validate <span className="text-accent">*</span>
+            </label>
+            <span className="text-caption text-fg-muted">
+              {facultyList.length > 0 ? (
+                <span>
+                  Showing {filteredFaculty.length} of {facultyList.length} faculty
+                </span>
+              ) : facultyLoading ? (
+                'Loading roster…'
+              ) : null}
+            </span>
+          </div>
+
+          {/* Search & Filter Row */}
+          <div className="grid gap-2 sm:grid-cols-[1fr,auto] mb-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search faculty by name or department…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-fg-muted hover:text-fg rounded transition-colors"
+                  title="Clear search"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {departments.length > 2 && (
+              <div className="sm:w-48">
+                <Select
+                  value={deptFilter}
+                  onChange={(e) => setDeptFilter(e.target.value)}
+                  className="text-xs"
+                >
+                  {departments.map((d) => (
+                    <option key={d} value={d}>
+                      {d === 'all' ? 'All Departments' : d}
+                    </option>
+                  ))}
+                </Select>
+              </div>
             )}
-          </Field>
+          </div>
+
+          {/* Quick Match Chips / Filtered List when searching */}
+          {searchQuery.trim() && filteredFaculty.length > 0 && (
+            <div className="mb-3 max-h-48 overflow-y-auto rounded-lg border border-line-strong bg-bg-sunken p-2 space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted px-2 py-1">
+                Quick Select Matches ({filteredFaculty.length}):
+              </p>
+              {filteredFaculty.map((f) => {
+                const isSelected = f.facultyId === selectedFacultyId;
+                return (
+                  <button
+                    key={f.facultyId}
+                    type="button"
+                    onClick={() => {
+                      setSelectedFacultyId(f.facultyId);
+                    }}
+                    className={`w-full text-left flex items-center justify-between gap-2 px-3 py-2 rounded-md transition-all text-sm ${
+                      isSelected
+                        ? 'bg-accent/15 border border-accent/40 text-accent font-medium'
+                        : 'bg-surface hover:bg-surface-elevated text-fg border border-line'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <User className={`h-4 w-4 shrink-0 ${isSelected ? 'text-accent' : 'text-fg-muted'}`} />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm">{f.name}</p>
+                        {f.department && (
+                          <p className="truncate text-caption text-fg-muted">{f.department}</p>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected && <Check className="h-4 w-4 text-accent shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Standard Select Dropdown populated with filtered options */}
+          <Select
+            value={selectedFacultyId}
+            onChange={(e) => setSelectedFacultyId(e.target.value)}
+            disabled={facultyLoading || facultyList.length === 0}
+          >
+            {filteredFaculty.length === 0 ? (
+              <option disabled value="">
+                No faculty matching &ldquo;{searchQuery}&rdquo;
+              </option>
+            ) : (
+              filteredFaculty.map((f) => (
+                <option key={f.facultyId} value={f.facultyId}>
+                  {f.name} {f.department ? `(${f.department})` : ''}
+                </option>
+              ))
+            )}
+          </Select>
+
+          {/* Active selection summary badge */}
+          {selectedFacultyObj && (
+            <div className="mt-2 flex items-center justify-between text-caption text-fg-muted bg-surface-elevated px-3 py-1.5 rounded border border-line">
+              <span className="truncate">
+                Selected: <strong className="text-fg">{selectedFacultyObj.name}</strong>
+                {selectedFacultyObj.department ? ` • ${selectedFacultyObj.department}` : ''}
+              </span>
+              {selectedFacultyObj.presenceState && (
+                <span className="shrink-0 ml-2 inline-flex items-center gap-1.5 text-xs font-medium">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      selectedFacultyObj.presenceState === 'confirmed_on_campus'
+                        ? 'bg-emerald-500'
+                        : selectedFacultyObj.presenceState === 'confirmed_off_campus'
+                        ? 'bg-fg-muted'
+                        : 'bg-amber-500'
+                    }`}
+                  />
+                  {selectedFacultyObj.presenceState === 'confirmed_on_campus'
+                    ? 'On Campus'
+                    : selectedFacultyObj.presenceState === 'confirmed_off_campus'
+                    ? 'Departed'
+                    : 'No Log Today'}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 2. Side-by-side comparison */}
