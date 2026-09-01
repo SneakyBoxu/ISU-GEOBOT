@@ -17,5 +17,5 @@ echo.
 echo All services launched!
 echo Web UI will open at: http://localhost:5173
 echo.
-timeout /t 3 >nul
+timeout /t 3 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 4 >nul
 start http://localhost:5173

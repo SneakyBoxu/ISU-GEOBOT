@@ -10,6 +10,7 @@ const SecurityGuardAttendanceDashboard = lazy(() => import('./components/securit
 const FacultyAnswerValidationList = lazy(() => import('./components/faculty-validation-portal/FacultyAnswerValidationList.jsx'));
 const CampusLocationManager = lazy(() => import('./components/admin-portal/CampusLocationManager.jsx'));
 const AdminDashboard = lazy(() => import('./components/admin-portal/AdminDashboard.jsx'));
+const UploadAnnouncementPage = lazy(() => import('./components/announcements/UploadAnnouncementPage.jsx'));
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/validate" element={<FacultyAnswerValidationList />} />
         <Route path="/admin" element={<CampusLocationManager />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/upload-announcement" element={<UploadAnnouncementPage />} />
         <Route path="*" element={<LandingMainPage />} />
       </Routes>
     </Suspense>

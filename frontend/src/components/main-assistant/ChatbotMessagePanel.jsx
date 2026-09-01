@@ -306,7 +306,7 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
                 <div className="min-w-0 flex-1">
                   {m.status && (
                     <div className="mb-4">
-                      <StatusIndicator code={m.status.code} label={m.status.label} asOf={m.status.asOf} />
+                      <StatusIndicator code={m.status.code} label={m.status.label} asOf={m.status.asOf} isEstimate={m.status.isEstimate} />
                     </div>
                   )}
 

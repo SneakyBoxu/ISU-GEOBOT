@@ -129,6 +129,7 @@ alter table poi_audit force  row level security;
 
 -- Faculty read their own visibility history; researchers read all.
 grant select on faculty_visibility_event to authenticated;
+drop policy if exists visibility_event_self_read on faculty_visibility_event;
 create policy visibility_event_self_read on faculty_visibility_event
   for select to authenticated
   using (
@@ -140,6 +141,7 @@ create policy visibility_event_self_read on faculty_visibility_event
   );
 
 grant select on poi_audit to authenticated;
+drop policy if exists poi_audit_admin_read on poi_audit;
 create policy poi_audit_admin_read on poi_audit
   for select to authenticated
   using (geobot.has_role('admin') or geobot.has_role('researcher'));

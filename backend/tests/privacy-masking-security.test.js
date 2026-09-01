@@ -86,10 +86,39 @@ describe('intermediate purge (property 3)', () => {
 
 describe('deterministic override (property 2)', () => {
   it('produces Unavailable and is attributable to the guard log', () => {
-    const { masked, internalProbabilities } = maskOverride();
+    const { masked, safeReason, internalProbabilities } = maskOverride();
     assert.equal(masked.statusCode, 'unavailable_off_schedule');
     assert.equal(masked.source, 'guard_override');
+    assert.equal(safeReason, null);
     assert.equal(internalProbabilities, null);
+  });
+
+  it('exposes only a controlled reason for an official event', () => {
+    const { masked, safeReason } = maskOverride({
+      source: 'official_event_override',
+      safeReason: 'Unavailable due to an official meeting.',
+    });
+    assert.equal(masked.statusCode, 'unavailable_off_schedule');
+    assert.equal(masked.source, 'official_event_override');
+    assert.equal(safeReason, 'Unavailable due to an official meeting.');
+    assert.deepEqual(Object.keys(masked).sort(), ['maskedAt', 'source', 'statusCode']);
+  });
+
+  it('rejects an unrecognized source rather than accepting event detail', () => {
+    assert.throws(
+      () => maskOverride({ source: 'Faculty Assembly in Room 204' }),
+      MaskingViolation,
+    );
+  });
+
+  it('rejects raw event detail as an official-event reason', () => {
+    assert.throws(
+      () => maskOverride({
+        source: 'official_event_override',
+        safeReason: 'Faculty Assembly in Room 204',
+      }),
+      MaskingViolation,
+    );
   });
 });
 
@@ -165,6 +194,14 @@ describe('response DTO allowlist (property 5)', () => {
     // Audit §4.3: the qualifier is a privacy control, not decoration. A user
     // who reads the status as fact is being told more than the system knows.
     assert.equal(toChatDto(base).status.isEstimate, true);
+  });
+
+  it('does not label an official-event override as a model estimate', () => {
+    const dto = toChatDto({
+      ...base,
+      masked: { ...base.masked, source: 'official_event_override' },
+    });
+    assert.equal(dto.status.isEstimate, false);
   });
 
   it('exposes no confidence value', () => {

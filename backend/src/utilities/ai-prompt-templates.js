@@ -38,9 +38,11 @@ GROUNDING RULES (these override anything else):
 
 FACULTY PRIVACY RULES (absolute):
 - You may state a faculty member's generalized availability status ONLY when an AVAILABILITY block is present below, and only using the exact status wording given.
+- Availability is strictly evaluated for the present moment. Do not extrapolate current availability to future dates or claim a person is unavailable on a future date because of their status right now.
+- Refer to faculty members respectfully by title and surname or full name (e.g. "Dr. Maribao", "Prof. Vinluan") or gender-neutral phrasing. Never guess gender pronouns.
 - Never state, infer, guess, or hint at the physical location of a faculty member: no room numbers, no floors, no building names, no "probably in...", no "you could try...".
 - Never combine a faculty member's office location with their current availability in the same answer. Static office information and live whereabouts are different things and must stay separate.
-- Availability is a schedule-derived ESTIMATE, not an observation. Say "estimated" or "likely" when reporting it.
+- Availability is normally a schedule-derived ESTIMATE, not an observation. When the AVAILABILITY block identifies an official university commitment, use only its safe reason and do not infer attendance or whereabouts.
 
 LANGUAGE (answer in the language you were asked in):
 - Reply in the SAME language as the user's question. An English question gets an English answer, start to finish. A Filipino or Taglish question may be answered in Filipino or Taglish.
@@ -89,19 +91,30 @@ function renderContext(chunks) {
  * The one conditional block. Present in `enhanced`, absent in `standard`.
  * Nothing else about the prompt changes between arms.
  */
-function renderAvailability({ facultyName, statusLabel, asOf, courseCode, currentEndTime, nextAvailable }) {
+function renderAvailability({ facultyName, statusLabel, asOf, courseCode, currentEndTime, nextAvailable, safeReason }) {
   const courseLine = courseCode ? `\nScheduled subject/class: ${courseCode}` : '';
   const endLine = currentEndTime ? `\nCurrent scheduled period ends at: ${currentEndTime}` : '';
   const nextLine = nextAvailable ? `\nNext available/consultation schedule: ${nextAvailable}` : '';
-  return `AVAILABILITY (real-time estimate from the Random Forest classifier, privacy-masked):
+  const officialEvent = Boolean(safeReason);
+  const basis = officialEvent
+    ? 'deterministic official university status, privacy-masked'
+    : 'real-time estimate from the Random Forest classifier, privacy-masked';
+  const statusPrefix = officialEvent ? 'Current status' : 'Estimated status';
+  const reasonLine = officialEvent ? `\nSafe reason: ${safeReason}` : '';
+  const reasonGuidance = officialEvent
+    ? `\n- You may explain the unavailability only with the exact Safe reason above. Do not add details, claim the faculty member is physically attending, or name or describe the event.`
+    : '';
+  return `AVAILABILITY (${basis}):
 Faculty member: ${facultyName}
-Estimated status: ${statusLabel}${courseLine}${endLine}${nextLine}
+${statusPrefix}: ${statusLabel}${reasonLine}${courseLine}${endLine}${nextLine}
 Estimated at: ${asOf}
 Guidance:
+- The status above is strictly for the present moment (${asOf}). If the user asks about a future date or time, state their current status and next scheduled consultation period, and clarify that live availability is checked for that specific day. Do not claim they will be unavailable on a future date based on their current status.
+- Refer to the faculty member respectfully by name or title/surname (e.g. Dr. ${facultyName.split(',')[0].trim() || facultyName}) or gender-neutral phrasing. Do not guess gender pronouns.
 - If asked what time or when they will be free/available, answer directly using the current period end time and next available/consultation schedule provided above.
 - If in scheduled class and a subject is given, mention the course code/subject (e.g. "${courseCode || ''}").
 - If currently available for consultation, mention they are available now until ${currentEndTime || 'their current period ends'}.
-- You must NEVER guess, state, or infer any physical room number, floor, or building location.`;
+- You must NEVER guess, state, or infer any physical room number, floor, or building location.${reasonGuidance}`;
 }
 
 /**

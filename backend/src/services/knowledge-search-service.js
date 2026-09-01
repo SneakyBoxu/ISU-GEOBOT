@@ -145,7 +145,7 @@ export function sanitiseHistory(raw) {
   return clean.slice(-6);
 }
 
-async function labelFor(code) {
+export async function labelFor(code) {
   if (!statusLabels) {
     const { data } = await db
       .from('availability_status')

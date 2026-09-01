@@ -21,4 +21,4 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":5173" ^| findstr "LISTENING
 
 echo.
 echo All GeoBot services stopped cleanly.
-timeout /t 2 >nul
+timeout /t 2 /nobreak >nul 2>&1 || ping 127.0.0.1 -n 3 >nul

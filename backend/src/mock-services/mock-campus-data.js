@@ -349,6 +349,8 @@ export const appUserRole = [
 
 export const poiAudit = [];
 export const facultyVisibilityEvent = [];
+export const availabilityEvent = [];
+export const availabilityEventFaculty = [];
 
 /** Empty on purpose. Audit R6/R7: no seeded metrics, ever. */
 export const evalRun = [];

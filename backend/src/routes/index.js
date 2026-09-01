@@ -18,9 +18,17 @@ import { db, ml, log } from '../utilities/service-clients.js';
 import { config } from '../utilities/configuration.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/authentication.js';
 import { assertNoLeak, toChatDto } from '../middleware/privacy-masking-middleware.js';
-import { logChat, runPipeline } from '../services/knowledge-search-service.js';
-import { resolvePresence } from '../services/faculty-presence-service.js';
+import { logChat, runPipeline, labelFor } from '../services/knowledge-search-service.js';
+import { getAvailability, resolvePresence } from '../services/faculty-presence-service.js';
 import { admin } from './admin-routes.js';
+import {
+  extractAvailabilityPreview,
+  findAvailabilityFacultyCandidates,
+  listAvailabilityEvents,
+  publishReviewedAvailabilityEvents,
+  resolveAvailabilityEventDraft,
+  withdrawAvailabilityEvent,
+} from '../services/availability-event-service.js';
 
 export const api = Router();
 
@@ -372,17 +380,47 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
         targetFacultyId = anyFaculty?.id ?? null;
       }
 
+      if (!targetFacultyId) {
+        const { data: statuses } = await db
+          .from('availability_status')
+          .select('code, display_label')
+          .order('sort_order');
+
+        return res.json({
+          faculty: null,
+          systemStatus: null,
+          systemStatusLabel: null,
+          overrideApplied: false,
+          estimatedAt: null,
+          statusOptions: statuses ?? [],
+        });
+      }
+
       const { data: faculty } = await db
         .from('faculty')
         .select('id, full_name')
         .eq('id', targetFacultyId)
         .maybeSingle();
 
-      const result = await runPipeline({
-        query: `Is ${faculty?.full_name ?? 'faculty'} available right now?`,
-        mode: 'enhanced',
-        allowAvailability: true,
-      });
+      let systemStatus = null;
+      let systemStatusLabel = null;
+      let overrideApplied = false;
+      let estimatedAt = null;
+
+      try {
+        const avail = await getAvailability(targetFacultyId);
+        if (avail?.masked?.statusCode) {
+          systemStatus = avail.masked.statusCode;
+          systemStatusLabel = await labelFor(avail.masked.statusCode);
+          if (systemStatus === 'unavailable_off_schedule' && avail.scheduleContext?.onOtherCampus) {
+            systemStatusLabel = 'Teaching this period; not scheduled on this campus';
+          }
+          overrideApplied = Boolean(avail.overrideApplied);
+          estimatedAt = avail.masked.maskedAt ?? new Date().toISOString();
+        }
+      } catch (err) {
+        log.warn({ err: err.message, targetFacultyId }, 'Could not resolve availability estimate for validation context');
+      }
 
       const { data: statuses } = await db
         .from('availability_status')
@@ -390,11 +428,11 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
         .order('sort_order');
 
       res.json({
-        faculty: { id: faculty?.id, name: faculty?.full_name },
-        systemStatus: result.masked?.statusCode ?? null,
-        systemStatusLabel: result.statusLabel,
-        overrideApplied: result.overrideApplied,
-        estimatedAt: result.masked?.maskedAt ?? null,
+        faculty: faculty ? { id: faculty.id, name: faculty.full_name } : null,
+        systemStatus,
+        systemStatusLabel,
+        overrideApplied,
+        estimatedAt,
         statusOptions: statuses ?? [],
       });
     } catch (err) { next(err); }
@@ -426,7 +464,18 @@ api.post('/validate/entries', requireAuth, requireRole('validator', 'admin', 're
       }
 
       if (!targetFacultyId) {
-        return res.status(400).json({ error: 'No active faculty member found to attach validation entry to.' });
+        return res.status(400).json({ error: 'invalid_faculty', message: 'No active faculty member found to attach validation entry to.' });
+      }
+
+      // Verify the faculty exists in the database
+      const { data: facultyExists } = await db
+        .from('faculty')
+        .select('id')
+        .eq('id', targetFacultyId)
+        .maybeSingle();
+
+      if (!facultyExists) {
+        return res.status(400).json({ error: 'invalid_faculty', message: 'Target faculty member not found in database.' });
       }
 
       const { data, error } = await db
@@ -528,6 +577,83 @@ api.get('/eval/status', async (_req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ---------------------------------------------------------------------------
+// Availability events - private OCR extraction and reviewed publication
+// ---------------------------------------------------------------------------
+
+const availabilityManagers = [
+  requireAuth,
+  requireRole('admin', 'researcher'),
+  limit(config.rateLimit.generalMax),
+];
+
+api.post('/availability-events/extract', ...availabilityManagers, async (req, res, next) => {
+  try {
+    const { ocrText } = z.object({
+      ocrText: z.string().min(10).max(50_000),
+    }).parse(req.body);
+    res.json(await extractAvailabilityPreview(ocrText));
+  } catch (err) { next(err); }
+});
+
+api.post('/availability-events/resolve', ...availabilityManagers, async (req, res, next) => {
+  try {
+    const { event } = z.object({
+      event: z.record(z.unknown()),
+    }).strict().parse(req.body);
+    const resolved = await resolveAvailabilityEventDraft(event);
+    res.json({
+      resolution: resolved.resolution,
+      warnings: resolved.warnings,
+      publishable: resolved.publishable,
+    });
+  } catch (err) { next(err); }
+});
+
+api.get('/availability-events/faculty-candidates', ...availabilityManagers, async (req, res, next) => {
+  try {
+    const { q } = z.object({ q: z.string().trim().min(2).max(160) }).parse(req.query);
+    res.json({ candidates: await findAvailabilityFacultyCandidates(q) });
+  } catch (err) { next(err); }
+});
+
+api.post('/availability-events/publish', ...availabilityManagers, async (req, res, next) => {
+  try {
+    if (req.body && Object.hasOwn(req.body, 'rawOcr')) {
+      return res.status(400).json({
+        error: 'raw_ocr_not_accepted',
+        message: 'Raw OCR is accepted only by the extraction endpoint and is not persisted.',
+      });
+    }
+    const review = z.object({
+      reviewToken: z.string().min(1).max(20_000),
+      ocrChecksum: z.string().regex(/^[0-9a-f]{64}$/),
+      events: z.array(z.record(z.unknown())).min(1).max(50),
+    }).strict().parse(req.body);
+    const result = await publishReviewedAvailabilityEvents(review, req.user.id);
+    res.status(201).json(result);
+  } catch (err) { next(err); }
+});
+
+api.get('/availability-events', ...availabilityManagers, async (req, res, next) => {
+  try {
+    const filters = z.object({
+      status: z.enum(['published', 'withdrawn']).optional(),
+      from: z.string().max(80).optional(),
+      to: z.string().max(80).optional(),
+      limit: z.coerce.number().int().min(1).max(500).optional(),
+    }).parse(req.query);
+    res.json({ events: await listAvailabilityEvents(filters) });
+  } catch (err) { next(err); }
+});
+
+api.post('/availability-events/:id/withdraw', ...availabilityManagers, async (req, res, next) => {
+  try {
+    const { id } = z.object({ id: z.string().min(1).max(64) }).parse(req.params);
+    res.json({ event: await withdrawAvailabilityEvent(id, req.user.id) });
+  } catch (err) { next(err); }
+});
+
 api.use('/admin', admin);
 
 /**
@@ -562,9 +688,18 @@ api.use((err, _req, res, _next) => {
     log.error({ err: err.message, detail: err.detail }, 'status masking violation');
     return res.status(500).json({ error: 'availability could not be resolved safely' });
   }
+  if (err?.code === '22P02') {
+    return res.status(400).json({ error: 'invalid_parameter', message: 'Invalid identifier format (expected UUID).' });
+  }
+  if (err?.code === '23503') {
+    return res.status(400).json({ error: 'foreign_key_violation', message: err.message || 'Referenced entity not found.' });
+  }
+  if (err?.code === '23505') {
+    return res.status(409).json({ error: 'conflict', message: 'Resource already exists.' });
+  }
   log.error({ err: err.message, stack: err.stack }, 'request failed');
   res.status(err.status ?? 500).json({
     error: err.status === 503 ? 'service_unavailable' : 'internal_error',
-    message: err.status && err.status < 500 ? err.message : 'Something went wrong.',
+    message: err.message || (err.status && err.status < 500 ? err.message : 'Something went wrong.'),
   });
 });

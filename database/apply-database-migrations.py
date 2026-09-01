@@ -54,6 +54,8 @@ FILES = [
     ("database/migrations/007_attendance_features.sql", "attendance_features() for the RF", False),
     ("database/migrations/008_campus_aware_presence.sql", "campus-aware schedule_lookup_status()", False),
     ("database/migrations/009_dedupe_place_cards.sql", "remove superseded POI place cards", False),
+    ("database/migrations/010_announcements.sql", "retire legacy announcement ingestion", False),
+    ("database/migrations/011_availability_events.sql", "private availability-event storage", False),
 ]
 
 
@@ -99,6 +101,8 @@ def main() -> None:
     ap.add_argument("--run", action="store_true", help="execute (default is a dry run)")
     ap.add_argument("--initial", action="store_true",
                     help="include schema.sql, which DROPS the geobot schema first")
+    ap.add_argument("--start-at", metavar="MIGRATION",
+                    help="apply from this migration filename onward (for example, 010_announcements.sql)")
     args = ap.parse_args()
 
     assert_migration_list_complete()
@@ -109,6 +113,12 @@ def main() -> None:
     print(f"mode:   {'EXECUTE' if args.run else 'dry run (nothing will change)'}\n")
 
     planned = [f for f in FILES if args.initial or not f[2]]
+    if args.start_at:
+        starts = [i for i, f in enumerate(planned)
+                  if pathlib.PurePath(f[0]).name == args.start_at]
+        if not starts:
+            sys.exit(f"unknown --start-at migration: {args.start_at}")
+        planned = planned[starts[0]:]
     for path, why, destructive in planned:
         mark = "  DROPS geobot FIRST" if destructive else ""
         print(f"  {path:<48} {why}{mark}")

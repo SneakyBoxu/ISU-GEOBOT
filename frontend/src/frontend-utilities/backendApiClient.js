@@ -23,6 +23,8 @@ async function request(path, { method = 'GET', body, token } = {}) {
     const err = new Error(json.message || json.error || `Request failed (${res.status})`);
     err.status = res.status;
     err.code = json.error;
+    const retryAfter = Number(json.retryAfterSeconds ?? res.headers.get('retry-after'));
+    if (Number.isFinite(retryAfter) && retryAfter > 0) err.retryAfterSeconds = retryAfter;
     throw err;
   }
   return json;
@@ -81,4 +83,21 @@ export const api = {
   validateSubmit: (token, body) =>
     request('/validate/entries', { method: 'POST', body, token }),
   validateEntries: (token) => request('/validate/entries', { token }),
+
+  // Availability-event ingestion. OCR remains in the browser; extraction,
+  // publication, and withdrawal cross the authenticated Express boundary.
+  availabilityEventExtract: (token, ocrText) =>
+    request('/availability-events/extract', { method: 'POST', body: { ocrText }, token }),
+  availabilityEventResolve: (token, event) =>
+    request('/availability-events/resolve', { method: 'POST', body: { event }, token }),
+  availabilityEventFacultyCandidates: (token, q) =>
+    request(`/availability-events/faculty-candidates?q=${encodeURIComponent(q)}`, { token }),
+  availabilityEventPublish: (token, review) =>
+    request('/availability-events/publish', {
+      method: 'POST', body: review, token,
+    }),
+  availabilityEvents: (token, status = 'published') =>
+    request(`/availability-events?status=${encodeURIComponent(status)}`, { token }),
+  availabilityEventWithdraw: (token, id) =>
+    request(`/availability-events/${encodeURIComponent(id)}/withdraw`, { method: 'POST', token }),
 };

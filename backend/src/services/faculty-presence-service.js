@@ -24,6 +24,7 @@
 import { db, ml, log } from '../utilities/service-clients.js';
 import { config } from '../utilities/configuration.js';
 import { maskOverride, maskPrediction } from '../middleware/privacy-masking-middleware.js';
+import { findCurrentAvailabilityEvent } from './availability-event-service.js';
 
 export async function resolvePresence(facultyId, at = new Date()) {
   const { data, error } = await db.rpc('resolve_presence', {
@@ -348,27 +349,48 @@ async function semesterPhase(at) {
 }
 
 /**
- * Full availability path: guard check -> (override | model) -> masking boundary.
+ * Full availability path: guard/event checks -> (override | model) -> masking boundary.
  *
  * Returns the masked result plus the internals a caller may CHOOSE to persist
  * for research. Nothing internal is attached to the returned masked object —
  * see maskingMiddleware for why that separation is deliberate.
  */
+export function availabilityOverrideSource(presence, officialEvent) {
+  // A confirmed departure remains the strongest presence signal. Otherwise a
+  // current published mandatory event overrides both arrival and unknown state.
+  if (presence?.state === 'confirmed_off_campus') return 'guard_override';
+  if (officialEvent?.mandatory === true) return 'official_event_override';
+  return null;
+}
+
 export async function getAvailability(facultyId, at = new Date()) {
   const t0 = performance.now();
   const presence = await resolvePresence(facultyId, at);
-  const tGuard = performance.now() - t0;
 
   if (presence.state === 'confirmed_off_campus') {
-    // Thesis §3.5.3: bypass the AI entirely. The model is never consulted, so
-    // there is no prediction to mask — only the override to project.
+    // Departure takes precedence and stays available even if the separate
+    // official-event store is unavailable.
     return {
       ...maskOverride(),
       presence,
       overrideApplied: true,
-      timings: { guard: tGuard, rf: 0 },
+      timings: { guard: performance.now() - t0, rf: 0 },
     };
   }
+
+  const officialEvent = await findCurrentAvailabilityEvent(facultyId, at);
+  if (availabilityOverrideSource(presence, officialEvent)) {
+    // Do not return or log the event. maskOverride derives the only explanation
+    // allowed to enter response phrasing, without event details.
+    return {
+      ...maskOverride({ source: 'official_event_override', safeReason: officialEvent.safeReason }),
+      presence,
+      overrideApplied: true,
+      timings: { guard: performance.now() - t0, rf: 0 },
+    };
+  }
+
+  const tGuard = performance.now() - t0;
 
   const [pseudonym, sched] = await Promise.all([
     pseudonymFor(facultyId),

@@ -201,7 +201,13 @@ comment on function geobot.match_document_chunks is
 --  is_consultation_hour and the scheduled-block indicator.
 -- =====================================================================
 
-create or replace function geobot.schedule_lookup_status(
+-- Migration 008 adds p_campus. Drop both known signatures so this base file is
+-- safe to re-run on an already-migrated database instead of creating an
+-- ambiguous overload before migration 008 restores the five-argument form.
+drop function if exists geobot.schedule_lookup_status(uuid, timestamptz, text, text, text);
+drop function if exists geobot.schedule_lookup_status(uuid, timestamptz, text, text);
+
+create function geobot.schedule_lookup_status(
   p_faculty_id  uuid,
   p_at          timestamptz default now(),
   p_semester    text default null,

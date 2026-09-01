@@ -117,14 +117,42 @@ export function maskPrediction(prediction, { source = 'random_forest' } = {}) {
   return { masked, internalProbabilities, modelVersion };
 }
 
-/** Property 2. The deterministic guard override, thesis §3.5.3. */
-export function maskOverride() {
+const OVERRIDE_SAFE_REASONS = Object.freeze({
+  guard_override: null,
+});
+
+const OFFICIAL_EVENT_SAFE_REASONS = new Set([
+  'Unavailable due to an institutional event.',
+  'Unavailable due to official university duties.',
+  'Unavailable due to an official meeting.',
+  'Unavailable due to an official training activity.',
+  'Unavailable due to approved leave.',
+  'Unavailable due to an institutional closure.',
+  'Availability is affected by an official schedule suspension.',
+  'Availability is affected by an emergency announcement.',
+  'Availability is affected by an official announcement.',
+]);
+
+/** Property 2. A deterministic authoritative override, thesis §3.5.3. */
+export function maskOverride({ source = 'guard_override', safeReason = null } = {}) {
+  const isOfficialEvent = source === 'official_event_override';
+  if (!Object.hasOwn(OVERRIDE_SAFE_REASONS, source) && !isOfficialEvent) {
+    throw new MaskingViolation('Unknown availability override source', { source });
+  }
+  if (isOfficialEvent && !OFFICIAL_EVENT_SAFE_REASONS.has(safeReason)) {
+    throw new MaskingViolation('Unknown official event reason');
+  }
+
   return {
     masked: {
       statusCode: 'unavailable_off_schedule',
-      source: 'guard_override',
+      source,
       maskedAt: new Date().toISOString(),
     },
+    // Kept outside the masked DTO. This fixed phrase is derived from the
+    // allowlisted source; no event title, description, location, or time enters
+    // the response pipeline.
+    safeReason: isOfficialEvent ? safeReason : OVERRIDE_SAFE_REASONS[source],
     internalProbabilities: null,
     modelVersion: null,
   };
@@ -205,7 +233,7 @@ export function toChatDto(result) {
       // Audit §4.3: an explicit estimate qualifier is a privacy control, not
       // decoration. A user who reads the status as fact is being told
       // something more precise than the system knows.
-      isEstimate: true,
+      isEstimate: result.masked.source !== 'official_event_override',
       asOf: result.masked.maskedAt,
       facultyName: result.facultyName ?? null,
     };

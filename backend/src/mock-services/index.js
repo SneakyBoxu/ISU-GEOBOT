@@ -120,12 +120,16 @@ export async function demoGenerate(messages) {
 
   if (availability) {
     const name = (availability.match(/Faculty member: (.+)/) ?? [])[1] ?? 'The faculty member';
-    const status = (availability.match(/Estimated status: (.+)/) ?? [])[1] ?? 'Unavailable';
+    const status = (availability.match(/(?:Estimated|Current) status: (.+)/) ?? [])[1] ?? 'Unavailable';
+    const safeReason = (availability.match(/Safe reason: (.+)/) ?? [])[1] ?? null;
     // Deliberately does NOT splice in the top retrieved chunk. The lexical
     // embedder ranks weakly on availability phrasing, so the best chunk is
     // often unrelated, and tacking it on would make the answer look like the
     // real pipeline hallucinating rather than the stub being a stub.
-    return (
+    return safeReason ? (
+      `Based on official university information, ${name}'s current status is: ${status}. ` +
+      `${safeReason} No event or location details are disclosed.`
+    ) : (
       `Based on the current schedule, ${name} is estimated to be: ${status}. ` +
       'This is a schedule-derived estimate rather than a confirmed observation, ' +
       'so it is worth coordinating with the department office before visiting.'

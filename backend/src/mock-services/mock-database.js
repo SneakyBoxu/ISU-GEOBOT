@@ -38,6 +38,8 @@ const TABLES = {
   chat_log: D.chatLog,
   poi_audit: D.poiAudit,
   faculty_visibility_event: D.facultyVisibilityEvent,
+  availability_event: D.availabilityEvent,
+  availability_event_faculty: D.availabilityEventFaculty,
   // Registered late — see the assignment after documentChunks is built.
   document: null,
   document_chunk: null,

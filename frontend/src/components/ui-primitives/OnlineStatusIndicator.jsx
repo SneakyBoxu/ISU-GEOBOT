@@ -11,9 +11,8 @@ import { CheckCircle2, GraduationCap, MinusCircle } from 'lucide-react';
  *    blindness, and either theme — the tones are semantic tokens, and the Dark
  *    theme fills them with values checked to AA against every ground they can
  *    land on.
- * 2. Always marked as an estimate. The status is schedule-derived, not
- *    observed, and a reader who takes it as fact has been told something more
- *    precise than the system knows.
+ * 2. Model statuses are marked as estimates. Reviewed official-event overrides
+ *    are deterministic status inputs and are labeled accordingly.
  * 3. Never a number. No probability, no percentage, no confidence badge —
  *    those imply a precision the study does not measure and would create an
  *    evaluation obligation the thesis never planned for.
@@ -43,6 +42,7 @@ export default function StatusIndicator({
   code,
   label,
   asOf,
+  isEstimate = true,
   variant = 'block',
   className = '',
 }) {
@@ -70,8 +70,9 @@ export default function StatusIndicator({
         <div className="min-w-0">
           <p className={`text-body ${meta.weight}`}>{text}</p>
           <p className="mt-0.5 text-meta opacity-80">
-            Estimated{time ? ` at ${time}` : ''} from schedule data &mdash; not a
-            confirmed observation
+            {isEstimate ? 'Estimated' : 'Official status'}{time ? ` at ${time}` : ''}{isEstimate
+              ? ' from schedule data - not a confirmed observation'
+              : ' from reviewed university information'}
           </p>
         </div>
       </div>

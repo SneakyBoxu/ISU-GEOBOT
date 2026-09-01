@@ -81,6 +81,17 @@ describe('sanitiseHistory — what may be replayed', () => {
     assert.deepEqual(h, [], 'a presence timeline reached the prompt');
   });
 
+  it('drops every controlled official-event reason', async () => {
+    const { SAFE_REASON_BY_CODE } = await import('../src/services/availability-event-service.js');
+    for (const reason of Object.values(SAFE_REASON_BY_CODE)) {
+      const h = sanitiseHistory([
+        u('Is Prof. Santos free?'),
+        a(`Based on official university information, Prof. Santos is unavailable. ${reason}`),
+      ]);
+      assert.deepEqual(h, [], reason);
+    }
+  });
+
   it('caps the number of turns carried forward', () => {
     const many = Array.from({ length: 40 }, (_, i) => u(`question ${i}`));
     assert.ok(sanitiseHistory(many).length <= 6);
@@ -147,5 +158,22 @@ describe('buildPrompt — where history is allowed to reach', () => {
     const enh = buildPrompt({ mode: 'enhanced', query: 'q', chunks });
     assert.equal(std.messages.length, 2);
     assert.deepEqual(std.messages, enh.messages);
+  });
+
+  it('gives the model only the controlled official-event reason', () => {
+    const availability = {
+      facultyName: 'Prof. Santos',
+      statusLabel: 'Unavailable / Off-Schedule',
+      safeReason: 'Unavailable due to an official meeting.',
+      asOf: '2026-08-31T01:00:00.000Z',
+    };
+    const { fusedPrompt } = buildPrompt({
+      mode: 'enhanced', query: 'Is Prof. Santos available?', chunks, availability,
+    });
+
+    assert.match(fusedPrompt, /deterministic official university status/);
+    assert.match(fusedPrompt, /Current status: Unavailable \/ Off-Schedule/);
+    assert.match(fusedPrompt, /Safe reason: Unavailable due to an official meeting\./);
+    assert.doesNotMatch(fusedPrompt, /Random Forest classifier/);
   });
 });

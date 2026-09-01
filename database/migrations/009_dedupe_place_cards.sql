@@ -94,14 +94,26 @@ delete from document legacy
 -- Verify the corpus is now one card per POI, and that nothing was lost.
 -- ---------------------------------------------------------------------
 do $$
-declare dupes integer; cards integer; pois integer; orphans integer;
+declare dupes integer; cards integer; pois integer; missing integer; orphans integer;
 begin
   select count(*) into dupes from (
     select title from document where doc_type = 'poi_place_card'
      group by title having count(*) > 1) x;
 
   select count(*) into cards from document where doc_type = 'poi_place_card';
-  select count(*) into pois  from poi;
+  -- Unpublished POIs intentionally have no retrievable place card. Counting
+  -- them here made this idempotency check fail after a legitimate unpublish.
+  select count(*) into pois  from poi where is_published;
+
+  select count(*) into missing
+  from poi p
+  where p.is_published
+    and not exists (
+      select 1 from document d
+      where d.doc_type = 'poi_place_card'
+        and (d.source_origin = 'generated:poi:' || p.id::text
+             or d.title = 'Place card — ' || p.name)
+    );
 
   select count(*) into orphans from document_chunk ch
    where not exists (select 1 from document d where d.id = ch.document_id);
@@ -115,10 +127,9 @@ begin
   if orphans > 0 then
     raise exception '% orphaned chunk(s) left behind', orphans;
   end if;
-  if cards <> pois then
+  if missing > 0 then
     raise exception
-      'place cards (%) no longer match POIs (%) -- a POI has lost its only '
-      'card, which would make it unretrievable', cards, pois;
+      '% published POI(s) have no place card, which makes them unretrievable', missing;
   end if;
 end $$;
 

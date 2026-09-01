@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Building2, ClipboardCheck, LayoutDashboard, LogOut, Settings2, ShieldCheck,
+  Building2, ClipboardCheck, LayoutDashboard, LogOut, Megaphone, ShieldCheck,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { currentSession, signOut } from '../../frontend-utilities/supabaseClient.js';
 import PortalLogin from '../shared-components/UserRoleLoginModal.jsx';
 import TopNavigationBar from '../shared-components/TopNavigationBar.jsx';
@@ -126,6 +127,19 @@ export default function AdminDashboard() {
                   </li>
                 );
               })}
+              <li>
+                <Link
+                  to="/upload-announcement"
+                  className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left text-fg-muted transition-all duration-150 hover:bg-bg-sunken hover:text-fg"
+                >
+                  <Megaphone
+                    className="h-4 w-4 shrink-0 text-fg-subtle transition-colors group-hover:text-fg"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                  <span className="truncate text-meta">Availability Events (OCR)</span>
+                </Link>
+              </li>
             </ul>
           </nav>
 

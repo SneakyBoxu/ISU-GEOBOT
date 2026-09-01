@@ -63,8 +63,12 @@ export default function ValidationChecklist() {
     setBusy(true);
     try {
       await api.validateSubmit(session.access_token, {
-        systemStatus: ctx.systemStatus, actualStatus: actual, correctness,
-        overrideApplied: ctx.overrideApplied, notes: notes || undefined,
+        facultyId: ctx?.faculty?.id,
+        systemStatus: ctx.systemStatus,
+        actualStatus: actual,
+        correctness,
+        overrideApplied: ctx.overrideApplied,
+        notes: notes || undefined,
       });
       setNotes('');
       setMsg({ kind: 'ok', text: 'Entry recorded. Thank you.' });
