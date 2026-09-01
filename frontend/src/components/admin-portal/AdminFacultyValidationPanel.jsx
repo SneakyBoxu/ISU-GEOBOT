@@ -6,9 +6,22 @@
  * ground-truth validation entries.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ClipboardCheck, RefreshCw, UserCheck, Sparkles, Loader2, ArrowRight, Search, X, User, Check } from 'lucide-react';
+import {
+  ClipboardCheck, RefreshCw, UserCheck, Sparkles, Loader2, ArrowRight,
+  Search, X, User, Check, Wifi, WifiOff, UploadCloud, Download, Database,
+  AlertCircle, FileDown, ShieldCheck
+} from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { Alert, Button, EmptyState, Field, Input, Select, SkeletonRows, StatusIndicator, Textarea } from '../ui-primitives/index.js';
+import {
+  getPendingEntries,
+  savePendingEntry,
+  removePendingEntries,
+  exportPendingEntriesAsJson,
+  exportPendingEntriesAsCsv,
+  getOfflineSnapshotMeta,
+  saveOfflineSnapshotMeta,
+} from '../../frontend-utilities/offlineValidationQueue.js';
 
 const PAGE = 15;
 
@@ -31,6 +44,14 @@ export default function AdminFacultyValidationPanel({ session }) {
   const [estimateCtx, setEstimateCtx] = useState(null);
   const [ctxLoading, setCtxLoading] = useState(false);
 
+  // Offline Mode & Sync states
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [pendingEntries, setPendingEntries] = useState(() => getPendingEntries());
+  const [syncing, setSyncing] = useState(false);
+  const [preloading, setPreloading] = useState(false);
+  const [snapshotMeta, setSnapshotMeta] = useState(() => getOfflineSnapshotMeta());
+  const [syncMsg, setSyncMsg] = useState(null);
+
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
@@ -47,6 +68,15 @@ export default function AdminFacultyValidationPanel({ session }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  // Listen to queue changes across tabs/components
+  useEffect(() => {
+    const handleQueueChange = (e) => {
+      setPendingEntries(e.detail || getPendingEntries());
+    };
+    window.addEventListener('geobot-offline-queue-changed', handleQueueChange);
+    return () => window.removeEventListener('geobot-offline-queue-changed', handleQueueChange);
+  }, []);
 
   const departments = useMemo(() => {
     return ['all', ...new Set(facultyList.map((f) => f.department).filter(Boolean))];
@@ -75,8 +105,8 @@ export default function AdminFacultyValidationPanel({ session }) {
       if (list.length > 0 && !selectedFacultyId) {
         setSelectedFacultyId(list[0].facultyId);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn('Could not fetch online roster; checking fallback', err);
     } finally {
       setFacultyLoading(false);
     }
@@ -89,9 +119,12 @@ export default function AdminFacultyValidationPanel({ session }) {
     try {
       const e = await api.validateEntries(session.access_token);
       setEntries(e.entries ?? []);
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); }
-  }, [session]);
+    } catch (err) {
+      if (!offlineMode) setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [session, offlineMode]);
 
   // 3. Load Real-Time Estimate for Selected Faculty
   const loadEstimate = useCallback(async (fId) => {
@@ -104,7 +137,8 @@ export default function AdminFacultyValidationPanel({ session }) {
         setSystemStatus(ctx.systemStatus);
         setActualStatus(ctx.systemStatus);
       }
-    } catch {
+    } catch (err) {
+      console.warn('Could not load estimate context', err);
       setEstimateCtx(null);
     } finally {
       setCtxLoading(false);
@@ -122,10 +156,80 @@ export default function AdminFacultyValidationPanel({ session }) {
     }
   }, [selectedFacultyId, loadEstimate]);
 
+  // Preload Snapshot Action
+  const handlePreloadSnapshot = async () => {
+    if (!session) return;
+    setPreloading(true);
+    setSyncMsg(null);
+    try {
+      const res = await api.validatePreload(session.access_token);
+      const meta = {
+        cachedAt: res.cachedAt || new Date().toISOString(),
+        facultyCount: res.facultyCount || 0,
+        scheduleCount: res.scheduleCount || 0,
+      };
+      saveOfflineSnapshotMeta(meta);
+      setSnapshotMeta(meta);
+      setSyncMsg({ kind: 'ok', text: `Offline snapshot ready (${res.facultyCount} faculty, ${res.scheduleCount} schedules cached).` });
+      await loadRoster();
+    } catch (err) {
+      setSyncMsg({ kind: 'error', text: `Preload failed: ${err.message}` });
+    } finally {
+      setPreloading(false);
+    }
+  };
+
+  // Manual Batch Sync Action
+  const handleManualSync = async () => {
+    if (!session || pendingEntries.length === 0) return;
+    setSyncing(true);
+    setSyncMsg(null);
+    try {
+      const res = await api.validateBatchSync(session.access_token, pendingEntries);
+      const syncedIds = pendingEntries.map((e) => e.clientTempId);
+      removePendingEntries(syncedIds);
+      setPendingEntries(getPendingEntries());
+      setSyncMsg({ kind: 'ok', text: `Successfully synced ${res.syncedCount || pendingEntries.length} entries to Supabase!` });
+      await loadEntries();
+    } catch (err) {
+      setSyncMsg({ kind: 'error', text: `Sync failed: ${err.message}. Entries remain safely in local storage.` });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   async function submit(e) {
     e.preventDefault();
     if (!selectedFacultyId) return;
     setBusy(true); setMsg(null);
+
+    const facultyObj = facultyList.find((f) => f.facultyId === selectedFacultyId);
+
+    // If explicit Offline Mode is enabled
+    if (offlineMode) {
+      try {
+        savePendingEntry({
+          facultyId: selectedFacultyId,
+          facultyName: facultyObj?.name || 'Selected Faculty',
+          systemStatus,
+          actualStatus,
+          correctness,
+          overrideApplied: estimateCtx?.overrideApplied ?? false,
+          notes: notes || undefined,
+          queriedAt: new Date().toISOString(),
+        });
+        setPendingEntries(getPendingEntries());
+        setMsg({ kind: 'ok', text: '📦 Recorded to local offline queue (Pending sync).' });
+        setNotes('');
+      } catch (err) {
+        setMsg({ kind: 'error', text: err.message });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
+    // Otherwise attempt normal online submission with fallback
     try {
       await api.validateSubmit(session.access_token, {
         facultyId: selectedFacultyId,
@@ -135,12 +239,33 @@ export default function AdminFacultyValidationPanel({ session }) {
         overrideApplied: estimateCtx?.overrideApplied ?? false,
         notes: notes || undefined,
       });
-      setMsg({ kind: 'ok', text: 'Validation entry recorded successfully.' });
+      setMsg({ kind: 'ok', text: 'Validation entry recorded successfully to database.' });
       setNotes('');
       await loadEntries();
       setPage(0);
-    } catch (err) { setMsg({ kind: 'error', text: err.message }); }
-    finally { setBusy(false); }
+    } catch (err) {
+      // Auto-fallback if network error
+      console.warn('Online submit failed, saving to offline queue:', err.message);
+      try {
+        savePendingEntry({
+          facultyId: selectedFacultyId,
+          facultyName: facultyObj?.name || 'Selected Faculty',
+          systemStatus,
+          actualStatus,
+          correctness,
+          overrideApplied: estimateCtx?.overrideApplied ?? false,
+          notes: notes || undefined,
+          queriedAt: new Date().toISOString(),
+        });
+        setPendingEntries(getPendingEntries());
+        setMsg({ kind: 'ok', text: '📦 Server offline: Saved to local queue (Pending sync).' });
+        setNotes('');
+      } catch (saveErr) {
+        setMsg({ kind: 'error', text: `Failed: ${err.message}` });
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   const pages = Math.ceil(entries.length / PAGE);
@@ -155,6 +280,124 @@ export default function AdminFacultyValidationPanel({ session }) {
 
   return (
     <div>
+      {/* Offline Mode & Sync Control Banner */}
+      <div className={`mb-6 rounded-lg border p-4 transition-all duration-300 ${
+        offlineMode
+          ? 'border-amber-500/40 bg-amber-500/10 text-fg'
+          : 'border-line bg-surface'
+      }`}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+              offlineMode ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/15 text-emerald-500'
+            }`}>
+              {offlineMode ? <WifiOff className="h-5 w-5" /> : <Wifi className="h-5 w-5" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-body font-semibold text-fg">
+                  {offlineMode ? 'Offline Mode Active' : 'Online Cloud Mode'}
+                </span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                  offlineMode
+                    ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                    : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${offlineMode ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                  {offlineMode ? 'Local ML Model & Queue' : 'Live Supabase Connection'}
+                </span>
+              </div>
+              <p className="text-meta text-fg-muted mt-0.5">
+                {offlineMode
+                  ? 'Estimates run via local Python Random Forest. Validation entries are stored safely in local storage.'
+                  : 'Predictions query live presence & schedule services. Entries sync directly to database.'}
+                {snapshotMeta?.cachedAt && (
+                  <span className="ml-2 opacity-80">
+                    • Snapshot: {new Date(snapshotMeta.cachedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })} ({snapshotMeta.facultyCount ?? 37} faculty)
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Mode Switch Button */}
+            <Button
+              type="button"
+              variant={offlineMode ? 'secondary' : 'outline'}
+              size="sm"
+              icon={offlineMode ? Wifi : WifiOff}
+              onClick={() => setOfflineMode((prev) => !prev)}
+            >
+              {offlineMode ? 'Switch to Online' : 'Force Offline Mode'}
+            </Button>
+
+            {/* Preload Snapshot Button */}
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              icon={Download}
+              loading={preloading}
+              onClick={handlePreloadSnapshot}
+              title="Cache faculty roster and schedules to disk for offline evaluation"
+            >
+              Preload for Offline
+            </Button>
+
+            {/* Manual Sync Button */}
+            <Button
+              type="button"
+              variant={pendingEntries.length > 0 ? 'primary' : 'secondary'}
+              size="sm"
+              icon={UploadCloud}
+              loading={syncing}
+              disabled={pendingEntries.length === 0 || syncing}
+              onClick={handleManualSync}
+            >
+              Sync to Cloud ({pendingEntries.length})
+            </Button>
+
+            {/* Export Backup Dropdown / Action */}
+            {pendingEntries.length > 0 && (
+              <div className="flex items-center gap-1 border-l border-line pl-2">
+                <Button
+                  type="button"
+                  variant="text"
+                  size="sm"
+                  icon={FileDown}
+                  onClick={() => exportPendingEntriesAsJson()}
+                  title="Export offline entries as JSON backup"
+                >
+                  JSON
+                </Button>
+                <Button
+                  type="button"
+                  variant="text"
+                  size="sm"
+                  icon={FileDown}
+                  onClick={() => exportPendingEntriesAsCsv()}
+                  title="Export offline entries as CSV"
+                >
+                  CSV
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {syncMsg && (
+          <div className={`mt-3 flex items-center justify-between rounded p-2.5 text-meta ${
+            syncMsg.kind === 'ok' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+          }`}>
+            <span>{syncMsg.text}</span>
+            <button type="button" onClick={() => setSyncMsg(null)} className="opacity-70 hover:opacity-100">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Submit form */}
       <form onSubmit={submit} className="mb-10 rounded-lg border border-line bg-surface p-6">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-line pb-4">
@@ -433,7 +676,7 @@ export default function AdminFacultyValidationPanel({ session }) {
         {/* Submit action */}
         <div className="mt-6 flex items-center gap-4">
           <Button type="submit" variant="primary" size="lg" loading={busy} disabled={!selectedFacultyId}>
-            Record entry
+            {offlineMode ? 'Queue offline entry' : 'Record entry'}
           </Button>
           {msg && (
             <span className={msg.kind === 'ok' ? 'text-success text-meta font-medium' : 'text-error text-meta font-medium'}>
@@ -456,9 +699,72 @@ export default function AdminFacultyValidationPanel({ session }) {
         </Button>
       </div>
 
+      {/* Pending Unsynced Offline Queue Table (if any) */}
+      {pendingEntries.length > 0 && (
+        <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <h3 className="text-body font-semibold text-fg">
+                Unsynced Offline Queue ({pendingEntries.length})
+              </h3>
+            </div>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              icon={UploadCloud}
+              loading={syncing}
+              onClick={handleManualSync}
+            >
+              Sync All Now
+            </Button>
+          </div>
+
+          <div className="overflow-x-auto rounded border border-amber-500/20 bg-surface">
+            <table className="w-full min-w-[36rem] text-left">
+              <thead>
+                <tr className="table-head bg-bg-sunken text-xs">
+                  <th scope="col" className="py-2 px-3 font-medium">Captured Time</th>
+                  <th scope="col" className="py-2 px-3 font-medium">Faculty</th>
+                  <th scope="col" className="py-2 px-3 font-medium">Estimate</th>
+                  <th scope="col" className="py-2 px-3 font-medium">Observed</th>
+                  <th scope="col" className="py-2 px-3 font-medium">Result</th>
+                  <th scope="col" className="py-2 px-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingEntries.map((pe) => (
+                  <tr key={pe.clientTempId} className="border-b border-line last:border-0 text-xs">
+                    <td className="py-2 px-3 font-mono text-fg-subtle">
+                      {new Date(pe.queriedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </td>
+                    <td className="py-2 px-3 font-medium text-fg">{pe.facultyName}</td>
+                    <td className="py-2 px-3 text-fg-muted">{statusLabel(pe.systemStatus)}</td>
+                    <td className="py-2 px-3 text-fg-muted">{statusLabel(pe.actualStatus)}</td>
+                    <td className="py-2 px-3">
+                      <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                        pe.correctness === 'correct' ? 'bg-emerald-500/10 text-emerald-600' : pe.correctness === 'incorrect' ? 'bg-rose-500/10 text-rose-600' : 'bg-amber-500/10 text-amber-600'
+                      }`}>
+                        {pe.correctness === 'correct' ? '✓ Correct' : pe.correctness === 'incorrect' ? '✗ Incorrect' : '≈ Partial'}
+                      </span>
+                    </td>
+                    <td className="py-2 px-3">
+                      <span className="inline-flex items-center gap-1 rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                        📦 Pending Sync
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {entries.length > 0 && (
         <dl className="mb-6 grid gap-px border-y border-line sm:grid-cols-4">
-          {[['Total Entries', entries.length], ['Correct', correct], ['Partially Correct', partial], ['Incorrect', incorrect]].map(([label, value]) => (
+          {[['Total Cloud Entries', entries.length], ['Correct', correct], ['Partially Correct', partial], ['Incorrect', incorrect]].map(([label, value]) => (
             <div key={label} className="py-4 sm:pr-6">
               <dt className="eyebrow">{label}</dt>
               <dd className="mt-1 font-serif text-h3 text-fg" data-numeric>{value}</dd>

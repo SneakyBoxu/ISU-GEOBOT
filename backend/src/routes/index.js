@@ -19,7 +19,7 @@ import { config } from '../utilities/configuration.js';
 import { optionalAuth, requireAuth, requireRole } from '../middleware/authentication.js';
 import { assertNoLeak, toChatDto } from '../middleware/privacy-masking-middleware.js';
 import { logChat, runPipeline, labelFor } from '../services/knowledge-search-service.js';
-import { getAvailability, resolvePresence } from '../services/faculty-presence-service.js';
+import { getAvailability, resolvePresence, preloadOfflineSnapshot, getMemorySnapshot } from '../services/faculty-presence-service.js';
 import { admin } from './admin-routes.js';
 import {
   extractAvailabilityPreview,
@@ -286,7 +286,23 @@ api.get('/guard/roster', requireAuth, requireRole('guard', 'admin', 'researcher'
           lastEventAt: r.last_event_at,
         })),
       });
-    } catch (err) { next(err); }
+    } catch (err) {
+      log.warn({ err: err.message }, 'guard/roster falling back to offline snapshot');
+      const snap = getMemorySnapshot();
+      if (snap?.faculty?.length) {
+        return res.json({
+          roster: snap.faculty.map((f) => ({
+            facultyId: f.id,
+            name: f.full_name,
+            department: f.department,
+            presenceState: 'unknown',
+            lastEventType: null,
+            lastEventAt: null,
+          })),
+        });
+      }
+      next(err);
+    }
   });
 
 const eventSchema = z.object({
@@ -371,20 +387,35 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
       // transcription-error attack on the results.
       let targetFacultyId = req.query.facultyId || req.user.facultyId;
       if (!targetFacultyId && req.user.roles.some((r) => ['admin', 'researcher'].includes(r))) {
-        const { data: anyFaculty } = await db
-          .from('faculty')
-          .select('id')
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
-        targetFacultyId = anyFaculty?.id ?? null;
+        try {
+          const { data: anyFaculty } = await db
+            .from('faculty')
+            .select('id')
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+          targetFacultyId = anyFaculty?.id ?? null;
+        } catch {
+          const snap = getMemorySnapshot();
+          targetFacultyId = snap?.faculty?.[0]?.id ?? null;
+        }
       }
 
+      const defaultStatusOptions = [
+        { code: 'available_consultation', display_label: 'Available for Consultation' },
+        { code: 'in_scheduled_class', display_label: 'In Scheduled Class' },
+        { code: 'unavailable_off_schedule', display_label: 'Unavailable / Off Schedule' },
+      ];
+
       if (!targetFacultyId) {
-        const { data: statuses } = await db
-          .from('availability_status')
-          .select('code, display_label')
-          .order('sort_order');
+        let statuses = defaultStatusOptions;
+        try {
+          const { data } = await db
+            .from('availability_status')
+            .select('code, display_label')
+            .order('sort_order');
+          if (data?.length) statuses = data;
+        } catch { /* use default */ }
 
         return res.json({
           faculty: null,
@@ -392,15 +423,23 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
           systemStatusLabel: null,
           overrideApplied: false,
           estimatedAt: null,
-          statusOptions: statuses ?? [],
+          statusOptions: statuses,
         });
       }
 
-      const { data: faculty } = await db
-        .from('faculty')
-        .select('id, full_name')
-        .eq('id', targetFacultyId)
-        .maybeSingle();
+      let faculty = null;
+      try {
+        const { data } = await db
+          .from('faculty')
+          .select('id, full_name')
+          .eq('id', targetFacultyId)
+          .maybeSingle();
+        faculty = data;
+      } catch (err) {
+        const snap = getMemorySnapshot();
+        const f = snap?.faculty?.find((x) => x.id === targetFacultyId);
+        if (f) faculty = { id: f.id, name: f.full_name, full_name: f.full_name };
+      }
 
       let systemStatus = null;
       let systemStatusLabel = null;
@@ -422,19 +461,31 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
         log.warn({ err: err.message, targetFacultyId }, 'Could not resolve availability estimate for validation context');
       }
 
-      const { data: statuses } = await db
-        .from('availability_status')
-        .select('code, display_label')
-        .order('sort_order');
+      let statuses = defaultStatusOptions;
+      try {
+        const { data } = await db
+          .from('availability_status')
+          .select('code, display_label')
+          .order('sort_order');
+        if (data?.length) statuses = data;
+      } catch { /* use default */ }
 
       res.json({
-        faculty: faculty ? { id: faculty.id, name: faculty.full_name } : null,
+        faculty: faculty ? { id: faculty.id, name: faculty.full_name || faculty.name } : null,
         systemStatus,
         systemStatusLabel,
         overrideApplied,
         estimatedAt,
-        statusOptions: statuses ?? [],
+        statusOptions: statuses,
       });
+    } catch (err) { next(err); }
+  });
+
+api.get('/validate/offline-preload', requireAuth, requireRole('validator', 'admin', 'researcher'),
+  async (_req, res, next) => {
+    try {
+      const result = await preloadOfflineSnapshot();
+      res.json(result);
     } catch (err) { next(err); }
   });
 
@@ -445,7 +496,52 @@ const validationSchema = z.object({
   correctness: z.enum(['correct', 'partially_correct', 'incorrect']),
   overrideApplied: z.boolean().optional(),
   notes: z.string().max(500).optional(),
+  queriedAt: z.string().optional().nullable(),
+  occurredAt: z.string().optional().nullable(),
 });
+
+const batchSyncSchema = z.object({
+  entries: z.array(z.object({
+    facultyId: z.string().min(1).max(64),
+    systemStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
+    actualStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
+    correctness: z.enum(['correct', 'partially_correct', 'incorrect']),
+    overrideApplied: z.boolean().optional(),
+    notes: z.string().max(500).optional().nullable(),
+    queriedAt: z.string().optional().nullable(),
+    occurredAt: z.string().optional().nullable(),
+  })).min(1),
+});
+
+api.post('/validate/batch-sync', requireAuth, requireRole('validator', 'admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const body = batchSyncSchema.parse(req.body);
+      const rows = body.entries.map((e) => ({
+        faculty_id: e.facultyId,
+        system_status: e.systemStatus,
+        actual_status: e.actualStatus,
+        correctness: e.correctness,
+        override_applied: Boolean(e.overrideApplied),
+        notes: e.notes || null,
+        queried_at: e.queriedAt || e.occurredAt || new Date().toISOString(),
+        data_origin: 'real',
+      }));
+
+      const { data, error } = await db
+        .from('faculty_validation')
+        .insert(rows)
+        .select('id, queried_at');
+
+      if (error) throw error;
+      res.status(201).json({
+        ok: true,
+        syncedCount: data ? data.length : rows.length,
+        total: rows.length,
+        entries: data ?? [],
+      });
+    } catch (err) { next(err); }
+  });
 
 api.post('/validate/entries', requireAuth, requireRole('validator', 'admin', 'researcher'),
   async (req, res, next) => {
@@ -487,6 +583,7 @@ api.post('/validate/entries', requireAuth, requireRole('validator', 'admin', 're
           correctness: body.correctness,
           override_applied: body.overrideApplied ?? false,
           notes: body.notes ?? null,
+          queried_at: body.queriedAt || body.occurredAt || new Date().toISOString(),
           data_origin: 'real',
         })
         .select('id, queried_at')

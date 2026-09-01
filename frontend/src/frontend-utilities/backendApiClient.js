@@ -83,6 +83,10 @@ export const api = {
   validateSubmit: (token, body) =>
     request('/validate/entries', { method: 'POST', body, token }),
   validateEntries: (token) => request('/validate/entries', { token }),
+  validatePreload: (token) =>
+    request('/validate/offline-preload', { token }),
+  validateBatchSync: (token, entries) =>
+    request('/validate/batch-sync', { method: 'POST', body: { entries }, token }),
 
   // Availability-event ingestion. OCR remains in the browser; extraction,
   // publication, and withdrawal cross the authenticated Express boundary.

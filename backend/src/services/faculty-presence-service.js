@@ -21,24 +21,117 @@
  * ground truth is absent.
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { db, ml, log } from '../utilities/service-clients.js';
 import { config } from '../utilities/configuration.js';
 import { maskOverride, maskPrediction } from '../middleware/privacy-masking-middleware.js';
 import { findCurrentAvailabilityEvent } from './availability-event-service.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SNAPSHOT_DIR = path.resolve(__dirname, '../../data');
+const SNAPSHOT_FILE = path.join(SNAPSHOT_DIR, 'offline_schedule_snapshot.json');
+
+let memorySnapshot = null;
+
+export function getMemorySnapshot() {
+  if (memorySnapshot) return memorySnapshot;
+  try {
+    if (fs.existsSync(SNAPSHOT_FILE)) {
+      const raw = fs.readFileSync(SNAPSHOT_FILE, 'utf8');
+      memorySnapshot = JSON.parse(raw);
+      log.info({ cachedAt: memorySnapshot.cachedAt, facultyCount: memorySnapshot.faculty?.length }, 'Loaded offline schedule snapshot from disk');
+    }
+  } catch (err) {
+    log.warn({ err: err.message }, 'Could not load offline schedule snapshot from disk');
+  }
+  return memorySnapshot;
+}
+
+export async function preloadOfflineSnapshot() {
+  log.info('Preloading offline schedule snapshot from database...');
+  try {
+    const [facRes, deptRes, schedRes, pseudoRes, eventRes] = await Promise.all([
+      db.from('faculty').select('id, full_name, department_id, is_active, is_consented').eq('is_active', true),
+      db.from('department').select('id, name'),
+      db.from('faculty_schedule').select('id, faculty_id, day_of_week, start_time, end_time, block_kind, course_code, campus, semester'),
+      db.from('faculty_pseudonym_map').select('faculty_id, pseudonym_id'),
+      db.from('institutional_event').select('id, event_date, title, event_type, disrupts_schedule'),
+    ]);
+
+    if (facRes.error) throw facRes.error;
+    if (schedRes.error) throw schedRes.error;
+
+    const deptMap = {};
+    (deptRes.data ?? []).forEach((d) => {
+      deptMap[d.id] = d.name;
+    });
+
+    const pseudoMap = {};
+    (pseudoRes.data ?? []).forEach((p) => {
+      pseudoMap[p.faculty_id] = p.pseudonym_id;
+    });
+
+    const snapshot = {
+      cachedAt: new Date().toISOString(),
+      campus: config.presence.campus,
+      timezone: config.presence.timezone,
+      faculty: (facRes.data ?? []).map((f) => ({
+        id: f.id,
+        full_name: f.full_name,
+        department: deptMap[f.department_id] || 'General Faculty',
+        is_consented: Boolean(f.is_consented),
+      })),
+      schedules: schedRes.data ?? [],
+      pseudonymMap: pseudoMap,
+      events: eventRes.data ?? [],
+    };
+
+    if (!fs.existsSync(SNAPSHOT_DIR)) {
+      fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
+    }
+    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(snapshot, null, 2), 'utf8');
+    memorySnapshot = snapshot;
+
+    log.info({ facultyCount: snapshot.faculty.length, scheduleCount: snapshot.schedules.length }, 'Offline snapshot preloaded and saved successfully');
+
+    return {
+      ok: true,
+      cachedAt: snapshot.cachedAt,
+      facultyCount: snapshot.faculty.length,
+      scheduleCount: snapshot.schedules.length,
+      eventsCount: snapshot.events.length,
+    };
+  } catch (err) {
+    log.error({ err: err.message }, 'Failed to preload offline snapshot from database');
+    throw err;
+  }
+}
+
 export async function resolvePresence(facultyId, at = new Date()) {
-  const { data, error } = await db.rpc('resolve_presence', {
-    p_faculty_id: facultyId,
-    p_at: at.toISOString(),
-    p_timezone: config.presence.timezone,
-  });
-  if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : data;
-  return {
-    state: row?.presence_state ?? 'unknown',
-    lastEventType: row?.last_event_type ?? null,
-    lastEventAt: row?.last_event_at ?? null,
-  };
+  try {
+    const { data, error } = await db.rpc('resolve_presence', {
+      p_faculty_id: facultyId,
+      p_at: at.toISOString(),
+      p_timezone: config.presence.timezone,
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+      state: row?.presence_state ?? 'unknown',
+      lastEventType: row?.last_event_type ?? null,
+      lastEventAt: row?.last_event_at ?? null,
+    };
+  } catch (err) {
+    log.warn({ err: err.message, facultyId }, 'resolvePresence fallback: returning unknown state (offline mode)');
+    return {
+      state: 'unknown',
+      lastEventType: null,
+      lastEventAt: null,
+    };
+  }
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -54,43 +147,74 @@ function formatClock(timeStr) {
   return `${h}:${m} ${ampm}`;
 }
 
-/**
- * Schedule context for the feature vector. Uses the same SQL function that
- * backs baseline_rule.py, so the forest and the baseline see the same view of
- * the schedule (audit F-20).
- */
 async function scheduleContext(facultyId, at) {
-  const { data, error } = await db.rpc('schedule_lookup_status', {
-    p_faculty_id: facultyId,
-    p_at: at.toISOString(),
-    p_semester: null,
-    p_timezone: config.presence.timezone,
-    // Migration 008. Without this the function defaults to 'echague', which
-    // happens to be right for this deployment — but availability is always
-    // relative to a place, and a lookup that does not say which place is one
-    // configuration change away from being quietly wrong.
-    p_campus: config.presence.campus,
-  });
-  if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : data;
-  const matchedBlock = row?.matched_block ?? null;
+  const local = new Date(at.toLocaleString('en-US', { timeZone: config.presence.timezone }));
+  const dow = local.getDay();
+  const timeStr = local.toTimeString().slice(0, 8);
+  const dateIso = local.toISOString().slice(0, 10);
 
-  let courseCode = null;
-  let currentEndTime = null;
-  let nextAvailable = null;
+  let row = null;
+  let allSched = null;
 
   try {
-    const local = new Date(at.toLocaleString('en-US', { timeZone: config.presence.timezone }));
-    const dow = local.getDay();
-    const timeStr = local.toTimeString().slice(0, 8);
+    const { data, error } = await db.rpc('schedule_lookup_status', {
+      p_faculty_id: facultyId,
+      p_at: at.toISOString(),
+      p_semester: null,
+      p_timezone: config.presence.timezone,
+      p_campus: config.presence.campus,
+    });
+    if (error) throw error;
+    row = Array.isArray(data) ? data[0] : data;
 
-    const { data: allSched } = await db
+    const { data: schedData } = await db
       .from('faculty_schedule')
       .select('day_of_week, start_time, end_time, block_kind, course_code, campus')
       .eq('faculty_id', facultyId)
       .order('day_of_week')
       .order('start_time');
+    allSched = schedData;
+  } catch (err) {
+    log.warn({ err: err.message, facultyId }, 'scheduleContext using offline snapshot fallback');
+    const snapshot = getMemorySnapshot();
+    if (snapshot?.schedules) {
+      allSched = snapshot.schedules.filter((s) => s.faculty_id === facultyId);
+      
+      const eventToday = snapshot.events?.find((e) => {
+        const eDate = typeof e.event_date === 'string' ? e.event_date.slice(0, 10) : new Date(e.event_date).toISOString().slice(0, 10);
+        return eDate === dateIso && e.disrupts_schedule;
+      });
 
+      if (eventToday) {
+        row = {
+          status_code: 'unavailable_off_schedule',
+          matched_block: null,
+          is_event_day: true,
+          event_type: eventToday.event_type,
+        };
+      } else {
+        const curBlock = allSched.find((s) => s.day_of_week === dow && s.start_time <= timeStr && s.end_time > timeStr);
+        if (!curBlock) {
+          row = { status_code: 'unavailable_off_schedule', matched_block: null, is_event_day: false, event_type: null };
+        } else if (curBlock.campus && curBlock.campus !== config.presence.campus) {
+          row = { status_code: 'unavailable_off_schedule', matched_block: 'class_other_campus', is_event_day: false, event_type: null };
+        } else if (curBlock.block_kind === 'class') {
+          row = { status_code: 'in_scheduled_class', matched_block: 'class', is_event_day: false, event_type: null };
+        } else if (['consultation', 'admin'].includes(curBlock.block_kind)) {
+          row = { status_code: 'available_consultation', matched_block: curBlock.block_kind, is_event_day: false, event_type: null };
+        } else {
+          row = { status_code: 'unavailable_off_schedule', matched_block: null, is_event_day: false, event_type: null };
+        }
+      }
+    }
+  }
+
+  const matchedBlock = row?.matched_block ?? null;
+  let courseCode = null;
+  let currentEndTime = null;
+  let nextAvailable = null;
+
+  try {
     if (allSched?.length) {
       const current = allSched.find(
         (s) => s.day_of_week === dow && s.start_time <= timeStr && s.end_time > timeStr,
@@ -104,7 +228,6 @@ async function scheduleContext(facultyId, at) {
       }
 
       // Find next consultation block
-      // 1. Later today (only if today is not a disrupted event day)
       let next = null;
       if (!row?.is_event_day) {
         next = allSched.find(
@@ -118,7 +241,6 @@ async function scheduleContext(facultyId, at) {
       if (next) {
         nextAvailable = `today from ${formatClock(next.start_time)} to ${formatClock(next.end_time)}`;
       } else {
-        // Fetch upcoming institutional events for the next 14 days
         const startIso = local.toISOString().slice(0, 10);
         const endLimit = new Date(local);
         endLimit.setDate(local.getDate() + 14);
@@ -137,9 +259,15 @@ async function scheduleContext(facultyId, at) {
               .filter((e) => e.disrupts_schedule)
               .map((e) => typeof e.event_date === 'string' ? e.event_date.slice(0, 10) : new Date(e.event_date).toISOString().slice(0, 10))
           );
-        } catch { /* fallback to normal calendar if query fails */ }
+        } catch {
+          const snapshot = getMemorySnapshot();
+          disruptedDates = new Set(
+            (snapshot?.events ?? [])
+              .filter((e) => e.disrupts_schedule)
+              .map((e) => typeof e.event_date === 'string' ? e.event_date.slice(0, 10) : new Date(e.event_date).toISOString().slice(0, 10))
+          );
+        }
 
-        // 2. Look across next 14 days, skipping dates with disruptive events / holidays
         for (let offset = 1; offset <= 14; offset++) {
           const candidate = new Date(local);
           candidate.setDate(local.getDate() + offset);
@@ -147,7 +275,7 @@ async function scheduleContext(facultyId, at) {
           const nextDow = candidate.getDay();
 
           if (disruptedDates.has(candidateDateStr)) {
-            continue; // Skip holiday or disruptive campus event
+            continue;
           }
 
           next = allSched.find(
@@ -170,46 +298,12 @@ async function scheduleContext(facultyId, at) {
     nextAvailable,
     isEventDay: Boolean(row?.is_event_day),
     eventType: row?.event_type ?? null,
-    /**
-     * Teaching, but not here — and INTERNAL ONLY.
-     *
-     * The tempting move is to answer "they are teaching at the Santiago
-     * campus", which is friendlier and more informative. It is also a
-     * location disclosure about an identified person, which is precisely
-     * what the Status Masking Protocol exists to prevent. Naming a city is
-     * coarser than naming a room; it is not categorically different, and a
-     * system that refuses to say "Room 304" while volunteering "Santiago"
-     * has not drawn the line it claims to draw.
-     *
-     * So the disclosed status stays 'unavailable_off_schedule' — accurate,
-     * because they are not available here — and this flag is used only
-     * inside the process: it keeps is_scheduled_class at 0 for the feature
-     * vector, and it explains the result in an audit trail. The DTO is
-     * built from an allowlist in privacy-masking-middleware.js, so this
-     * cannot reach a response by accident.
-     */
     onOtherCampus: matchedBlock === 'class_other_campus',
   };
 }
 
 /**
  * The three historical-attendance features, thesis §3.5.2(b).
- *
- * WHY THIS EXISTS. dataset_loader.py computes these when it builds training
- * rows, and they carry roughly a third of the trained model's decision —
- * hist_presence_rate alone is its second strongest feature. This path used to
- * send seven features and leave these out, so the Flask service filled them
- * with zeros and every live prediction was made with a third of the model's
- * signal flat.
- *
- * That failure is silent by construction: the model still returns a class, the
- * logs still look healthy, and the offline accuracy stays high. It is the
- * train/serve skew feature_engineering.py opens by warning about.
- *
- * One definition, in the database, called by both sides. A degraded read
- * returns zeros rather than throwing: an availability answer computed from a
- * partial feature vector is worse than a slow one, but far better than a
- * 500 on the whole query.
  */
 async function attendanceHistory(pseudonym, at) {
   const zero = {
@@ -234,47 +328,29 @@ async function attendanceHistory(pseudonym, at) {
       hist_early_departure_rate: Number(row.hist_early_departure_rate ?? 0),
     };
   } catch (err) {
-    log.warn({ err }, 'attendance_features unavailable; predicting without §3.5.2(b)');
     return zero;
   }
 }
 
 async function pseudonymFor(facultyId) {
-  // Audit F-19. The model receives a pseudonym, never a name and never the
-  // faculty UUID. The map is held separately and is not exposed by any route.
-  const { data } = await db
-    .from('faculty_pseudonym_map')
-    .select('pseudonym_id')
-    .eq('faculty_id', facultyId)
-    .maybeSingle();
-  return data?.pseudonym_id ?? null;
+  try {
+    const { data, error } = await db
+      .from('faculty_pseudonym_map')
+      .select('pseudonym_id')
+      .eq('faculty_id', facultyId)
+      .maybeSingle();
+    if (!error && data?.pseudonym_id) return data.pseudonym_id;
+  } catch (err) {
+    // offline fallback
+  }
+
+  const snapshot = getMemorySnapshot();
+  return snapshot?.pseudonymMap?.[facultyId] ?? null;
 }
 
 /**
- * THE ONE PLACE A TIMESTAMP BECOMES A MODEL FEATURE.
- *
- * `day_of_week` and `time_slot` are read straight off the `when` the model is
- * handed: `feature_engineering.build_vector()` calls `row.when.weekday()` and
- * `time_slot(row.when.time())` with no conversion of its own. Training builds
- * those rows from `dataset_loader._slots_for_day()`, which yields CAMPUS-LOCAL
- * NAIVE datetimes.
- *
- * Serving used to send `at.toISOString()` — UTC. Manila is UTC+8, so every
- * prediction was made eight hours from the moment asked about:
- *
- *     16:30 Manila Tue -> 2026-11-03T08:30:00Z   model reads 08:30
- *     07:00 Manila Tue -> 2026-11-02T23:00:00Z   model reads MONDAY 23:00
- *
- * The second is the damaging one. Any query before 08:00 local — most of the
- * teaching morning — crossed into the previous UTC day, so the model was asked
- * about a different weekday's pattern entirely.
- *
- * `sv-SE` is not a style choice: it is the locale whose output is already
- * ISO-shaped (`YYYY-MM-DD HH:mm:ss`), so the conversion needs no dependency and
- * no hand-rolled zero-padding. The zone comes from `config.presence.timezone`
- * rather than a hardcoded offset, so another campus stays correct.
- *
- * Exported for the regression tests: no network, no database.
+ * The one place a timestamp becomes a model feature.
+ * Campus-local naive ISO string.
  */
 export function toCampusLocalNaive(at, timezone = config.presence.timezone) {
   return at.toLocaleString('sv-SE', { timeZone: timezone }).replace(' ', 'T');
@@ -282,14 +358,6 @@ export function toCampusLocalNaive(at, timezone = config.presence.timezone) {
 
 /**
  * The academic window, from institutional_event.
- *
- * Two rows of event_type 'other' titled 'Academic window…' carry the start and
- * end (see database/sample-data/006_official_calendar.sql). They are marked
- * disrupts_schedule = false so schedule_lookup_status(), which selects only
- * `where ie.disrupts_schedule`, never sees them.
- *
- * Cached for a minute like the other lookups — a semester window does not move
- * during a request, and this is on the availability hot path.
  */
 let windowCache = { at: 0, value: null };
 const WINDOW_TTL_MS = 60_000;
@@ -298,17 +366,23 @@ async function academicWindow() {
   if (Date.now() - windowCache.at < WINDOW_TTL_MS) return windowCache.value;
   let value = null;
   try {
-    const { data } = await db
+    const { data, error } = await db
       .from('institutional_event')
       .select('event_date, title')
       .eq('event_type', 'other')
       .like('title', 'Academic window%')
       .order('event_date');
-    if (data?.length === 2) {
+    if (!error && data?.length === 2) {
       value = { start: new Date(data[0].event_date), end: new Date(data[1].event_date) };
     }
   } catch (err) {
-    log.warn({ err }, 'academic window unavailable; semester_phase falls back to mid');
+    const snapshot = getMemorySnapshot();
+    const windowEvents = (snapshot?.events ?? [])
+      .filter((e) => e.event_type === 'other' && e.title?.startsWith('Academic window'))
+      .sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+    if (windowEvents.length === 2) {
+      value = { start: new Date(windowEvents[0].event_date), end: new Date(windowEvents[1].event_date) };
+    }
   }
   windowCache = { at: Date.now(), value };
   return value;
