@@ -159,6 +159,49 @@ export function maskOverride({ source = 'guard_override', safeReason = null } = 
 }
 
 /**
+ * Property 1, applied to the SCHEDULE-ONLY path.
+ *
+ * WHY THIS EXISTS. `attendance_features()` returns 0.0 both when a person has
+ * been observed and was never present, and when there is no observation at
+ * all:
+ *
+ *     case when p.obs > 0 then p.hits / p.obs else 0.0 end
+ *
+ * Those are different statements. The Random Forest was trained where 0.0
+ * meant the first, so handing it the second for a lecturer with no attendance
+ * record asserts something false — that they are never on campus — and it
+ * duly returns `unavailable_off_schedule` for all of them.
+ *
+ * The honest response is not to invent a history. It is to notice that with no
+ * attendance evidence the model has nothing to add over the timetable, use the
+ * timetable, and SAY SO. That mirrors the guard override one layer down: an
+ * observation beats an estimate; no observation falls through to the weaker
+ * source, labelled as the weaker source.
+ *
+ * The status still crosses the same allowlist. Only `source` differs, so a
+ * reader of eval_result or chat_log can separate model-derived answers from
+ * schedule-derived ones — which is exactly the distinction Chapter 4 has to
+ * make.
+ */
+export function maskScheduleOnly(ruleStatus) {
+  if (!ALLOWED_STATUS_CODES.includes(ruleStatus)) {
+    throw new MaskingViolation(
+      'Schedule status rejected at the status masking boundary',
+      { received: typeof ruleStatus === 'string' ? ruleStatus : typeof ruleStatus },
+    );
+  }
+  return {
+    masked: {
+      statusCode: ruleStatus,
+      source: 'schedule_only',
+      maskedAt: new Date().toISOString(),
+    },
+    internalProbabilities: null,
+    modelVersion: null,
+  };
+}
+
+/**
  * Property 4. Output-side filter.
  *
  * Applied to every answer that carried an availability status. Returns the

@@ -356,24 +356,52 @@ function CropModal({ imageSrc, onDone, onCancel }) {
   const imgRef = useRef(null);
   const [crop, setCrop] = useState();
 
-  const handleImageLoad = useCallback((event) => {
-    const { width, height } = event.currentTarget;
-    setCrop({ unit: 'px', x: 0, y: 0, width, height });
+  /**
+   * PERCENT, NOT PIXELS.
+   *
+   * `onLoad` can fire before the browser has applied the CSS size constraints,
+   * so `event.currentTarget.width` is often still the NATURAL width — 1160 px
+   * for a scanned A4 page — while the element will actually render at about
+   * 400 px. A pixel crop built from that number is nearly three times the size
+   * of the displayed image, so the selection overflows the scroll container
+   * and only the part of the page that happens to be on screen can be reached.
+   * That is why a full-page document came out cropped.
+   *
+   * A percentage crop is resolution-independent: 100% is the whole page
+   * whatever size it is eventually laid out at.
+   */
+  const selectWholePage = useCallback(() => {
+    setCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
   }, []);
+
+  const handleImageLoad = useCallback(() => {
+    selectWholePage();
+  }, [selectWholePage]);
 
   const handleCrop = useCallback(() => {
     const image = imgRef.current;
     if (!image || !crop?.width || !crop?.height) return;
+
+    // Normalise to displayed pixels first: the crop may be in either unit.
+    const box = crop.unit === '%'
+      ? {
+        x: (crop.x / 100) * image.width,
+        y: (crop.y / 100) * image.height,
+        width: (crop.width / 100) * image.width,
+        height: (crop.height / 100) * image.height,
+      }
+      : crop;
+
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    const sourceWidth = crop.width * scaleX;
-    const sourceHeight = crop.height * scaleY;
+    const sourceWidth = box.width * scaleX;
+    const sourceHeight = box.height * scaleY;
     const outputScale = Math.min(1, 2400 / sourceWidth, 2400 / sourceHeight);
     const canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(sourceWidth * outputScale));
     canvas.height = Math.max(1, Math.round(sourceHeight * outputScale));
     canvas.getContext('2d').drawImage(
-      image, crop.x * scaleX, crop.y * scaleY, sourceWidth, sourceHeight,
+      image, box.x * scaleX, box.y * scaleY, sourceWidth, sourceHeight,
       0, 0, canvas.width, canvas.height,
     );
     onDone(canvas.toDataURL('image/jpeg', 0.92));
@@ -386,13 +414,26 @@ function CropModal({ imageSrc, onDone, onCancel }) {
           <div className="flex items-center gap-2 text-fg"><Crop className="h-4 w-4 text-accent" /><span className="font-semibold">Crop image</span></div>
           <button type="button" onClick={onCancel} className="rounded-lg p-2 text-fg-muted hover:bg-bg-sunken hover:text-fg" aria-label="Close crop dialog"><X className="h-4 w-4" /></button>
         </div>
-        <div className="flex h-[55vh] min-h-72 items-center justify-center overflow-auto rounded-lg bg-bg-sunken p-2 sm:h-[65vh]">
-          <ReactCrop crop={crop} onChange={(pixelCrop) => setCrop(pixelCrop)}>
-            <img ref={imgRef} src={imageSrc} alt="Crop preview" onLoad={handleImageLoad} className="block max-h-[62vh] max-w-full object-contain" />
+        <div className="flex h-[56vh] min-h-64 items-center justify-center overflow-hidden rounded-lg bg-bg-sunken p-3 sm:h-[58vh]">
+          {/*
+            The height cap goes on the WRAPPER, not the image. react-image-crop
+            ships `.ReactCrop__child-wrapper > img { max-height: inherit }`,
+            which at specificity (0,2,1) beats any single utility class on the
+            img itself — so a max-height set there is silently discarded and the
+            page renders at natural size. Capping the wrapper makes `inherit`
+            resolve to the value we actually want.
+          */}
+          <ReactCrop
+            crop={crop}
+            onChange={(pixelCrop) => setCrop(pixelCrop)}
+            className="max-h-[52vh]"
+          >
+            <img ref={imgRef} src={imageSrc} alt="Crop preview" onLoad={handleImageLoad} className="block w-auto object-contain" />
           </ReactCrop>
         </div>
         <div className="flex gap-3">
           <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-label text-fg-muted hover:bg-bg-sunken">Cancel</button>
+          <button type="button" onClick={selectWholePage} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-label text-fg-muted hover:bg-bg-sunken">Select whole page</button>
           <button type="button" onClick={handleCrop} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-label font-medium text-white hover:opacity-90"><Crop className="h-4 w-4" />Apply crop</button>
         </div>
       </div>
@@ -439,6 +480,7 @@ function CameraModal({ onCapture, onCancel }) {
         <div className="overflow-hidden rounded-xl bg-black"><video ref={videoRef} autoPlay playsInline muted className="w-full rounded-xl" /></div>
         <div className="flex gap-3">
           <button type="button" onClick={onCancel} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-label text-fg-muted hover:bg-bg-sunken">Cancel</button>
+          <button type="button" onClick={selectWholePage} className="flex-1 rounded-xl border border-line px-4 py-2.5 text-label text-fg-muted hover:bg-bg-sunken">Select whole page</button>
           <button type="button" onClick={capture} disabled={!ready || !!error} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-label font-medium text-white disabled:opacity-50"><Camera className="h-4 w-4" />Capture</button>
         </div>
       </div>
@@ -773,7 +815,15 @@ export default function UploadAnnouncementPage() {
       return;
     }
     if (kind === 'image') {
-      setCropSrc(await readFileAsDataURL(file));
+      // The whole page, unmodified. Cropping is available afterwards for the
+      // cases that need it (a photo with desk around it, several notices on
+      // one sheet) but it is no longer required to get a document in.
+      const dataURL = await readFileAsDataURL(file);
+      setImageDataURL(dataURL);
+      setSourceFile({ name: file.name, kind, size: file.size });
+      setOcrState('idle');
+      setOcrText('');
+      clearExtraction();
       return;
     }
 
@@ -797,7 +847,7 @@ export default function UploadAnnouncementPage() {
       setOcrState('error');
       setSourceError(err.message ?? 'Could not read this document.');
     }
-  }, [resetAll]);
+  }, [resetAll, clearExtraction]);
 
   const handleCropDone = useCallback((croppedDataURL) => {
     setImageDataURL(croppedDataURL);
@@ -1045,7 +1095,7 @@ export default function UploadAnnouncementPage() {
                 <div className="rounded-2xl border border-line bg-surface p-5">
                   <p className="mb-3 text-label font-semibold text-fg">1. Load source document</p>
                   {imageDataURL ? (
-                    <div className="relative"><img src={imageDataURL} alt="Selected availability notice" className="max-h-72 w-full rounded-xl border border-line object-contain" /><button type="button" onClick={resetAll} className="absolute right-2 top-2 rounded-lg border border-line bg-surface/90 p-1.5 text-fg-muted backdrop-blur-sm hover:text-fg" aria-label="Remove source image"><X className="h-3.5 w-3.5" /></button></div>
+                    <div className="relative"><img src={imageDataURL} alt="Selected availability notice" className="max-h-72 w-full rounded-xl border border-line object-contain" /><div className="absolute right-2 top-2 flex gap-1.5"><button type="button" onClick={() => setCropSrc(imageDataURL)} className="rounded-lg border border-line bg-surface/90 p-1.5 text-fg-muted backdrop-blur-sm hover:text-fg" aria-label="Crop this image" title="Crop this image"><Crop className="h-3.5 w-3.5" /></button><button type="button" onClick={resetAll} className="rounded-lg border border-line bg-surface/90 p-1.5 text-fg-muted backdrop-blur-sm hover:text-fg" aria-label="Remove source image"><X className="h-3.5 w-3.5" /></button></div></div>
                   ) : sourceFile ? (
                     <div className="flex items-start justify-between gap-3 rounded-xl border border-line bg-bg-sunken p-4">
                       <div className="flex min-w-0 gap-3"><FileText className="mt-0.5 h-5 w-5 shrink-0 text-accent" /><div className="min-w-0"><p className="truncate text-label font-medium text-fg">{sourceFile.name}</p><p className="mt-0.5 text-meta uppercase text-fg-muted">{sourceFile.kind} document</p></div></div>

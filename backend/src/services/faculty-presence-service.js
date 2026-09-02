@@ -26,7 +26,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { db, ml, log } from '../utilities/service-clients.js';
 import { config } from '../utilities/configuration.js';
-import { maskOverride, maskPrediction } from '../middleware/privacy-masking-middleware.js';
+import { maskOverride, maskPrediction, maskScheduleOnly } from '../middleware/privacy-masking-middleware.js';
 import { findCurrentAvailabilityEvent } from './availability-event-service.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -345,6 +345,35 @@ async function scheduleContext(facultyId, at) {
 /**
  * The three historical-attendance features, thesis §3.5.2(b).
  */
+/**
+ * Does this person have ANY attendance observation at all?
+ *
+ * attendance_features() cannot answer this. Its SQL is
+ *
+ *     case when p.obs > 0 then p.hits / p.obs else 0.0 end
+ *
+ * so "never observed" and "observed, never present" both come back as 0.0.
+ * The model was trained where 0.0 meant the second, so the first has to be
+ * detected separately rather than quietly passed off as a real rate.
+ */
+async function hasAttendanceEvidence(pseudonym) {
+  if (!pseudonym) return false;
+  try {
+    const { count, error } = await db
+      .from('attendance_record')
+      .select('id', { count: 'exact', head: true })
+      .eq('pseudonym_id', pseudonym)
+      .eq('granularity', 'intraday');
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  } catch (err) {
+    // Fail toward the model rather than rerouting every request to the
+    // schedule because one count query failed.
+    log.warn({ err }, 'attendance existence check failed; assuming evidence exists');
+    return true;
+  }
+}
+
 async function attendanceHistory(pseudonym, at) {
   const zero = {
     hist_presence_rate: 0,
@@ -516,6 +545,38 @@ export async function getAvailability(facultyId, at = new Date()) {
     pseudonymFor(facultyId),
     scheduleContext(facultyId, at),
   ]);
+
+  /**
+   * NO ATTENDANCE EVIDENCE -> DO NOT ASK THE MODEL.
+   *
+   * The three hist_* features are the only thing that lets the forest improve
+   * on schedule_lookup_status(). Without an attendance record they are all
+   * 0.0 — and attendance_features() returns that same 0.0 for "observed and
+   * never present", which is what the model was trained to read it as. So a
+   * lecturer with no attendance history is described to the model as someone
+   * who is never on campus, and it duly returns unavailable_off_schedule while
+   * they are standing in front of a class.
+   *
+   * Measured on this deployment: at hist_presence_rate 0.0 the model answers
+   * unavailable_off_schedule; the identical request at 0.3 answers
+   * in_scheduled_class. All 37 real lecturers have zero attendance rows, so
+   * every one of them was being reported unavailable all day.
+   *
+   * Handing the model zeros asserts something we do not know. With no evidence
+   * it has nothing to add over the timetable, so use the timetable and label
+   * the answer `schedule_only` — an estimate must not be presented as more
+   * than its evidence supports (audit F-18/F-20).
+   */
+  const hasEvidence = await hasAttendanceEvidence(pseudonym);
+  if (!hasEvidence) {
+    return {
+      ...maskScheduleOnly(sched.ruleStatus),
+      presence,
+      scheduleContext: sched,
+      overrideApplied: false,
+      timings: { guard: tGuard, rf: 0 },
+    };
+  }
 
   const history = await attendanceHistory(pseudonym, at);
 

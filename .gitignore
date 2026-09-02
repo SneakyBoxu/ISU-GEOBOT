@@ -3,6 +3,12 @@
 # =====================================================================
 
 # 1. Dependency and build artifacts (auto-installed via npm / pip)
+# Secrets. Never commit a live key.
+# This rule keeps getting lost in merges; every time it does, the Supabase
+# service_role key and the Groq key go public with the next push.
+.env
+.env.local
+
 node_modules/
 dist/
 .venv/
@@ -15,5 +21,4 @@ Thumbs.db
 # 2. Intermediate model runs (track active production model only)
 machine-learning/saved-models/*
 !machine-learning/saved-models/.gitkeep
-!machine-learning/saved-models/rf_current.joblib
 

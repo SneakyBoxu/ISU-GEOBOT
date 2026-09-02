@@ -1,0 +1,20 @@
+{
+  "poi": 29,
+  "poi_published": 28,
+  "document": 33,
+  "document_chunk": 208,
+  "faculty_total": 74,
+  "faculty_real": 37,
+  "schedule_total": 1163,
+  "schedule_class": 850,
+  "schedule_consult": 313,
+  "attendance": 4962,
+  "institutional_event": 30,
+  "guard_events": 46,
+  "faculty_validation": 3,
+  "eval_query": 33,
+  "eval_result": 132,
+  "ragas_score": 0,
+  "tables": 25,
+  "policies": 21
+}
