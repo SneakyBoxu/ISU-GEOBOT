@@ -40,10 +40,18 @@ export const config = {
 
   groq: {
     apiKey: process.env.GROQ_API_KEY ?? '',
-    // Thesis §3.7 names Llama 3.1 8B. Pinned, and recorded on every eval_run.
-    // If Groq retires this id the substitution must be DISCLOSED, not silent —
-    // every prior number becomes non-comparable (audit §8.7).
-    model: process.env.GROQ_MODEL ?? 'llama-3.1-8b-instant',
+    // Thesis §3.7 names Llama 3.1 8B. Groq has since retired that id — it is
+    // absent from GET /v1/models (verified 2026-09-03) — so the deployed
+    // generator is openai/gpt-oss-120b. This is the DISCLOSED substitution the
+    // previous note demanded, not a silent one: every eval_run recorded before
+    // the swap is non-comparable with one recorded after it, and Chapter 4 has
+    // to say so (audit §8.7).
+    //
+    // The DEFAULT is load-bearing. It is what runs when .env is absent, and a
+    // default naming a retired id turns "you have no .env" into "chat 404s from
+    // Groq", which reads as a code bug and sends the reader hunting in the
+    // wrong file.
+    model: process.env.GROQ_MODEL ?? 'openai/gpt-oss-120b',
     // Temperature 0 is not a style choice: it is required for the evaluation
     // runs to be reproducible, and it reduces hallucination (audit §8.5).
     temperature: 0,

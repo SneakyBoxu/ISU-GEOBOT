@@ -56,6 +56,10 @@ FILES = [
     ("database/migrations/009_dedupe_place_cards.sql", "remove superseded POI place cards", False),
     ("database/migrations/010_announcements.sql", "retire legacy announcement ingestion", False),
     ("database/migrations/011_availability_events.sql", "private availability-event storage", False),
+    ("database/migrations/012_validation_status_source.sql",
+     "record which engine produced each validated status", False),
+    ("database/migrations/013_validation_collection_protocol.sql",
+     "record how each validation was captured", False),
 ]
 
 

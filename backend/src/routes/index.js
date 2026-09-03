@@ -445,6 +445,7 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
       let systemStatusLabel = null;
       let overrideApplied = false;
       let estimatedAt = null;
+      let statusSource = null;
 
       try {
         const avail = await getAvailability(targetFacultyId);
@@ -456,6 +457,7 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
           }
           overrideApplied = Boolean(avail.overrideApplied);
           estimatedAt = avail.masked.maskedAt ?? new Date().toISOString();
+          statusSource = statusSourceOf(avail.masked);
         }
       } catch (err) {
         log.warn({ err: err.message, targetFacultyId }, 'Could not resolve availability estimate for validation context');
@@ -476,6 +478,7 @@ api.get('/validate/context', requireAuth, requireRole('validator', 'admin', 'res
         systemStatusLabel,
         overrideApplied,
         estimatedAt,
+        statusSource,
         statusOptions: statuses,
       });
     } catch (err) { next(err); }
@@ -489,12 +492,27 @@ api.get('/validate/offline-preload', requireAuth, requireRole('validator', 'admi
     } catch (err) { next(err); }
   });
 
+/**
+ * Migration 012. maskPrediction/maskScheduleOnly/maskOverride each stamp their
+ * own `source`; faculty_validation stores the coarser three-value form so a
+ * reader can split model rows from timetable rows without knowing which
+ * override fired.
+ */
+function statusSourceOf(masked) {
+  const src = masked?.source ?? null;
+  if (!src) return null;
+  if (src === 'random_forest' || src === 'schedule_only') return src;
+  return 'override';
+}
+
 const validationSchema = z.object({
   facultyId: z.string().min(1).max(64).optional().nullable(),
   systemStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
   actualStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
   correctness: z.enum(['correct', 'partially_correct', 'incorrect']),
   overrideApplied: z.boolean().optional(),
+  statusSource: z.enum(['random_forest', 'schedule_only', 'override']).optional().nullable(),
+  collectionProtocol: z.enum(['estimate_first', 'observation_first']).optional().nullable(),
   notes: z.string().max(500).optional(),
   queriedAt: z.string().optional().nullable(),
   occurredAt: z.string().optional().nullable(),
@@ -507,6 +525,8 @@ const batchSyncSchema = z.object({
     actualStatus: z.enum(['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule']),
     correctness: z.enum(['correct', 'partially_correct', 'incorrect']),
     overrideApplied: z.boolean().optional(),
+    statusSource: z.enum(['random_forest', 'schedule_only', 'override']).optional().nullable(),
+    collectionProtocol: z.enum(['estimate_first', 'observation_first']).optional().nullable(),
     notes: z.string().max(500).optional().nullable(),
     queriedAt: z.string().optional().nullable(),
     occurredAt: z.string().optional().nullable(),
@@ -523,6 +543,12 @@ api.post('/validate/batch-sync', requireAuth, requireRole('validator', 'admin', 
         actual_status: e.actualStatus,
         correctness: e.correctness,
         override_applied: Boolean(e.overrideApplied),
+        status_source: e.statusSource ?? null,
+        status_source_inferred: false,
+        // Migration 013. The blind form is the only client posting after this
+        // change, so an absent value means that form omitted it -- never that
+        // the row came from the old pre-filling one.
+        collection_protocol: e.collectionProtocol ?? 'observation_first',
         notes: e.notes || null,
         queried_at: e.queriedAt || e.occurredAt || new Date().toISOString(),
         data_origin: 'real',
@@ -582,6 +608,9 @@ api.post('/validate/entries', requireAuth, requireRole('validator', 'admin', 're
           actual_status: body.actualStatus,
           correctness: body.correctness,
           override_applied: body.overrideApplied ?? false,
+          status_source: body.statusSource ?? null,
+          status_source_inferred: false,
+          collection_protocol: body.collectionProtocol ?? 'observation_first',
           notes: body.notes ?? null,
           queried_at: body.queriedAt || body.occurredAt || new Date().toISOString(),
           data_origin: 'real',

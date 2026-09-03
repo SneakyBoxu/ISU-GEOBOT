@@ -77,11 +77,25 @@ export default function AdminFacultyValidationPanel({ session }) {
 
   // Submit form state
   const [systemStatus, setSystemStatus] = useState('available_consultation');
-  const [actualStatus, setActualStatus] = useState('available_consultation');
+  // Deliberately empty. Migration 013: this field used to be seeded with the
+  // system's own estimate, so a validator who saved without touching it
+  // recorded agreement by default. It must be chosen, never inherited.
+  const [actualStatus, setActualStatus] = useState('');
   const [correctness, setCorrectness] = useState('correct');
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
+
+  // The estimate stays hidden until the validator has committed to what they
+  // saw. Once committed, correctness follows from the two values rather than
+  // from a third click that could also drift toward agreement -- the radios
+  // stay editable because partially_correct is a judgement this cannot derive.
+  const revealed = actualStatus !== '';
+
+  const chooseObserved = (value) => {
+    setActualStatus(value);
+    if (value) setCorrectness(value === systemStatus ? 'correct' : 'incorrect');
+  };
 
   const handleToggleOfflineMode = () => {
     setOfflineMode((prev) => {
@@ -186,7 +200,8 @@ export default function AdminFacultyValidationPanel({ session }) {
       setEstimateCtx(ctx);
       if (ctx?.systemStatus) {
         setSystemStatus(ctx.systemStatus);
-        setActualStatus(ctx.systemStatus);
+        // The observed value is NOT seeded from the estimate -- see the
+        // actualStatus declaration.
       }
     } catch (err) {
       console.warn('Could not load estimate context from server, using local fallback', err);
@@ -196,11 +211,11 @@ export default function AdminFacultyValidationPanel({ session }) {
         systemStatus: 'unavailable_off_schedule',
         systemStatusLabel: 'Unavailable / Off Schedule (Offline Fallback)',
         overrideApplied: false,
+        statusSource: 'schedule_only',
         estimatedAt: new Date().toISOString(),
       };
       setEstimateCtx(offlineEst);
       setSystemStatus(offlineEst.systemStatus);
-      setActualStatus(offlineEst.systemStatus);
     } finally {
       setCtxLoading(false);
     }
@@ -298,6 +313,12 @@ export default function AdminFacultyValidationPanel({ session }) {
   async function submit(e) {
     e.preventDefault();
     if (!selectedFacultyId) return;
+    // A silent no-op here would read as a broken button and invite a reload,
+    // losing the observation the validator just walked across campus for.
+    if (!actualStatus) {
+      setMsg({ kind: 'error', text: 'Choose what you observed before saving.' });
+      return;
+    }
     setBusy(true); setMsg(null);
 
     const facultyObj = facultyList.find((f) => f.facultyId === selectedFacultyId);
@@ -312,12 +333,17 @@ export default function AdminFacultyValidationPanel({ session }) {
           actualStatus,
           correctness,
           overrideApplied: estimateCtx?.overrideApplied ?? false,
+          statusSource: estimateCtx?.statusSource ?? null,
+          collectionProtocol: 'observation_first',
           notes: notes || undefined,
           queriedAt: new Date().toISOString(),
         });
         setPendingEntries(getPendingEntries());
         setMsg({ kind: 'ok', text: '📦 Recorded to local offline queue (Pending sync).' });
         setNotes('');
+      // Next entry starts blind: an inherited observation is the same
+      // defect as an inherited default.
+      setActualStatus('');
       } catch (err) {
         setMsg({ kind: 'error', text: err.message });
       } finally {
@@ -334,10 +360,15 @@ export default function AdminFacultyValidationPanel({ session }) {
         actualStatus,
         correctness,
         overrideApplied: estimateCtx?.overrideApplied ?? false,
+        statusSource: estimateCtx?.statusSource ?? null,
+        collectionProtocol: 'observation_first',
         notes: notes || undefined,
       });
       setMsg({ kind: 'ok', text: 'Validation entry recorded successfully to database.' });
       setNotes('');
+      // Next entry starts blind: an inherited observation is the same
+      // defect as an inherited default.
+      setActualStatus('');
       await loadEntries();
       setPage(0);
     } catch (err) {
@@ -351,12 +382,17 @@ export default function AdminFacultyValidationPanel({ session }) {
           actualStatus,
           correctness,
           overrideApplied: estimateCtx?.overrideApplied ?? false,
+          statusSource: estimateCtx?.statusSource ?? null,
+          collectionProtocol: 'observation_first',
           notes: notes || undefined,
           queriedAt: new Date().toISOString(),
         });
         setPendingEntries(getPendingEntries());
         setMsg({ kind: 'ok', text: '📦 Server offline: Saved to local queue (Pending sync).' });
         setNotes('');
+      // Next entry starts blind: an inherited observation is the same
+      // defect as an inherited default.
+      setActualStatus('');
       } catch (saveErr) {
         setMsg({ kind: 'error', text: `Failed: ${err.message}` });
       }
@@ -501,7 +537,9 @@ export default function AdminFacultyValidationPanel({ session }) {
           <div>
             <h2 className="font-serif text-h3 text-fg">Record a validation spot-check</h2>
             <p className="text-meta text-fg-muted mt-1">
-              Select a faculty member to auto-fetch the AI&rsquo;s real-time estimate, then record what was observed in reality.
+              Select a faculty member to auto-fetch the system&rsquo;s current estimate, then record what was
+              observed in reality. The badge below names which engine produced it &mdash; the estimate is not
+              always the Random Forest.
             </p>
           </div>
           <Button
@@ -669,7 +707,16 @@ export default function AdminFacultyValidationPanel({ session }) {
               <p className="eyebrow !mb-0">What GeoBot estimated in real time</p>
             </div>
 
-            {ctxLoading ? (
+            {!revealed ? (
+              <div className="mt-2 rounded-md border border-dashed border-line-strong px-4 py-6 text-center">
+                <p className="text-meta text-fg-muted">
+                  Hidden until you record what you observed.
+                </p>
+                <p className="mt-1 text-label text-fg-subtle">
+                  Go and look first, then choose on the right.
+                </p>
+              </div>
+            ) : ctxLoading ? (
               <div className="flex items-center gap-2 py-4 text-meta text-fg-muted">
                 <Loader2 className="h-4 w-4 animate-spin text-accent" />
                 <span>Querying availability classifier & presence logs…</span>
@@ -684,6 +731,21 @@ export default function AdminFacultyValidationPanel({ session }) {
                 {estimateCtx.overrideApplied && (
                   <p className="text-label text-accent font-medium">
                     🛡️ Sourced from security gate presence log
+                  </p>
+                )}
+                {/*
+                  Which engine answered is recorded on the row (migration 012).
+                  Showing it here is not decoration: a validator judging a
+                  timetable lookup while believing they are judging the model
+                  produces a number that means neither.
+                */}
+                {estimateCtx.statusSource && (
+                  <p className="text-label text-fg-muted">
+                    {estimateCtx.statusSource === 'random_forest'
+                      ? '🌲 Random Forest prediction (attendance history available)'
+                      : estimateCtx.statusSource === 'schedule_only'
+                        ? '📅 Timetable lookup — no attendance history, so the model was not used'
+                        : '🛡️ Deterministic override — the model was not used'}
                   </p>
                 )}
                 <div className="pt-2">
@@ -719,7 +781,8 @@ export default function AdminFacultyValidationPanel({ session }) {
             <div className="mt-2">
               <Field label="Physically observed ground-truth" required>
                 {({ id }) => (
-                  <Select id={id} value={actualStatus} onChange={(e) => setActualStatus(e.target.value)}>
+                  <Select id={id} value={actualStatus} onChange={(e) => chooseObserved(e.target.value)}>
+                    <option value="" disabled>— choose what you observed —</option>
                     {STATUS_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </Select>
                 )}
