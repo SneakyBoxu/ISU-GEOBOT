@@ -22,3 +22,12 @@ Thumbs.db
 machine-learning/saved-models/*
 !machine-learning/saved-models/.gitkeep
 
+# 3. Thesis documents and generated study material.
+#    These are write-ups and rendered artefacts, not the system. They bloated
+#    every pull for the other researcher and none of them are needed to run,
+#    build or evaluate anything. They stay on the authors' machines.
+guide/
+notebooks/
+*.docx
+*.pdf
+CCSICT-SCHEDULE-*.xlsx
