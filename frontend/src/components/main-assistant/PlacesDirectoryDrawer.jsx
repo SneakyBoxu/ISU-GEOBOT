@@ -19,11 +19,29 @@ import { PoiGlyph } from './mapPinIconBuilder.js';
  * the same building twice on one screen and cost the user their place in the
  * list every time they looked something up.
  *
- * LAYOUT. From `md` up it is a permanent column in the flow: no rail, no
- * toggle, the map simply starts to its right. Below `md` a 320px column would
- * leave 55px of campus, so there it becomes a drawer over the map with a scrim,
- * sliding on `transform` — the one property that moves without reflowing a
- * Leaflet canvas underneath it.
+ * LAYOUT. It collapses at every width, but by two different mechanisms.
+ * Below `md` a 320px column would leave 55px of campus, so there it is a
+ * drawer over the map with a scrim, sliding on `transform` — the one property
+ * that moves without reflowing a Leaflet canvas underneath it. From `md` up it
+ * is a column in the flow, so collapsing it has to hand the width back to the
+ * map: it slides out on a negative margin and the map grows into the space.
+ * That one IS a real reflow of the Leaflet canvas, which Leaflet does not
+ * notice by itself — CampusMap watches its own container and calls
+ * invalidateSize, or half the tiles come back grey.
+ *
+ * THE TOGGLE is at the right edge of this panel's header, and its twin lives
+ * in the map toolbar (CampusMap) because a panel cannot carry its own reopen
+ * control off-screen with it. The toolbar one is mounted in both states rather
+ * than appearing on collapse: anything that materialises beside the map has to
+ * take its width from somewhere, and taking it at frame 0 shoves the map
+ * sideways before the panel has moved. Parked in a toolbar that is already
+ * there, it costs no layout at all.
+ *
+ * That leaves the panel's own margin as the ONLY thing animating, which is what
+ * makes the slide smooth. Everything else holds still: the panel keeps its full
+ * width the whole way — margin moves it, width never changes — so the list, the
+ * search field and the category chips cannot re-wrap mid-animation, and the map
+ * is the single box being resized.
  */
 
 function CategoryChips({ value, onChange, pois }) {
@@ -157,37 +175,24 @@ export default function LocationPanel({
     [visible],
   );
 
-  // Escape closes the drawer. Only meaningful below `md`, where it overlays
-  // the map — above that the panel is part of the layout and has no closed
-  // state to return to.
+  // Escape closes the drawer, but only below `md`, where it overlays the map
+  // and trapping the user behind it is a real risk. From `md` up the index sits
+  // beside the map and CampusMap binds Escape to clearing the selected marker;
+  // collapsing the whole index on the same keystroke would be a surprise, and
+  // the rail is right there.
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (e) => { if (e.key === 'Escape') onToggle(); };
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (window.matchMedia('(min-width: 768px)').matches) return;
+      onToggle();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onToggle]);
 
   return (
     <>
-      {/* Phone-only rail: the only way back to the index once it is dismissed. */}
-      <div className="relative z-[500] flex w-11 shrink-0 flex-col items-center border-r border-line bg-surface py-2.5 md:hidden">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          aria-controls="campus-index"
-          aria-label={open ? 'Hide campus index' : 'Show campus index'}
-          className="btn-icon"
-        >
-          <PanelLeftClose
-            className={`h-4 w-4 transition-transform duration-state ${
-              open ? 'rotate-0' : 'rotate-180'
-            }`}
-            aria-hidden
-          />
-        </button>
-      </div>
-
       <div
         onClick={onToggle}
         aria-hidden
@@ -198,8 +203,10 @@ export default function LocationPanel({
 
       <div
         id="campus-index"
-        className={`absolute inset-y-0 left-0 z-[700] flex w-[min(20rem,85vw)] flex-col border-r border-line bg-surface shadow-lg transition-[transform,visibility] duration-dialog ease-in md:static md:visible md:w-[16rem] md:translate-x-0 md:shadow-none lg:w-[18rem] xl:w-[20rem] ${
-          open ? 'visible translate-x-0' : 'invisible -translate-x-full'
+        className={`absolute inset-y-0 left-0 z-[700] flex w-[min(20rem,85vw)] flex-col border-r border-line bg-surface shadow-lg transition-[transform,visibility,margin] duration-dialog ease-in md:static md:w-[16rem] md:translate-x-0 md:shadow-none lg:w-[18rem] xl:w-[20rem] ${
+          open
+            ? 'visible translate-x-0 md:ml-0'
+            : 'invisible -translate-x-full md:-ml-[16rem] lg:-ml-[18rem] xl:-ml-[20rem]'
         }`}
       >
         <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2.5">
@@ -207,8 +214,11 @@ export default function LocationPanel({
           <button
             type="button"
             onClick={onToggle}
+            aria-expanded={open}
+            aria-controls="campus-index"
             aria-label="Hide campus index"
-            className="btn-icon -mr-1 md:hidden"
+            title="Hide campus index"
+            className="btn-icon -mr-1"
           >
             <PanelLeftClose className="h-4 w-4" aria-hidden />
           </button>

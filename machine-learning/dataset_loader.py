@@ -75,17 +75,40 @@ def _slots_for_day(d: date):
         cur += timedelta(minutes=SLOT_MINUTES)
 
 
-def load_roster() -> list[dict]:
-    return db.fetch_all(
-        """
+def load_roster(data_origin: str | None = None) -> list[dict]:
+    """
+    The cohort to build training samples from.
+
+    WHY THIS NO LONGER SELECTS ON is_active
+    ---------------------------------------
+    is_active and is_consented are PRODUCTION visibility flags: together they
+    decide who the assistant will answer questions about. Training used to
+    inherit both. So deactivating the SIM cohort -- the correct thing to do, so
+    that SIM-01 never appears in the UI -- silently emptied the training set,
+    and the run reported "no training samples produced". That reads as a
+    modelling failure and is actually a switch someone flipped in production.
+
+    Consent is still enforced wherever consent is a real thing. A simulated
+    subject is in the study by construction; a real lecturer is not, and no real
+    row is returned here without is_consented.
+
+    Pass data_origin to pin the cohort explicitly, so a simulation run cannot
+    quietly pick up real people (or the reverse) if a flag changes again.
+    """
+    sql = """
         select f.id::text as faculty_id,
-               m.pseudonym_id
+               m.pseudonym_id,
+               f.data_origin
         from geobot.faculty f
         join geobot.faculty_pseudonym_map m on m.faculty_id = f.id
-        where f.is_active and f.is_consented
-        order by f.id
-        """
-    )
+        where (f.data_origin = 'synthetic' or f.is_consented)
+    """
+    params: tuple = ()
+    if data_origin is not None:
+        sql += " and f.data_origin = %s"
+        params = (data_origin,)
+    sql += " order by f.id"
+    return db.fetch_all(sql, params)
 
 
 def load_schedule(semester: str) -> dict[str, list[dict]]:
@@ -164,11 +187,12 @@ def build_samples(
     semester_start: date,
     semester_end: date,
     label_source: str = "schedule_derived",
+    data_origin: str | None = None,
 ) -> list[Sample]:
     if label_source not in ("schedule_derived", "attendance_derived"):
         raise ValueError("label_source must be schedule_derived or attendance_derived")
 
-    roster = load_roster()
+    roster = load_roster(data_origin)
     schedule = load_schedule(semester)
     events = load_events()
     attendance = _load_attendance_index() if label_source == "attendance_derived" else {}

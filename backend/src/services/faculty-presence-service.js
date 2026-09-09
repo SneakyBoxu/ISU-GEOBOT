@@ -137,28 +137,21 @@ export async function preloadOfflineSnapshot() {
   }
 }
 
-export async function resolvePresence(facultyId, at = new Date()) {
-  try {
-    const { data, error } = await db.rpc('resolve_presence', {
-      p_faculty_id: facultyId,
-      p_at: at.toISOString(),
-      p_timezone: config.presence.timezone,
-    });
-    if (error) throw error;
-    const row = Array.isArray(data) ? data[0] : data;
-    return {
-      state: row?.presence_state ?? 'unknown',
-      lastEventType: row?.last_event_type ?? null,
-      lastEventAt: row?.last_event_at ?? null,
-    };
-  } catch (err) {
-    log.warn({ err: err.message, facultyId }, 'resolvePresence fallback: returning unknown state (offline mode)');
-    return {
-      state: 'unknown',
-      lastEventType: null,
-      lastEventAt: null,
-    };
-  }
+/**
+ * Presence resolution -- INERT since the guard portal was removed.
+ *
+ * This used to call resolve_presence(), which read the physical guard's log and
+ * could return 'confirmed_off_campus' to bypass the classifier entirely. There
+ * is no guard log any more, so it reports the neutral state the tri-state was
+ * built around: 'unknown' means "no observation today", which is explicitly NOT
+ * "off campus" and sends the caller on to the model (audit F-07).
+ *
+ * Kept as a function rather than deleted because getAvailability() and the
+ * masking boundary both read `presence.state`, and a stub keeps that contract
+ * intact with one honest answer instead of scattering null checks.
+ */
+export async function resolvePresence(_facultyId, _at = new Date()) {
+  return { state: 'unknown', lastEventType: null, lastEventAt: null };
 }
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -501,6 +494,13 @@ async function semesterPhase(at) {
 export function availabilityOverrideSource(presence, officialEvent) {
   // A confirmed departure remains the strongest presence signal. Otherwise a
   // current published mandatory event overrides both arrival and unknown state.
+  //
+  // NOTE: with the guard portal removed, resolvePresence() only ever reports
+  // 'unknown', so the first branch is unreachable in production today. It is
+  // kept because it is the precedence RULE, not the data source: if presence
+  // evidence is ever reintroduced it must still outrank an official event, and
+  // the ordering is what the tests pin down. official_event_override is the
+  // branch that actually fires now.
   if (presence?.state === 'confirmed_off_campus') return 'guard_override';
   if (officialEvent?.mandatory === true) return 'official_event_override';
   return null;

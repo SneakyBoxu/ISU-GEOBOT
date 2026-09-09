@@ -26,8 +26,7 @@ machine-learning/saved-models/*
 #    These are write-ups and rendered artefacts, not the system. They bloated
 #    every pull for the other researcher and none of them are needed to run,
 #    build or evaluate anything. They stay on the authors' machines.
-guide/
-notebooks/
+thesis/
 *.docx
 *.pdf
 CCSICT-SCHEDULE-*.xlsx

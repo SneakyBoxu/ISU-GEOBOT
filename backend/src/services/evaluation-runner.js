@@ -21,7 +21,7 @@
  *    holds placeholder rows. A folder convention cannot stop synthetic data
  *    reaching a reported result; a harness that will not start can.
  *
- * 4. JUDGE != GENERATOR (audit F-05). Using Llama 3.1 8B to grade its own
+ * 4. JUDGE != GENERATOR (audit F-05). Using the generator model to grade its own
  *    output is self-evaluation, and 8B-class models are weak at the claim
  *    decomposition Faithfulness depends on. The DB enforces the constraint;
  *    this script surfaces it early with a readable error.

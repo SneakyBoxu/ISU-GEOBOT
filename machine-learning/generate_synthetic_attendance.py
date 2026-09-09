@@ -129,6 +129,88 @@ class Traits:
         self.stay_late = float(rng.uniform(10, 75))       # minutes after last class
 
 
+# ------------------------------------------------------- declared office hours
+# A lecturer's PUBLISHED consultation hours. Two facts drive the numbers:
+#
+#   CCSICT lecturers post office hours on the door; they are declared, not
+#   inferred. This generator therefore DECLARES them as part of the simulated
+#   ground truth. It does NOT relabel empty timetable gaps as availability --
+#   a gap is the absence of a class, not the presence of a person, and turning
+#   one into the other is the exact inference this thesis argues against.
+CONSULT_WINDOWS_PER_WEEK = 2
+CONSULT_WINDOW_MINUTES = 120
+CONSULT_EARLIEST = time(7, 0)
+CONSULT_LATEST = time(17, 0)
+
+
+def declare_consultations(blocks: list[dict], names: list[str],
+                          rng: np.random.Generator) -> list[dict]:
+    """
+    Publish consultation windows for each SIM lecturer.
+
+    WHY THIS EXISTS. Every block this script used to write was block_kind
+    'class'. The schedule therefore could not express `available_consultation`
+    at all, so schedule_rule_baseline scored F1 = 0.0000 on that class -- not
+    because a rule is weak, but because the column it reads had been deleted.
+    The published "96.97% vs 74.45%" was a forest against a rule reading a
+    redacted schedule, which is not a comparison. See train_from_validations.py.
+
+    WHAT MAKES IT A FAIR TEST, NOT A GIVEAWAY. A window is placed where the
+    person could plausibly hold one -- inside 07:00-17:00, never overlapping a
+    class or a Santiago trip -- but ATTENDING it is governed by the lecturer's
+    traits, which no timetable carries. So the rule can now name the class and
+    will often be right, while whether someone actually kept their posted hours
+    stays exactly the behavioural question the classifier has to answer.
+
+    At most one window per weekday, so a lecturer never publishes two office
+    hours on the same day.
+    """
+    by_faculty_day: dict[tuple[str, int], list[dict]] = {}
+    for b in blocks:
+        by_faculty_day.setdefault((b["faculty"], b["dow"]), []).append(b)
+
+    step = timedelta(minutes=30)
+    span = timedelta(minutes=CONSULT_WINDOW_MINUTES)
+    anchor = date(2000, 1, 1)
+    out: list[dict] = []
+
+    for name in sorted(names):
+        candidates: list[tuple[int, time, time]] = []
+        for dow in range(1, 6):                      # Mon-Fri; 0 is Sunday
+            todays = by_faculty_day.get((name, dow), [])
+            # A day spent entirely in Santiago is not a day office hours can be
+            # kept at Echague. Same rule the punch generator applies.
+            if todays and all(b["campus"] == "santiago" for b in todays):
+                continue
+            busy = [(b["start"], b["end"]) for b in todays]
+            cursor = datetime.combine(anchor, CONSULT_EARLIEST)
+            limit = datetime.combine(anchor, CONSULT_LATEST)
+            while cursor + span <= limit:
+                s_t = cursor.time()
+                e_t = (cursor + span).time()
+                if not any(s_t < b_e and e_t > b_s for b_s, b_e in busy):
+                    candidates.append((dow, s_t, e_t))
+                cursor += step
+        if not candidates:
+            continue
+
+        chosen: list[tuple[int, time, time]] = []
+        used_days: set[int] = set()
+        for i in rng.permutation(len(candidates)):
+            dow, s_t, e_t = candidates[int(i)]
+            if dow in used_days:
+                continue
+            chosen.append((dow, s_t, e_t))
+            used_days.add(dow)
+            if len(chosen) == CONSULT_WINDOWS_PER_WEEK:
+                break
+
+        for dow, s_t, e_t in sorted(chosen):
+            out.append({"faculty": name, "dow": dow, "start": s_t, "end": e_t,
+                        "course": "CONSULT", "room": "", "campus": "echague"})
+    return out
+
+
 def pseudonym_for(name: str) -> str:
     """Stable 18-hex surrogate, matching the shape of the column default."""
     return hashlib.sha256((PSEUDONYM_SALT + "|" + name).encode()).hexdigest()[:18]
@@ -196,11 +278,19 @@ def merge_windows(spans: list[tuple[datetime, datetime]]) -> list[tuple[datetime
 
 
 # ------------------------------------------------------------------ generator
-def generate(blocks: list[dict], names: list[str], rng: np.random.Generator):
+def generate(blocks: list[dict], names: list[str], rng: np.random.Generator,
+             consults: list[dict] | None = None):
     """Returns (punch rows, per-faculty traits, calendar rows)."""
     by_faculty_day: dict[tuple[str, int], list[dict]] = {}
     for b in blocks:
         by_faculty_day.setdefault((b["faculty"], b["dow"]), []).append(b)
+
+    # Declared office hours, indexed the same way. A published window is a
+    # reason to come in on a day with no teaching -- that is what publishing
+    # one means -- so the branch below uses it instead of a 9am guess.
+    consult_by_day: dict[tuple[str, int], list[dict]] = {}
+    for c in (consults or []):
+        consult_by_day.setdefault((c["faculty"], c["dow"]), []).append(c)
 
     traits = {n: Traits(rng) for n in sorted(names)}
     exams = exam_days()
@@ -233,10 +323,20 @@ def generate(blocks: list[dict], names: list[str], rng: np.random.Generator):
                 # exam week, when nobody drops by casually.
                 if santiago or is_exam:
                     continue
-                if rng.random() > t.consultation * 0.35:
+                posted = consult_by_day.get((name, dow), [])
+                if rng.random() > t.consultation * (0.75 if posted else 0.35):
                     continue
-                start = at(day, time(9, 0)) + timedelta(minutes=int(rng.normal(0, 45)))
-                end = start + timedelta(minutes=int(rng.uniform(90, 260)))
+                if posted:
+                    # Keep the posted hours, give or take a few minutes. The
+                    # window is public; whether they honour it is the trait.
+                    w = posted[0]
+                    start = at(day, w["start"]) + timedelta(minutes=int(rng.normal(0, 12)))
+                    end = at(day, w["end"]) + timedelta(minutes=int(rng.normal(0, 20)))
+                    if end <= start:
+                        continue
+                else:
+                    start = at(day, time(9, 0)) + timedelta(minutes=int(rng.normal(0, 45)))
+                    end = start + timedelta(minutes=int(rng.uniform(90, 260)))
                 punches.append({"name": name, "ts": start, "kind": "check_in"})
                 punches.append({"name": name, "ts": end, "kind": "check_out"})
                 continue
@@ -302,7 +402,7 @@ def generate(blocks: list[dict], names: list[str], rng: np.random.Generator):
 
 
 # ------------------------------------------------------------------------ SQL
-def emit_sql(punches, traits, calendar, names, blocks) -> str:
+def emit_sql(punches, traits, calendar, names, blocks, consults=None) -> str:
     q = si.q
     # Real name -> cohort stand-in. Sorted, so the mapping is stable
     # across runs and the spreadsheet agrees with the database.
@@ -336,8 +436,15 @@ def emit_sql(punches, traits, calendar, names, blocks) -> str:
         "--    construction; consent_date satisfies consent_requires_date.",
         "delete from attendance_record where data_origin = 'synthetic';",
         "delete from faculty_schedule where data_origin = 'synthetic';",
-        "delete from faculty where data_origin = 'synthetic' and full_name like 'SIM-%';",
         "",
+        "-- The SIM cohort itself is NOT dropped and recreated.",
+        "--",
+        "--    guard_presence_event is append-only (audit F-07/F-30) and carries a",
+        "--    foreign key to faculty(id), so deleting the cohort on every rerun",
+        "--    fails outright once any event exists against it -- and would churn",
+        "--    the UUIDs that pseudonyms, attendance and every recorded event hang",
+        "--    off. SIM names are deterministic, so the rows are REUSED and only",
+        "--    the schedule and the punches above are replaced.",
         "insert into faculty (full_name, department_id, is_consented, consent_date, data_origin)",
         "select v.full_name, d.id, true, date '2026-08-10', 'synthetic'",
         "  from (values",
@@ -346,7 +453,16 @@ def emit_sql(punches, traits, calendar, names, blocks) -> str:
     out.append(",\n".join(f"    ({q(s)})" for s in sims))
     out += [
         "  ) as v(full_name)",
-        "  cross join (select id from department where short_code = 'CCSICT') d;",
+        "  cross join (select id from department where short_code = 'CCSICT') d",
+        " where not exists (select 1 from faculty f where f.full_name = v.full_name);",
+        "",
+        "-- Reused rows can predate this policy, and the insert above skips them.",
+        "-- load_roster() selects on is_consented, so a cohort left unconsented is",
+        "-- an empty training set that looks like a modelling failure.",
+        "update faculty",
+        "   set is_consented = true, consent_date = date '2026-08-10'",
+        " where data_origin = 'synthetic'",
+        "   and (is_consented is distinct from true or consent_date is null);",
         "",
         "-- 2. Pseudonyms for the cohort. Deterministic, so the spreadsheet and",
         "--    the database agree without a lookup.",
@@ -386,6 +502,36 @@ def emit_sql(punches, traits, calendar, names, blocks) -> str:
         f"{q(b['start'].strftime('%H:%M'))}::time, {q(b['end'].strftime('%H:%M'))}::time, "
         f"{q(b['course'])}, {q(b['room'])}, {q(b['campus'])})"
         for b in blocks))
+    out += [
+        "  ) as v(full_name, dow, st, et, course, room, campus)",
+        "  join faculty f on f.full_name = v.full_name;",
+        "",
+    ]
+
+    # 4b. Declared consultation windows. Written as their own statement so the
+    #     block_kind is visible in the file rather than buried in a CASE, and so
+    #     a reader can count them without parsing the class list.
+    consults = consults or []
+    out += [
+        "-- 4b. Published consultation hours: DECLARED, not derived from gaps.",
+        "--",
+        "--     Without these every block is 'class', the schedule cannot express",
+        "--     available_consultation, and schedule_rule_baseline scores 0.0000 on",
+        f"--     that class by construction. {len(consults)} windows, "
+        f"{CONSULT_WINDOW_MINUTES} minutes each, at most",
+        f"--     {CONSULT_WINDOWS_PER_WEEK} per lecturer per week.",
+        "insert into faculty_schedule",
+        "  (faculty_id, day_of_week, start_time, end_time, block_kind,",
+        "   semester, course_code, room_label, campus, data_origin)",
+        "select f.id, v.dow, v.st, v.et, 'consultation',",
+        f"       {q(SEMESTER)}, v.course, nullif(v.room, ''), v.campus, 'synthetic'",
+        "  from (values",
+    ]
+    out.append(",\n".join(
+        f"    ({q(sim[c['faculty']])}, {c['dow']}, "
+        f"{q(c['start'].strftime('%H:%M'))}::time, {q(c['end'].strftime('%H:%M'))}::time, "
+        f"{q(c['course'])}, {q(c['room'])}, {q(c['campus'])})"
+        for c in consults))
     out += [
         "  ) as v(full_name, dow, st, et, course, room, campus)",
         "  join faculty f on f.full_name = v.full_name;",
@@ -546,7 +692,13 @@ def main():
     print(f"roster: {len(names)} lecturers, {len(blocks)} schedule blocks")
 
     rng = np.random.default_rng(args.seed)
-    punches, traits, calendar = generate(blocks, names, rng)
+    # Office hours are drawn from their own stream so that changing the
+    # consultation policy does not shuffle every punch in the dataset.
+    consults = declare_consultations(blocks, names,
+                                     np.random.default_rng(args.seed + 1))
+    print(f"declared consultation windows: {len(consults)}")
+
+    punches, traits, calendar = generate(blocks, names, rng, consults)
 
     # ---- self-checks. Each of these has a specific failure it is guarding.
     pairs_ok = all(punches[i]["kind"] == "check_in" and punches[i + 1]["kind"] == "check_out"
@@ -603,7 +755,9 @@ def main():
 
     sql_path = ROOT / "database" / "sample-data" / "003_synthetic_attendance.sql"
     sql_path.parent.mkdir(parents=True, exist_ok=True)
-    sql_path.write_text(emit_sql(punches, traits, calendar, names, blocks), encoding="utf-8")
+    sql_path.write_text(
+        emit_sql(punches, traits, calendar, names, blocks, consults),
+        encoding="utf-8")
     print(f"\nwrote {sql_path}")
 
     xlsx = ROOT / "machine-learning" / "training-data" / \

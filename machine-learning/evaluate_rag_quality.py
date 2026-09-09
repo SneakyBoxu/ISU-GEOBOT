@@ -197,7 +197,15 @@ def build_judge(judge_model: str, embed_model: str):
 
     # temperature=0: a judge that scores the same run differently twice cannot
     # support a reported metric.
-    judge = ChatGroq(model=judge_model, temperature=0, api_key=api_key)
+    #
+    # max_retries is set on the CLIENT as well as in RunConfig. RAGAS retries
+    # around its own evaluation step, but a 429 raised inside langchain_groq
+    # propagates straight out and kills the whole run -- which is how a scoring
+    # pass died after 4 of 66 rows with "try again in 3.18s" in the message.
+    # The client backing off itself is what makes the run survive the free
+    # tier's per-minute token bucket.
+    judge = ChatGroq(model=judge_model, temperature=0, api_key=api_key,
+                     max_retries=10, timeout=180)
 
     # The SAME embedder as retrieval and query time (audit F-14). Answer
     # Relevancy and Context Precision are embedding-sensitive; scoring with a
@@ -231,11 +239,18 @@ def build_judge(judge_model: str, embed_model: str):
     # writes NaN into a reported metric.
     #
     # On a paid key, raise RAGAS_MAX_WORKERS. Do not raise it here.
+    #
+    # The default is ONE, which is what the reasoning above actually concludes.
+    # It used to default to 4, and four workers each carrying a ~2,000-token
+    # grading prompt exhaust an 8,000 TPM bucket on the first volley: they
+    # spend the rest of the run in backoff and still fail. max_wait is 60
+    # because that bucket refills per minute, so a shorter ceiling gives up
+    # while the limit is still in force.
     run_config = RunConfig(
-        max_workers=int(os.environ.get("RAGAS_MAX_WORKERS", "4")),
+        max_workers=int(os.environ.get("RAGAS_MAX_WORKERS", "1")),
         timeout=180,
         max_retries=15,
-        max_wait=30,
+        max_wait=60,
     )
     return judge, embeddings, run_config
 

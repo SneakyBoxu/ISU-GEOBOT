@@ -46,9 +46,15 @@ async function mlFetch(path, body, timeoutMs = config.ml.timeoutMs) {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const err = new Error(json.message ?? `ML ${path} failed (${res.status})`);
+      // The Flask service reports failures as {"error": "..."} while some
+      // handlers use {"message": "..."}. Reading only `message` threw away the
+      // explanation and left the caller with a bare status code -- which is how
+      // "no timetable found in this workbook" reached the browser as an
+      // unexplained 500.
+      const detail = json.error ?? json.message;
+      const err = new Error(detail ?? `ML ${path} failed (${res.status})`);
       err.status = res.status;
-      err.mlError = json.error;
+      err.mlError = detail;
       throw err;
     }
     return json;
@@ -70,7 +76,20 @@ export const ml = DEMO_MODE ? demoMl : {
   predict: (context) => mlFetch('/predict', { context }),
   modelInfo: () => mlFetch('/model/info'),
   health: () => mlFetch('/healthz'),
+
+  // Workbook parsing is measured in seconds, not the milliseconds an inference
+  // call takes, so these get their own timeout rather than tripping the one
+  // tuned for /predict.
+  schedulePreview: (body) => mlFetch('/schedule/preview', body, SCHEDULE_TIMEOUT_MS),
+  scheduleApply: (body) => mlFetch('/schedule/apply', body, SCHEDULE_TIMEOUT_MS),
+
+  // Embedding a handbook is minutes of CPU, not seconds.
+  documentPreview: (body) => mlFetch('/document/preview', body, SCHEDULE_TIMEOUT_MS),
+  documentApply: (body) => mlFetch('/document/apply', body, DOCUMENT_TIMEOUT_MS),
 };
+
+const SCHEDULE_TIMEOUT_MS = 120_000;
+const DOCUMENT_TIMEOUT_MS = 600_000;
 
 /**
  * Native HTTPS helper forcing IPv4.

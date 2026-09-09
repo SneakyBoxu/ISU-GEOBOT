@@ -4,7 +4,7 @@ import L from 'leaflet';
 import {
   AlertCircle, ChevronDown, ChevronUp, Clock, Compass, CornerUpRight,
   ExternalLink, Footprints, Locate, MapPin, Maximize, Minus, Navigation2,
-  Plus, Route, Sparkles, X,
+  PanelLeft, Plus, Route, Sparkles, X,
 } from 'lucide-react';
 import { CAMPUS_CENTER, CAMPUS_ZOOM } from '../../frontend-utilities/appConstants.js';
 import { usePrefersReducedMotion } from '../../custom-react-hooks/useReducedMotionPreference.js';
@@ -16,21 +16,53 @@ import {
   CAMPUS_PRESET_GATES, formatDistance, formatDuration,
 } from '../../frontend-utilities/campusRoutingService.js';
 
-const CARTO_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 const BASEMAPS = {
   satellite: {
     label: 'Satellite',
     url: () => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    reference: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    reference: () => 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
     maxZoom: 19,
+    // Esri's imagery over Echague stops at z18. Ask for z19 and the server
+    // answers 200 with a 2,521-byte "Map data not yet available" card —
+    // identical bytes campus-wide, while the same z19 request over Manila or
+    // Tokyo returns real imagery. Leaflet cannot tell that from a photo, so it
+    // renders the placeholder and the campus vanishes at full zoom.
+    //
+    // maxNativeZoom caps what is REQUESTED; maxZoom caps what is REACHABLE.
+    // Past 18 Leaflet upscales the z18 tile instead of fetching one that does
+    // not exist: soft, but it is the campus, and the pins stay usable.
+    maxNativeZoom: 18,
   },
+  // Esri, and it has to be Esri. This network reaches no other licensed tile
+  // host: tile.openstreetmap.org and basemaps.cartocdn.com both fail to connect
+  // outright (~15s, no HTTP status at all), maps.wikimedia.org answers 403 and
+  // Stadia 401, while arcgisonline answers in 0.3s. CARTO was here first and is
+  // what stamped "API KEY REQUIRED" across the few tiles that did arrive — it
+  // watermarks anything served without a key now. OSM replaced it and rendered
+  // nothing whatsoever.
+  //
+  // Canvas Gray, not World_Street_Map. Street has one more zoom level of detail
+  // (z17 against z16), and that is the whole argument for it — but it only ships
+  // a daytime style, so the dark theme had to fake night by inverting it, and
+  // inverting beige land and green vegetation is what turned this map brown.
+  // Canvas publishes Dark and Light as separate authored tilesets, so the theme
+  // swaps the tiles and no filter touches them. A real night map at z16 beats a
+  // recoloured day map at z17. Satellite still covers close inspection to z18.
+  //
+  // Base and Reference are separate services: Base is the ground and roads,
+  // Reference is the labels. Both must follow the theme.
   plan: {
-    label: 'Plan',
-    url: (theme) => `https://{s}.basemaps.cartocdn.com/${theme === 'dark' ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`,
-    attribution: CARTO_ATTRIBUTION,
-    maxZoom: 20,
+    label: 'Map',
+    url: (theme) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${theme === 'dark' ? 'Dark' : 'Light'}_Gray_Base/MapServer/tile/{z}/{y}/{x}`,
+    reference: (theme) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${theme === 'dark' ? 'Dark' : 'Light'}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`,
+    attribution: 'Map data &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
+    maxZoom: 19,
+    // Canvas has no data over Echague past z16 — same 2,521-byte "Map data not
+    // yet available" card the imagery serves past z18. Cap the request, keep the
+    // zoom: Leaflet upscales z16 rather than fetching a tile that is not there.
+    maxNativeZoom: 16,
   },
 };
 
@@ -152,6 +184,8 @@ export default function CampusMap({
   onAsk,
   onDirections,
   focusOffsetX = 0,
+  indexOpen = true,
+  onToggleIndex,
   navDestination = null,
   navOrigin = null,
   navRoute = null,
@@ -179,6 +213,39 @@ export default function CampusMap({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [focusId, navDestination, onClear, onClearNavigation]);
+
+  // Collapsing the campus index hands its column width back to the map. Leaflet
+  // measures its tile grid once and never re-measures on its own, so without
+  // this the map keeps drawing at the old width: grey gutter down the side, and
+  // hit targets offset from the pins the user can see.
+  //
+  // This deliberately runs every frame of the 240ms slide rather than once at
+  // the end. Re-measuring only on settle is cheaper, but then the strip the
+  // panel uncovers stays blank for the whole animation and snaps to tiles at
+  // the end — the collapse looks broken even though it is faster. Per frame the
+  // map grows into the space with the panel. It is affordable because the tile
+  // range barely changes between frames and GridLayer reuses what it already
+  // holds, so this requests each new tile once, not sixty times.
+  //
+  // `pan: false` keeps the centre put — a wider viewport should reveal more
+  // campus, not slide the campus sideways. `debounceMoveend` collapses the
+  // per-frame moveend storm into one event at the end, for the listeners above.
+  useEffect(() => {
+    if (!map || typeof ResizeObserver === 'undefined') return undefined;
+    const container = map.getContainer();
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        map.invalidateSize({ pan: false, debounceMoveend: true });
+      });
+    });
+    observer.observe(container);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [map]);
 
   const focus = useMemo(
     () => pois.find((p) => p.id === focusId || p.slug === focusId),
@@ -229,7 +296,30 @@ export default function CampusMap({
     <div className="flex h-full min-w-0 flex-1 flex-col bg-bg" data-dock data-basemap={basemap}>
       {/* Map top toolbar */}
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line bg-surface px-3 py-2">
-        <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Base map">
+        {/* The index's reopen control. It lives here, and it is mounted whether
+            the index is open or shut, because the alternative is a rail in the
+            flex row that has to grow from nothing as the panel leaves — two
+            siblings animating their own width against each other, with the map
+            re-measuring between them. Parked in the toolbar it never moves, so
+            closing the index animates exactly one box. */}
+        <div className="flex items-center gap-2">
+          {onToggleIndex && (
+          <button
+            type="button"
+            onClick={onToggleIndex}
+            aria-expanded={indexOpen}
+            aria-controls="campus-index"
+            aria-label={indexOpen ? 'Hide campus index' : 'Show campus index'}
+            title={indexOpen ? 'Hide campus index' : 'Show campus index'}
+            className={`${CTRL} shrink-0 rounded-md border border-line ${
+              indexOpen ? '' : 'bg-bg-sunken text-fg'
+            }`}
+          >
+            <PanelLeft className="h-4 w-4" aria-hidden />
+          </button>
+          )}
+
+          <div className="flex overflow-hidden rounded-md border border-line" role="group" aria-label="Base map">
           {Object.entries(BASEMAPS).map(([key, b]) => (
             <button
               key={key}
@@ -243,6 +333,7 @@ export default function CampusMap({
               {b.label}
             </button>
           ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -296,15 +387,19 @@ export default function CampusMap({
         >
           <TileLayer
             key={`${basemap}-${theme}`}
+            className="basemap-ground"
             attribution={BASEMAPS[basemap].attribution}
             url={BASEMAPS[basemap].url(theme)}
             maxZoom={BASEMAPS[basemap].maxZoom}
+            maxNativeZoom={BASEMAPS[basemap].maxNativeZoom}
           />
-          {BASEMAPS[basemap].reference && (
+          {typeof BASEMAPS[basemap].reference === 'function' && (
             <TileLayer
-              key={`${basemap}-ref`}
-              url={BASEMAPS[basemap].reference}
+              key={`${basemap}-ref-${theme}`}
+              className="basemap-labels"
+              url={BASEMAPS[basemap].reference(theme)}
               maxZoom={BASEMAPS[basemap].maxZoom}
+              maxNativeZoom={BASEMAPS[basemap].maxNativeZoom}
             />
           )}
 

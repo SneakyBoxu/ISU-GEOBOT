@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Building2, ClipboardCheck, LayoutDashboard, LogOut, Megaphone, ShieldCheck,
+  Building2, ClipboardCheck, FileSpreadsheet, LayoutDashboard, LogOut, Megaphone,
+  ShieldCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { currentSession, signOut } from '../../frontend-utilities/supabaseClient.js';
@@ -11,8 +12,8 @@ import DemoModeNotificationBanner from '../shared-components/DemoModeNotificatio
 // Lazy-loaded panel content — same components the standalone portals use, but
 // wired to accept a session prop so the admin only signs in once.
 import CampusLocationsPanel from './AdminCampusLocationsPanel.jsx';
-import SecurityPresencePanel from './AdminSecurityPresencePanel.jsx';
 import FacultyValidationPanel from './AdminFacultyValidationPanel.jsx';
+import ScheduleUploadPanel from './AdminScheduleUploadPanel.jsx';
 
 const TABS = [
   {
@@ -25,15 +26,6 @@ const TABS = [
     activeText: 'text-blue-300',
   },
   {
-    id: 'presence',
-    label: 'Security Presence',
-    icon: ShieldCheck,
-    description: 'View the live faculty presence roster logged by security guards.',
-    color: 'text-emerald-400',
-    activeBg: 'bg-emerald-500/10 border-emerald-500/40',
-    activeText: 'text-emerald-300',
-  },
-  {
     id: 'validation',
     label: 'Faculty Validation',
     icon: ClipboardCheck,
@@ -41,6 +33,15 @@ const TABS = [
     color: 'text-violet-400',
     activeBg: 'bg-violet-500/10 border-violet-500/40',
     activeText: 'text-violet-300',
+  },
+  {
+    id: 'schedule',
+    label: 'Schedule Import',
+    icon: FileSpreadsheet,
+    description: 'Import a departmental schedule workbook. Reviewed before it is written.',
+    color: 'text-emerald-400',
+    activeBg: 'bg-emerald-500/10 border-emerald-500/40',
+    activeText: 'text-emerald-300',
   },
 ];
 
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
         role="admin"
         icon={LayoutDashboard}
         title="Admin Dashboard"
-        description="Sign in with your administrator account to manage campus locations, review security presence logs, and view faculty validation entries."
+        description="Sign in with your administrator account to manage campus locations and view faculty validation entries."
         onSession={setSession}
       />
     );
@@ -174,8 +175,8 @@ export default function AdminDashboard() {
           {/* Tab panels */}
           <div className="px-8 py-8">
             {activeTab === 'locations' && <CampusLocationsPanel session={session} />}
-            {activeTab === 'presence' && <SecurityPresencePanel session={session} />}
             {activeTab === 'validation' && <FacultyValidationPanel session={session} />}
+            {activeTab === 'schedule' && <ScheduleUploadPanel session={session} />}
           </div>
         </main>
       </div>

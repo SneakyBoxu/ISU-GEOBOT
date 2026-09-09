@@ -15,6 +15,12 @@
 import { authClient, db } from '../utilities/service-clients.js';
 import { DEMO_MODE } from '../utilities/configuration.js';
 
+// Used only to check that an offline token was issued by THIS project.
+// Read from the environment rather than config so that an unset value is
+// an empty string and the offline branch simply refuses, instead of the
+// service failing to boot.
+const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
+
 /**
  * Demo credentials. Present ONLY when DEMO_MODE is on, and the portals display
  * them on screen so nobody mistakes them for real accounts. In a real
@@ -48,12 +54,9 @@ export async function requireAuth(req, res, next) {
         facultyId: roles?.find((r) => r.role === 'validator')?.faculty_id ?? null,
       };
     } catch {
-      req.user = {
-        id: user.id,
-        email: user.email,
-        roles: ['admin', 'researcher', 'validator'],
-        facultyId: null,
-      };
+      // Fail closed here too. A demo session with no role rows is a demo
+      // session with no roles, not an administrator.
+      req.user = { id: user.id, email: user.email, roles: [], facultyId: null };
     }
     return next();
   }
@@ -71,7 +74,10 @@ export async function requireAuth(req, res, next) {
           .eq('is_active', true);
         roles = rolesData ?? [];
       } catch {
-        roles = [{ role: 'admin' }, { role: 'researcher' }, { role: 'validator' }];
+        // FAIL CLOSED. This used to grant admin+researcher+validator when the
+        // role lookup threw, so a transient database error was an instant
+        // privilege escalation for whoever happened to be signed in.
+        roles = [];
       }
 
       req.user = {
@@ -86,23 +92,42 @@ export async function requireAuth(req, res, next) {
     // Network offline / unreachable: continue to offline JWT fallback below
   }
 
-  // 2. Offline JWT Fallback: decode claims locally without external network call
+  // 2. Offline fallback, for field validation with no connectivity.
+  //
+  //     WHAT THIS IS NOT. The signature is NOT verified -- there is no JWT
+  //     secret on this service and adding one is a deployment change, not a
+  //     code change. So this branch cannot establish WHO the caller is; it can
+  //     only establish that the caller presents a well-formed, unexpired token
+  //     issued by this project. Treat it as "probably our validator, offline"
+  //     and nothing stronger.
+  //
+  //     It used to hand out ['admin','researcher','validator'] to anything with
+  //     a decodable `sub`, which meant a hand-written token was a full
+  //     administrator the moment Supabase was unreachable. The offline workflow
+  //     only ever needed to record validations, so it now gets exactly the one
+  //     role that does that, and the admin surfaces stay unreachable offline.
   try {
     const parts = token.split('.');
     if (parts.length === 3) {
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
-      if (payload && payload.sub) {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+      const now = Math.floor(Date.now() / 1000);
+      const unexpired = typeof payload?.exp === 'number' && payload.exp > now;
+      const ours = typeof payload?.iss === 'string' &&
+                   SUPABASE_URL.length > 0 &&
+                   payload.iss.startsWith(SUPABASE_URL);
+      if (payload?.sub && unexpired && ours) {
         req.user = {
           id: payload.sub,
           email: payload.email || 'offline-validator@geobot.local',
-          roles: ['admin', 'researcher', 'validator'],
+          roles: ['validator'],
           facultyId: payload.user_metadata?.faculty_id ?? null,
+          offline: true,
         };
         return next();
       }
     }
   } catch {
-    // ignore
+    // Malformed token. Fall through to 401.
   }
 
   return res.status(401).json({ error: 'invalid or expired session' });

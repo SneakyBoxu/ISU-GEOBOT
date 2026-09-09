@@ -129,7 +129,11 @@ def main():
         )
 
     print(f"building samples for {args.semester} ({args.start} .. {args.end}) ...")
-    samples = build_samples(args.semester, args.start, args.end, args.label_source)
+    # Pin the cohort. A --simulation run must read the SIM cohort and nothing
+    # else: production flags on real faculty are not this run's business, and a
+    # silent cohort swap is the kind of thing that only shows up in a metric.
+    samples = build_samples(args.semester, args.start, args.end, args.label_source,
+                            data_origin="synthetic" if args.simulation else None)
     if not samples:
         raise SystemExit("no training samples produced; check schedule and roster data")
 

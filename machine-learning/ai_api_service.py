@@ -49,6 +49,14 @@ log = logging.getLogger("isu-geobot-ml")
 
 app = Flask(__name__)
 
+# Schedule upload lives in its own module: it is an operator workflow, not part
+# of the inference surface, and keeping it separate means the model endpoints
+# cannot be slowed down or broken by workbook parsing.
+from schedule_upload import schedule_bp  # noqa: E402
+from document_upload import document_bp  # noqa: E402
+app.register_blueprint(schedule_bp)
+app.register_blueprint(document_bp)
+
 # ---------------------------------------------------------------------------
 # Warm start. Both models load once and stay resident.
 #

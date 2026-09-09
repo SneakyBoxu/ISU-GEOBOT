@@ -142,7 +142,7 @@ export default function AdminFacultyValidationPanel({ session }) {
     }
     setFacultyLoading(true);
     try {
-      const res = await api.guardRoster(session.access_token);
+      const res = await api.validateRoster(session.access_token);
       const list = res.roster ?? [];
       if (list.length > 0) {
         setFacultyList(list);

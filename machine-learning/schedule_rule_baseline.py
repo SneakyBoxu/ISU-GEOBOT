@@ -47,6 +47,9 @@ def parse_args():
     p.add_argument("--split", default="time_based",
                    choices=["time_based", "grouped_faculty", "random"])
     p.add_argument("--test-size", type=float, default=0.2)
+    p.add_argument("--data-origin", default=None,
+                   help="Pin the cohort, e.g. synthetic. Must match the "
+                        "model run or the comparison is not like-for-like.")
     return p.parse_args()
 
 
@@ -90,7 +93,8 @@ def main():
             "!! meaningful comparison.\n"
         )
 
-    samples = build_samples(args.semester, args.start, args.end, args.label_source)
+    samples = build_samples(args.semester, args.start, args.end, args.label_source,
+                            data_origin=args.data_origin)
     if not samples:
         raise SystemExit("no samples produced")
 

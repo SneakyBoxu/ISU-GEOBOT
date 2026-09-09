@@ -62,7 +62,7 @@ import database_connector as db
 from dataset_loader import CAMPUS, _block_at, _schedule_label
 from feature_engineering import semester_phase_of
 
-TABLES = Path(__file__).resolve().parent.parent / "notebooks" / "tables"
+TABLES = Path(__file__).resolve().parent.parent / "thesis" / "tables"
 CAMPUS_TZ = ZoneInfo("Asia/Manila")
 SEMESTER = "2026-2027-1"
 
@@ -334,7 +334,7 @@ def main():
     ap.add_argument("--exclude-overrides", action="store_true")
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--no-write", action="store_true",
-                    help="print only; do not touch notebooks/tables")
+                    help="print only; do not touch thesis/tables")
     args = ap.parse_args()
 
     rows = load_validations(args.protocol, args.exclude_overrides)

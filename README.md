@@ -19,7 +19,15 @@ College of Computing Studies, Information and Communication Technology (CCSICT)
 
 2. **Faculty Availability Estimation (Random Forest)**
    - Predicts real-time faculty availability (`Available for Consultation`, `In Scheduled Class`, `Unavailable / Off-Schedule`).
-   - Trained across 37 CCSICT faculty profiles and 850+ schedule blocks with balanced precision, recall, and F1 metrics.
+   - **Trained on a synthetic cohort.** Real Daily Time Records were ruled out on
+     privacy grounds, so a 37-lecturer simulation cohort (SIM-01..SIM-37) carries the
+     real teaching shapes and none of the identities. Every metric it produces is a
+     simulation result: it shows the pipeline recovers injected behavioural traits,
+     not that it predicts real lecturer availability. See
+     `machine-learning/saved-models/MODEL-README.txt`.
+   - Schedule of record: **425 real CCSICT class blocks** across 37 lecturers, plus
+     **425 synthetic blocks and 71 declared consultation windows** for the simulation
+     cohort. Real and synthetic are separated by `data_origin` everywhere.
    - Schedule-derived consultation window intelligence and next-free-period predictions.
    - Privacy-preserving Status Masking Protocol & Egress Boundary (strictly protecting physical room numbers and live tracking).
 
@@ -36,7 +44,7 @@ College of Computing Studies, Information and Communication Technology (CCSICT)
 React 18 SPA (Port 5173)  ──►  Node.js / Express (Port 4000)  ──►  Python Flask ML (Port 5001)
   Interactive Leaflet Map        Query Router & Presence            Random Forest Classifier
   Conversational Assistant       Status Masking Boundary            all-MiniLM-L6-v2 Embedder
-  Admin & Security Portals       Context Fusion
+  Admin & Validation Portals     Context Fusion
                                        │
                                        ├──►  Supabase (PostgreSQL + pgvector)
                                        └──►  Groq Cloud API (openai/gpt-oss-120b)
@@ -113,4 +121,9 @@ Run the automated backend test suites:
 cd backend
 npm test
 ```
-All 95 unit, security, and integration tests should pass with 0 failures.
+All **134** unit, security, and integration tests should pass with 0 failures.
+
+They run with `DEMO_MODE=true`, which substitutes the classifier, the LLM and the
+embedder with deterministic stand-ins. That is deliberate — the suite pins routing,
+authorization, masking and temporal logic, which is what it claims to cover. It is
+not evidence about retrieval quality or the trained model.

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, ClipboardCheck, LayoutDashboard, Menu, Settings2, ShieldCheck, X } from 'lucide-react';
+import { ChevronDown, ClipboardCheck, LayoutDashboard, Menu, Settings2, X } from 'lucide-react';
 import ISULogoBrand from './ISULogoBrand.jsx';
 import Button from '../ui-primitives/ActionButton.jsx';
 import ThemeToggle from '../ui-primitives/DarkModeToggleSwitch.jsx';
@@ -9,7 +9,7 @@ import ThemeToggle from '../ui-primitives/DarkModeToggleSwitch.jsx';
  * Portals are reachable from every page, but they are not marketing links.
  *
  * Only `/validate` is something a person outside the research team goes
- * looking for. `/guard` and `/admin` are operational surfaces for one or two
+ * looking for. `/admin` and `/validate` are operational surfaces for one or two
  * people each: in the menu so nobody needs to be told a URL, out of the top
  * bar so the navigation does not imply a general-purpose audience.
  *
@@ -30,12 +30,6 @@ const PORTALS = [
     label: 'Faculty validation',
     hint: 'Score availability estimates against your real attendance log.',
     icon: ClipboardCheck,
-  },
-  {
-    to: '/guard',
-    label: 'Security presence',
-    hint: 'Log faculty check-ins at campus gates and stations.',
-    icon: ShieldCheck,
   },
   {
     to: '/admin',

@@ -53,8 +53,6 @@ export const api = {
   facultySearch: (q) => request(`/faculty/search?q=${encodeURIComponent(q)}`),
   evalStatus: () => request('/eval/status'),
 
-  guardRoster: (token) => request('/guard/roster', { token }),
-  guardLog: (token, body) => request('/guard/events', { method: 'POST', body, token }),
 
   me: (token) => request('/me', { token }),
 
@@ -78,6 +76,15 @@ export const api = {
   setMyVisibility: (token, body) =>
     request('/admin/me/faculty/visibility', { method: 'POST', body, token }),
 
+  validateRoster: (token) => request('/validate/roster', { token }),
+  schedulePreview: (token, body) =>
+    request('/admin/schedule/preview', { method: 'POST', body, token }),
+  scheduleApply: (token, body) =>
+    request('/admin/schedule/apply', { method: 'POST', body, token }),
+  documentPreview: (token, body) =>
+    request('/admin/document/preview', { method: 'POST', body, token }),
+  documentApply: (token, body) =>
+    request('/admin/document/apply', { method: 'POST', body, token }),
   validateContext: (token, facultyId) =>
     request(facultyId ? `/validate/context?facultyId=${encodeURIComponent(facultyId)}` : '/validate/context', { token }),
   validateSubmit: (token, body) =>

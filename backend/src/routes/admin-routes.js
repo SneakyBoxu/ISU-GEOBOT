@@ -32,7 +32,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 
-import { db, log } from '../utilities/service-clients.js';
+import { db, log, ml } from '../utilities/service-clients.js';
 import { requireAuth, requireRole } from '../middleware/authentication.js';
 import { createPoi, deletePoi, reindexPoi, republishPoi, unpublishPoi, updatePoi } from '../services/campus-places-service.js';
 import { clearRosterCache } from '../services/intent-query-router.js';
@@ -158,6 +158,124 @@ admin.post('/pois/:id/reindex', requireAuth, requireRole('admin', 'researcher'),
     try {
       const index = await reindexPoi(req.params.id);
       res.json({ indexed: index.chunks, placeCard: index.text });
+    } catch (err) { next(err); }
+  });
+
+// ---------------------------------------------------------------------------
+// Schedule upload (thesis 3.4.2)
+//
+// Two steps on purpose. The workbook describes 37 real lecturers, and a
+// mis-parse is quiet: a merged cell read wrongly turns a three-hour class into
+// thirty minutes, and a lecturer whose name fails to match simply disappears
+// and looks free all week. So `preview` reports what was found and writes
+// nothing, and `apply` refuses any workbook whose parse does not match the
+// checksum the operator actually reviewed.
+//
+// Same shape as the OCR announcement pipeline: extract, show a human, then commit.
+// ---------------------------------------------------------------------------
+
+const scheduleUploadSchema = z.object({
+  filename: z.string().min(1).max(255).optional(),
+  // ~12 MB of workbook is ~16 MB of base64.
+  contentB64: z.string().min(1).max(17_000_000),
+  semester: z.string().min(1).max(32).optional(),
+  // Which column of an academic calendar to read. Zod strips unknown keys, so
+  // omitting it here silently pinned every calendar upload to the first
+  // semester no matter which tab the operator selected.
+  semesterColumn: z.enum(['first', 'second', 'midyear']).optional(),
+  checksum: z.string().min(1).max(128).optional(),
+});
+
+admin.post('/schedule/preview', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const body = scheduleUploadSchema.parse(req.body);
+      const preview = await ml.schedulePreview({
+        content_b64: body.contentB64,
+        semester: body.semester,
+        semester_column: body.semesterColumn,
+      });
+      log.info({ user: req.user.id, filename: body.filename,
+                 blocks: preview?.parsed?.blocks }, 'schedule preview');
+      res.json(preview);
+    } catch (err) { next(err); }
+  });
+
+admin.post('/schedule/apply', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const body = scheduleUploadSchema.parse(req.body);
+      if (!body.checksum) {
+        return res.status(400).json({ error: 'preview the workbook first' });
+      }
+      const result = await ml.scheduleApply({
+        content_b64: body.contentB64,
+        semester: body.semester,
+        semester_column: body.semesterColumn,
+        checksum: body.checksum,
+      });
+      // The roster gazetteer caches faculty names; a new lecturer would be
+      // unrecognised by the router until it is dropped.
+      clearRosterCache();
+      log.warn({ user: req.user.id, filename: body.filename,
+                 written: result?.blocks_written }, 'schedule APPLIED');
+      res.json(result);
+    } catch (err) { next(err); }
+  });
+
+// ---------------------------------------------------------------------------
+// Institutional document upload -> the retrieval corpus
+//
+// Same two-step shape as the schedule: extract and show, then write only what
+// was reviewed. A document is replaced by title rather than appended, because
+// appending is how the academic calendar ended up in the corpus twice, with
+// retrieval spending its top-k budget on two copies of the same passage.
+// ---------------------------------------------------------------------------
+
+const documentUploadSchema = z.object({
+  filename: z.string().min(1).max(255),
+  contentB64: z.string().min(1).max(34_000_000),   // ~25 MB of file
+  title: z.string().min(1).max(200).optional(),
+  docType: z.string().min(1).max(64).optional(),
+  sourceOrigin: z.string().min(1).max(500).optional(),
+  providedBy: z.string().min(1).max(200).optional(),
+  checksum: z.string().min(1).max(128).optional(),
+});
+
+function documentBody(body) {
+  return {
+    filename: body.filename,
+    content_b64: body.contentB64,
+    title: body.title,
+    doc_type: body.docType,
+    source_origin: body.sourceOrigin,
+    provided_by: body.providedBy,
+    checksum: body.checksum,
+  };
+}
+
+admin.post('/document/preview', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const body = documentUploadSchema.parse(req.body);
+      const preview = await ml.documentPreview(documentBody(body));
+      log.info({ user: req.user.id, filename: body.filename,
+                 chunks: preview?.chunks }, 'document preview');
+      res.json(preview);
+    } catch (err) { next(err); }
+  });
+
+admin.post('/document/apply', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const body = documentUploadSchema.parse(req.body);
+      if (!body.checksum) {
+        return res.status(400).json({ error: 'preview the document first' });
+      }
+      const result = await ml.documentApply(documentBody(body));
+      log.warn({ user: req.user.id, filename: body.filename,
+                 chunks: result?.chunks_written }, 'document INGESTED');
+      res.json(result);
     } catch (err) { next(err); }
   });
 

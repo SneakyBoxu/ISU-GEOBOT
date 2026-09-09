@@ -121,17 +121,40 @@ def chunk_document(text: str) -> list[tuple[str, int]]:
     if not blocks:
         return []
 
+    # WHICH SECTION EACH PIECE CAME FROM.
+    #
+    # A heading labels the text under it only while they stay in the same
+    # chunk. Split a long section and the later chunks carry the facts with no
+    # indication of what they are about: "Undergraduate Students: 2026-12-07"
+    # with the semester heading three chunks back, or "8.a. Good standing"
+    # with no clue it is the academic-standing section. Retrieval then finds
+    # the chunk and the model still cannot answer, because the chunk does not
+    # say what it is about -- and declining is the correct behaviour.
+    #
+    # So the heading in force travels with every piece and is restored below.
     sized: list[str] = []
+    sized_head: list[str] = []
     counts = count_tokens(blocks)
+    head = ""
     for block, n in zip(blocks, counts):
-        sized.extend(split_oversized(block) if n > TARGET_TOKENS else [block])
+        first_line = block.split(chr(10), 1)[0].strip()
+        if HEADING.match(first_line):
+            head = first_line.lstrip("#").strip()
+        parts = split_oversized(block) if n > TARGET_TOKENS else [block]
+        sized.extend(parts)
+        sized_head.extend([head] * len(parts))
 
     chunks: list[str] = []
+    heads: list[str] = []
     cur: list[str] = []
-    for piece in sized:
+    cur_head = ""
+    for piece, piece_head in zip(sized, sized_head):
+        if not cur:
+            cur_head = piece_head
         candidate = cur + [piece]
-        if count_tokens(["\n\n".join(candidate)])[0] > TARGET_TOKENS and cur:
-            chunks.append("\n\n".join(cur))
+        if count_tokens([(chr(10) * 2).join(candidate)])[0] > TARGET_TOKENS and cur:
+            chunks.append((chr(10) * 2).join(cur))
+            heads.append(cur_head)
             # Overlap: carry the tail of the previous chunk forward.
             keep = max(1, int(len(cur) * OVERLAP_RATIO)) if len(cur) > 1 else 0
             tail = cur[-keep:] if keep else []
@@ -150,10 +173,24 @@ def chunk_document(text: str) -> list[tuple[str, int]]:
             if tail and count_tokens(["\n\n".join(tail + [piece])])[0] > MAX_TOKENS:
                 tail = []
             cur = tail + [piece]
+            cur_head = piece_head
         else:
             cur = candidate
     if cur:
-        chunks.append("\n\n".join(cur))
+        chunks.append((chr(10) * 2).join(cur))
+        heads.append(cur_head)
+
+    # Restore the heading on any chunk that does not already open with it.
+    # Skipped when it would breach the ceiling: a self-describing chunk is
+    # worth a few tokens, a silently truncated embedding is not (audit F-34).
+    restored: list[str] = []
+    for chunk, chunk_head in zip(chunks, heads):
+        if chunk_head and not chunk.lstrip().startswith(chunk_head[:40]):
+            with_head = chunk_head + (chr(10) * 2) + chunk
+            if count_tokens([with_head])[0] <= MAX_TOKENS:
+                chunk = with_head
+        restored.append(chunk)
+    chunks = restored
 
     final = count_tokens(chunks)
     result = []

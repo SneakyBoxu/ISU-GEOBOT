@@ -14,6 +14,14 @@ app.set('trust proxy', 1);           // rate limiting behind a proxy (F-29)
 app.use(helmet());
 app.use(compression());
 app.use(cors({ origin: config.corsOrigins, credentials: false }));
+// 64kb is deliberately tight: every other endpoint takes a query or a small
+// object, and a small ceiling is the cheapest defence against a body-size
+// denial of service. The schedule importer is the one exception -- a
+// departmental workbook is ~550kb of xlsx, which is ~730kb once base64'd --
+// so it gets its own parser mounted ahead of the global one rather than
+// loosening the limit for the whole API.
+app.use('/api/admin/schedule', express.json({ limit: '20mb' }));
+app.use('/api/admin/document', express.json({ limit: '36mb' }));
 app.use(express.json({ limit: '64kb' }));
 app.use(pinoHttp({ logger: log, autoLogging: { ignore: (r) => r.url === '/api/health' } }));
 

@@ -16,9 +16,9 @@
  *   2. embed the query    Flask /embed — the same code path as ingestion
  *   3. retrieve           exact cosine over pgvector, top-K
  *      ...simultaneously (§3.5.4 step 4 — retrieval is NOT conditional)...
- *   4. availability       guard tri-state -> RF -> masking boundary
+ *   4. availability       schedule/RF -> masking boundary
  *   5. Context Fusion     query + chunks + masked status
- *   6. generate           Llama 3.1 8B via Groq, temperature 0
+ *   6. generate           openai/gpt-oss-120b via Groq, temperature 0
  *   7. egress filter      output-side location-leak scan
  */
 
@@ -423,8 +423,30 @@ export async function runPipeline({
   //
   // A validated [LOCATION: id] tag still wins unconditionally above; that one
   // is the model deliberately naming a place, not the retriever's leftovers.
-  const wantsPlace = route.category === 'campus_navigation'
-    || route.category === 'combined';
+  // NO MAP PIN ON A QUESTION ABOUT A PERSON. Neither source, ever.
+  //
+  // "where is sir alado" reaches here as category 'campus_navigation': the
+  // router matched the lecturer AND saw a navigation phrase, and with no
+  // availability words the faculty match is dropped from the category. Both
+  // pin paths were therefore open, and the interface pinned "Old Admin
+  // Building" -- the retriever's nearest place-card -- while the answer said
+  // it had no such information.
+  //
+  // The association was not merely unhelpful, it was invented. `faculty` has
+  // no office or poi column: the system holds NO mapping from a person to a
+  // place. So a pin on a person-question can only ever be the retriever's
+  // nearest embedding or the model's guess at a [LOCATION: id], and both are
+  // fabrications dressed as directory information. Audit C6 permits static
+  // office location as directory information -- but only if the office is
+  // known, and here nothing is.
+  //
+  // This also keeps the footer honest. It promises "Faculty locations are
+  // never disclosed" while the map moved to a building next to the person's
+  // name, which is the disclosure it promises not to make.
+  const aboutAPerson = (route.facultyCandidates?.length ?? 0) > 0;
+
+  const wantsPlace = !aboutAPerson
+    && (route.category === 'campus_navigation' || route.category === 'combined');
   const poiChunk = wantsPlace ? retrieval.chunks.find((c) => c.poi_id) : null;
   const chunkPoi = poiChunk
     ? locations.find((l) => l.id === poiChunk.poi_id) ?? { id: poiChunk.poi_id }
@@ -445,9 +467,14 @@ export async function runPipeline({
     internalProbabilities: availability?.internalProbabilities ?? null,
     modelVersion: availability?.modelVersion ?? null,
     egressFilterHit: egressHit,
-    poiFocus: tagged.poi ?? (chunkPoi
+    // A validated [LOCATION: id] tag normally wins unconditionally -- it is the
+    // model deliberately naming a place rather than the retriever's leftovers.
+    // It does not win here: the prompt tells the model to emit a tag whenever
+    // it is asked where something is, and it cannot tell "where is the library"
+    // from "where is sir alado". The person check is applied to BOTH sources.
+    poiFocus: aboutAPerson ? null : (tagged.poi ?? (chunkPoi
       ? { poiId: chunkPoi.id, slug: chunkPoi.slug ?? null, name: chunkPoi.name ?? null }
-      : null),
+      : null)),
     availabilityWithheld: false,
     timings,
   };

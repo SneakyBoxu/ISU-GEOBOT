@@ -241,18 +241,36 @@
 }
 .leaflet-control-attribution a { @apply text-fg-muted; }
 
-/* Dark swaps the basemap for CARTO's night cartography; imagery is only
-   provider and no API key — and it keeps the map honest with the theme
-   instead of leaving a colour photograph inside a greyscale interface. */
-/* The plan basemap swaps to CARTO's dark cartography in the dark theme — a
-   real nighttime map, not the day map with a filter over it. See BASEMAPS in
-   CampusMap.jsx. Satellite imagery cannot be re-authored, so it is dimmed just
-   enough to sit in a dark page instead of blazing out of it. Grayscale is
-   deliberately NOT used: aerial imagery without colour is unreadable, and the
-   point of the satellite view is telling a field from a roof. */
+/* Dark mode treats the two basemaps oppositely, because only one of them can be
+   re-authored. The drawn map has a true night tileset — see BASEMAPS in
+   CampusMap.jsx, where the theme picks Canvas Dark Gray over Canvas Light Gray —
+   so it must arrive UNTOUCHED. Filtering a map that is already dark only greys
+   out cartography someone drew for exactly this purpose, which is why the plan
+   rule below is `none` and not a smaller brightness.
+   (A previous provider shipped no night style and this file faked one with
+   invert() + hue-rotate(). It reads as brown: inverting beige ground and green
+   vegetation lands squarely on olive. Do not reintroduce it — swap the tileset.)
+
+   Aerial imagery cannot be re-authored, so satellite IS filtered, dimmed just
+   enough to sit in a dark page instead of blazing out of it. Greyscale is
+   deliberately NOT used there: imagery without colour is unreadable, and telling
+   a field from a roof is the entire point of the satellite view. */
 [data-theme='dark'] .leaflet-tile-pane { filter: brightness(0.88); }
 [data-theme='dark'] [data-basemap='satellite'] .leaflet-tile-pane {
   filter: brightness(0.78) saturate(0.88) contrast(1.04);
+}
+/* Plan in dark: the pane itself is left alone so the labels arrive at full
+   strength, and only the GROUND is pushed down to near-black. Canvas Dark Gray
+   ships a mid-grey land colour that reads washed-out next to this interface;
+   dimming it is a brightness change on an already-dark map, not the invert()
+   recolour that turned the old street basemap brown. Splitting ground from
+   labels is why the two tile layers carry class names — dimming the whole pane
+   would take the place names down with it, and unreadable labels are the one
+   thing a campus map cannot afford. Contrast is nudged back up so roads stay
+   separable from the ground once both are this dark. */
+[data-theme='dark'] [data-basemap='plan'] .leaflet-tile-pane { filter: none; }
+[data-theme='dark'] [data-basemap='plan'] .basemap-ground {
+  filter: brightness(0.5) contrast(1.15);
 }
 
 /* Leaflet paints its own white ground behind the tiles while they load. */

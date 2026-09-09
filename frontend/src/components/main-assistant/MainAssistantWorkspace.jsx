@@ -207,6 +207,8 @@ export default function Workspace() {
             onAsk={ask}
             onDirections={handleStartDirections}
             focusOffsetX={overlayPanel ? panelWidthPx() : 0}
+            indexOpen={panelOpen}
+            onToggleIndex={() => setPanelOpen((v) => !v)}
             navDestination={navDestination}
             navOrigin={navOrigin}
             navRoute={navRoute}

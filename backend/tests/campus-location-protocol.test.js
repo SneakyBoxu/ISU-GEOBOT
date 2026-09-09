@@ -149,6 +149,40 @@ describe('POST /chat — map focus', () => {
     const res = await chat('What are the enrollment requirements?');
     assert.ok(!res.body.poiFocus?.slug, 'a policy question panned the map');
   });
+
+  /**
+   * REGRESSION. "where is sir alado" pinned "Old Admin Building" while the
+   * answer said the system had no such information.
+   *
+   * The phrasing is the trap: a lecturer's name plus a navigation phrase and no
+   * availability word routes to 'campus_navigation', so the faculty match is
+   * dropped from the category and both pin paths open -- the retriever's
+   * nearest place-card, and the [LOCATION: id] the prompt asks the model to
+   * emit whenever it is asked where something is.
+   *
+   * There is no honest pin available either way: `faculty` carries no office or
+   * poi column, so the system holds no mapping from a person to a place. An
+   * equivalent assertion already existed in live-stack.test.js and never caught
+   * this, because that suite is gated behind LIVE_TESTS=1 and does not run.
+   */
+  it('does not pin a location for a question about a person', async () => {
+    for (const query of [
+      'where is Demo Faculty A',
+      'where is Prof. Demo Faculty A',
+      "where is Demo Faculty A's office",
+    ]) {
+      const res = await chat(query);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.poiFocus ?? null, null,
+        `"${query}" panned the map to ${res.body.poiFocus?.name}`);
+    }
+  });
+
+  it('still pins a place when the question names no person', async () => {
+    const res = await chat('Where is the University Library?');
+    assert.equal(res.body.poiFocus?.slug, 'university-library',
+      'the person check suppressed a legitimate navigation pin');
+  });
 });
 
 describe('GET /map/pois — the authoritative location list', () => {

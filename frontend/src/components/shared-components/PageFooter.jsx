@@ -30,7 +30,6 @@ const COLUMNS = [
     title: 'Portals',
     links: [
       { to: '/validate', label: 'Faculty portal' },
-      { to: '/guard', label: 'Security presence' },
       { to: '/admin', label: 'Campus locations' },
     ],
   },
