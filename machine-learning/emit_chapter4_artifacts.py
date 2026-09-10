@@ -248,7 +248,7 @@ def main():
         print("  !! a schedule with one block type deleted.")
 
     if args.no_write:
-        print("\nno-write: notebooks/ untouched")
+        print("\nno-write: thesis/ untouched")
         return
 
     TABLES.mkdir(parents=True, exist_ok=True)

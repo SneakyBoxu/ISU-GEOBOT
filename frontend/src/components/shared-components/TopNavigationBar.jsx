@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronDown, ClipboardCheck, LayoutDashboard, Menu, Settings2, X } from 'lucide-react';
+import { ChevronDown, LayoutDashboard, Menu, X } from 'lucide-react';
 import ISULogoBrand from './ISULogoBrand.jsx';
 import Button from '../ui-primitives/ActionButton.jsx';
 import ThemeToggle from '../ui-primitives/DarkModeToggleSwitch.jsx';
@@ -21,23 +21,17 @@ const PORTALS = [
   {
     to: '/admin-dashboard',
     label: 'Admin Dashboard',
-    hint: 'Unified management: campus locations, security presence & validation.',
+    hint: 'Campus locations, faculty validation, schedule import and announcements.',
     icon: LayoutDashboard,
     primary: true,
   },
-  {
-    to: '/validate',
-    label: 'Faculty validation',
-    hint: 'Score availability estimates against your real attendance log.',
-    icon: ClipboardCheck,
-  },
-  {
-    to: '/admin',
-    label: 'Campus locations',
-    hint: 'Manage published campus locations, buildings and coordinates.',
-    icon: Settings2,
-  },
 ];
+
+// Faculty validation and Campus locations used to sit here as separate doors.
+// Both opened a page that duplicated a tab already inside the Admin Dashboard —
+// the same component, the same endpoints, maintained twice. Two copies of one
+// form is how the two drift: a fix lands in one and nobody notices the other
+// until an operator happens to use the wrong door. One surface now.
 
 const SECTIONS = [
   { href: '#campus', label: 'Campus' },

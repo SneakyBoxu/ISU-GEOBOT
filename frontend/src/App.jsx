@@ -9,8 +9,6 @@ import LoadingSpinnerOverlay from './components/shared-components/LoadingSpinner
 // The guard dashboard was removed with the presence log. Nothing replaces it:
 // availability now comes from the schedule and the classifier only.
 const MainAssistantWorkspace = lazy(() => import('./components/main-assistant/MainAssistantWorkspace.jsx'));
-const FacultyAnswerValidationList = lazy(() => import('./components/faculty-validation-portal/FacultyAnswerValidationList.jsx'));
-const CampusLocationManager = lazy(() => import('./components/admin-portal/CampusLocationManager.jsx'));
 const AdminDashboard = lazy(() => import('./components/admin-portal/AdminDashboard.jsx'));
 const UploadAnnouncementPage = lazy(() => import('./components/announcements/UploadAnnouncementPage.jsx'));
 
@@ -20,8 +18,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingMainPage />} />
         <Route path="/app" element={<MainAssistantWorkspace />} />
-        <Route path="/validate" element={<FacultyAnswerValidationList />} />
-        <Route path="/admin" element={<CampusLocationManager />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/upload-announcement" element={<UploadAnnouncementPage />} />
         <Route path="*" element={<LandingMainPage />} />

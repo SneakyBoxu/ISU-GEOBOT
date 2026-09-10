@@ -292,8 +292,8 @@ export default function LandingResearchInstruments({ count = 0 }) {
               <Button as={Link} to="/app" variant="primary" size="lg" iconRight={ArrowRight}>
                 Explore Campus
               </Button>
-              <Button as={Link} to="/validate" variant="secondary" size="lg">
-                Faculty Portal
+              <Button as={Link} to="/admin-dashboard" variant="secondary" size="lg">
+                Admin Dashboard
               </Button>
             </div>
           </div>

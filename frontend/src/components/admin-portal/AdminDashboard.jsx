@@ -14,6 +14,11 @@ import DemoModeNotificationBanner from '../shared-components/DemoModeNotificatio
 import CampusLocationsPanel from './AdminCampusLocationsPanel.jsx';
 import FacultyValidationPanel from './AdminFacultyValidationPanel.jsx';
 import ScheduleUploadPanel from './AdminScheduleUploadPanel.jsx';
+// RA 10173 right-to-object control. It lived on the /validate portal, which was
+// consolidated into this dashboard; the control itself must not disappear with the
+// page that happened to host it. It self-hides when the signed-in account is not a
+// lecturer, so an administrator simply never sees it.
+import FacultyPrivacyToggleCard from '../faculty-validation-portal/FacultyPrivacyToggleCard.jsx';
 
 const TABS = [
   {
@@ -175,7 +180,12 @@ export default function AdminDashboard() {
           {/* Tab panels */}
           <div className="px-8 py-8">
             {activeTab === 'locations' && <CampusLocationsPanel session={session} />}
-            {activeTab === 'validation' && <FacultyValidationPanel session={session} />}
+            {activeTab === 'validation' && (
+              <>
+                <FacultyValidationPanel session={session} />
+                <FacultyPrivacyToggleCard token={session?.access_token} />
+              </>
+            )}
             {activeTab === 'schedule' && <ScheduleUploadPanel session={session} />}
           </div>
         </main>

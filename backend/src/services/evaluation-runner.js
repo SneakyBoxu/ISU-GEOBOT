@@ -38,16 +38,51 @@ import { db, log } from '../utilities/service-clients.js';
 import { config, PROMPT_TEMPLATE_VERSION, ROUTER_VERSION } from '../utilities/configuration.js';
 import { runPipeline } from './knowledge-search-service.js';
 
+// Valueless switches. The parser below walks argv in pairs, so a flag with no
+// value would swallow the NEXT flag as its argument -- which is how
+// `--simulation --judge X` produced "judge is required".
+const FLAGS = new Set(['--simulation']);
+
 function parseArgs(argv) {
+  const rest = argv.slice(2).filter((a) => !FLAGS.has(a));
   const args = {};
-  for (let i = 2; i < argv.length; i += 2) {
-    args[argv[i].replace(/^--/, '')] = argv[i + 1];
+  for (let i = 0; i < rest.length; i += 2) {
+    args[rest[i].replace(/^--/, '')] = rest[i + 1];
   }
   return args;
 }
 
-/** Audit F-38. The gate. */
-export async function assertResearchReady() {
+/**
+ * Audit F-38. The gate.
+ *
+ * THE SIMULATION ESCAPE, AND WHY IT IS NOT A WAY ROUND THE GATE.
+ *
+ * train_availability_model.py already draws this distinction: --simulation
+ * permits a run against generated data, and everything it writes is stamped
+ * data_origin='synthetic' and reported as a simulation result. The evaluation
+ * harness had no equivalent, so an availability query could not be measured at
+ * all -- not even for latency, where whether the attendance was invented has no
+ * bearing on how long the classifier takes to run.
+ *
+ * What the flag permits and what it does not:
+ *
+ *   permitted   the pipeline is exercised end to end on the SIM cohort, so the
+ *               Random Forest actually executes and per-stage timings mean
+ *               something. Faithfulness and Answer Relevancy remain meaningful
+ *               too: both ask whether the answer is grounded in the retrieved
+ *               context, which is true or false regardless of whose attendance
+ *               produced the status.
+ *
+ *   NOT permitted, and Chapter 4 must say so: Context Recall on an availability
+ *               query compares the answer against a ground truth that is itself
+ *               derived from invented attendance. That number describes the
+ *               simulation, not the system.
+ *
+ * The corpus entities stay required-real in every mode. Every query retrieves
+ * against them, so a synthetic corpus would contaminate the navigation and
+ * institutional arms as well.
+ */
+export async function assertResearchReady({ simulation = false } = {}) {
   if (config.demoMode) {
     throw new Error(
       'REFUSING TO RUN: the server is in DEMO_MODE.\n'
@@ -91,7 +126,10 @@ export async function assertResearchReady() {
   const needsPeople = (queries ?? []).some(
     (q) => q.category === 'faculty_availability' || q.category === 'combined',
   );
-  const required = needsPeople ? [...CORPUS, ...PEOPLE] : CORPUS;
+  // In a simulation run the people entities are expected to be synthetic --
+  // that is the entire point of the cohort -- so they are not required to be
+  // real. The corpus still is.
+  const required = (needsPeople && !simulation) ? [...CORPUS, ...PEOPLE] : CORPUS;
 
   const offenders = (data ?? []).filter(
     (r) => !r.ready && required.includes(r.entity),
@@ -153,7 +191,7 @@ async function assertJudgeExists(judgeModel) {
   }
 }
 
-export async function createRun({ label, judgeModel, notes }) {
+export async function createRun({ label, judgeModel, notes, simulation = false }) {
   if (!judgeModel) throw new Error('--judge is required (audit F-05)');
   if (judgeModel === config.groq.model) {
     throw new Error(
@@ -192,7 +230,10 @@ export async function createRun({ label, judgeModel, notes }) {
       status_as_context: true,        // audit C3
       router_version: ROUTER_VERSION,
       notes: notes ?? null,
-      data_origin: 'real',
+      // The run carries its own provenance. A reader looking at eval_result
+      // rows should not have to reconstruct from timestamps whether the cohort
+      // behind them was generated.
+      data_origin: simulation ? 'synthetic' : 'real',
     })
     .select()
     .single();
@@ -341,12 +382,25 @@ export async function executeRun(runId) {
 // so the harness would exit silently instead of running.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = parseArgs(process.argv);
+  // --simulation takes no value, so parseArgs' pairwise walk would swallow the
+  // next flag. Read it from argv directly and strip it before parsing.
+  const simulation = process.argv.includes('--simulation');
   try {
-    await assertResearchReady();
+    await assertResearchReady({ simulation });
+    if (simulation) {
+      console.log(
+        '\n  SIMULATION RUN. The cohort behind any availability question is'
+        + '\n  generated, and this run is stamped data_origin=\'synthetic\'.'
+        + '\n  Latency, Faithfulness and Answer Relevancy remain meaningful.'
+        + '\n  Context Recall on an availability query does NOT: its reference'
+        + '\n  answer is derived from invented attendance. Chapter 4 must say so.\n',
+      );
+    }
     const run = await createRun({
       label: args.label ?? `run-${new Date().toISOString().slice(0, 16)}`,
       judgeModel: args.judge,
       notes: args.notes,
+      simulation,
     });
     console.log(`eval_run ${run.id} (${run.run_label})\n`);
     await executeRun(run.id);

@@ -29,8 +29,7 @@ const COLUMNS = [
   {
     title: 'Portals',
     links: [
-      { to: '/validate', label: 'Faculty portal' },
-      { to: '/admin', label: 'Campus locations' },
+      { to: '/admin-dashboard', label: 'Admin dashboard' },
     ],
   },
 ];

@@ -6,11 +6,13 @@ import { Field, Input } from '../ui-primitives/index.js';
 /**
  * The location photograph, for the campus-location editor.
  *
- * ONE COMPONENT, TWO HOSTS. CampusLocationManager (the standalone page) and
- * AdminCampusLocationsPanel (the dashboard panel) each carry their own copy of
- * the location form. Duplicating an upload control across both is how the two
- * drift: a fix lands in one and not the other, and nobody notices until an
- * administrator uses the wrong door. The control lives here and both render it.
+ * SEPARATE FROM THE FORM ON PURPOSE. This was written when the location editor
+ * existed twice -- a standalone page and a dashboard panel, each with its own
+ * copy of the form -- because duplicating an upload control across both is how
+ * two copies drift apart. The standalone page has since been removed and the
+ * dashboard panel is the only host, but the separation is worth keeping: the
+ * photograph uploads on its own endpoint and has nothing to do with the form's
+ * submit.
  *
  * WHY IT UPLOADS ON ITS OWN, NOT WITH THE FORM.
  * The photograph is stored under the location's id, so the location has to

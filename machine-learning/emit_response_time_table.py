@@ -2,6 +2,7 @@
 Emit the Response Time half of SO2 from measurements already collected.
 
     python machine-learning/emit_response_time_table.py
+    python machine-learning/emit_response_time_table.py --run-label run-03-simulation
 
 WHERE THE DATA COMES FROM
 -------------------------
@@ -10,22 +11,32 @@ embed, retrieve, llm, total) and eval_result stores all seven per run. Nothing
 new has to be executed: 132 runs are already recorded, 66 standard and 66
 enhanced, over the same 33 pre-registered queries.
 
-WHAT THIS SCRIPT FOUND, AND WHY IT MATTERS MORE THAN THE LATENCY
-----------------------------------------------------------------
-t_rf_ms is 0.0 on EVERY enhanced run. The Random Forest is invoked only for
-faculty-availability questions, and eval_query holds 20 campus_navigation and
-13 general_institutional rows and ZERO faculty_availability rows. So the
-"enhanced" arm of the recorded comparison never actually engaged the
-enhancement: both arms ran the same retrieval-and-generate path.
+WHY IT REPORTS ONE RUN AND NOT ALL OF THEM
+------------------------------------------
+eval_result accumulates across every run ever executed. Averaging over all of
+them pools runs that used different prompt template versions and different
+query sets -- run-01 and run-02 predate the faculty_availability queries
+entirely -- so the mean describes no experiment that was actually performed.
 
-Any difference between the two arms therefore measures run-to-run variance,
-not the architecture. The script prints this as a hard check rather than
-leaving it for a reader to notice, because the alternative is a Chapter 4 that
-reports a latency win the design cannot produce.
+The table therefore reports a SINGLE run, the most recent by default, and
+names it in the caption. Pass --run-label to pin a specific one.
+
+THE CHECK THIS SCRIPT ENFORCES
+------------------------------
+The Random Forest is invoked only by a faculty-availability question. If the
+selected run recorded t_rf_ms = 0.0 on every enhanced row, the "enhanced" arm
+never engaged the enhancement, both arms ran the same retrieval-and-generate
+path, and any difference between them is run-to-run variance rather than the
+architecture. That was true of run-01 and run-02, whose query set held 20
+campus_navigation and 13 general_institutional rows and no availability rows
+at all. The script fails loudly rather than emitting a latency win the design
+cannot produce.
+
 """
 
 from __future__ import annotations
 
+import argparse
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -45,6 +56,30 @@ def main():
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--run-label", help="pin a specific eval_run (default: the most recent)")
+    args = ap.parse_args()
+
+    # Pick the run to report. Pooling runs would average across prompt template
+    # versions and query sets, describing an experiment nobody performed.
+    if args.run_label:
+        run = db.fetch_all(
+            "select id, run_label, prompt_template_version, data_origin, finished_at "
+            "from geobot.eval_run where run_label = %s", (args.run_label,))
+        if not run:
+            raise SystemExit(f"no eval_run with run_label {args.run_label!r}")
+    else:
+        run = db.fetch_all(
+            "select id, run_label, prompt_template_version, data_origin, finished_at "
+            "from geobot.eval_run order by started_at desc limit 1")
+        if not run:
+            raise SystemExit("no eval_run rows; run the evaluation harness first")
+    run = run[0]
+    if not run["finished_at"]:
+        raise SystemExit(
+            f"run {run['run_label']} has not finished; its arms are incomplete "
+            "and a table built from them would be wrong")
+
     rows = db.fetch_all("""
         select mode, count(*) n,
                round(avg(t_route_ms), 1)    route,
@@ -57,8 +92,9 @@ def main():
                percentile_cont(0.5)  within group (order by t_total_ms) p50,
                percentile_cont(0.95) within group (order by t_total_ms) p95
           from geobot.eval_result
+         where run_id = %s
          group by mode order by mode
-    """)
+    """, (run["id"],))
     if not rows:
         raise SystemExit("no eval_result rows; run the evaluation harness first")
 
@@ -77,21 +113,26 @@ def main():
     out = [
         "### Table 4.5: Response time, standard vs Enhanced RAG",
         "",
-        f"*n = {std['n']} standard and {enh['n']} enhanced runs over the same "
-        f"pre-registered query set ({cat_line}) · measured in "
+        f"*run `{run['run_label']}` · prompt template {run['prompt_template_version']} "
+        f"· data_origin **{run['data_origin']}** · n = {std['n']} standard and "
+        f"{enh['n']} enhanced over the same pre-registered query set ({cat_line}) "
+        f"· measured in "
         f"`knowledge-search-service.js`, stored per stage in `eval_result` · "
         f"generated {stamp} by `machine-learning/emit_response_time_table.py`*",
         "",
     ]
 
-    if availability_queries == 0:
+    # The query set holding availability rows is necessary but not sufficient:
+    # what matters is whether the classifier actually ran in THIS run.
+    if availability_queries == 0 or float(enh["rf"]) == 0.0:
         out += [
             "> **THIS COMPARISON MEASURES NOTHING ABOUT THE ARCHITECTURE.**",
             ">",
-            "> `t_rf_ms` is **0.0 ms on every enhanced run**. The Random Forest is",
-            "> reached only by a faculty-availability question, and the evaluation set",
-            "> contains **no faculty_availability queries at all**. Both arms therefore",
-            "> executed the same retrieval-and-generate path, and the gap below is",
+            "> `t_rf_ms` is **0.0 ms across the enhanced arm of this run**. The",
+            "> Random Forest is reached only by a faculty-availability question, so",
+            "> either the evaluation set carries no such query or none reached the",
+            "> classifier. Both arms therefore executed the same",
+            "> retrieval-and-generate path, and the gap below is",
             "> run-to-run variance in the router and the LLM call.",
             ">",
             "> To answer SO2 the query set needs availability questions in it. Until",
@@ -122,11 +163,12 @@ def main():
     print(text)
     print()
     print(f"wrote {TABLES / 'table5_response_time.md'}")
-    if availability_queries == 0:
+    if availability_queries == 0 or float(enh["rf"]) == 0.0:
         print()
-        print("  !! SO2 IS NOT ANSWERABLE FROM THIS DATA.")
-        print("  !! eval_query has no faculty_availability rows, so the enhancement")
-        print("  !! never ran. Add availability queries and re-run the harness.")
+        print("  !! SO2 IS NOT ANSWERABLE FROM THIS RUN.")
+        print("  !! t_rf_ms is 0.0 across the enhanced arm, so the classifier never")
+        print("  !! ran. Check the query set holds availability rows, then re-run")
+        print("  !! the harness with --simulation.")
 
 
 if __name__ == "__main__":

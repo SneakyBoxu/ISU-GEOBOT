@@ -1,7 +1,9 @@
 /**
  * Campus Locations panel for the unified Admin Dashboard.
  * Accepts a `session` prop so no additional sign-in is needed.
- * Reuses the same UI logic as the standalone CampusLocationManager.
+ * The only campus-location editor. It used to have a standalone twin at
+ * /admin carrying a second copy of this form; that door was removed and
+ * this is now the single surface.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, EyeOff, List, Map as MapIcon, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react';

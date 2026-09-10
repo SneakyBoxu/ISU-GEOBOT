@@ -60,6 +60,10 @@ FILES = [
      "record which engine produced each validated status", False),
     ("database/migrations/013_validation_collection_protocol.sql",
      "record how each validation was captured", False),
+    ("database/migrations/014_poi_photo.sql",
+     "POI photograph columns; widen the poi_audit action check", False),
+    ("database/migrations/015_prune_orphaned_place_card.sql",
+     "drop place cards left behind by a POI rename", False),
 ]
 
 

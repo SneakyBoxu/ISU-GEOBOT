@@ -1,5 +1,5 @@
 {
-  "cachedAt": "2026-09-09T15:46:09.958Z",
+  "cachedAt": "2026-09-10T04:29:01.684Z",
   "campus": "echague",
   "timezone": "Asia/Manila",
   "faculty": [
@@ -228,7 +228,7 @@
   ],
   "schedules": [
     {
-      "id": "1d65602d-4664-4f8a-97e5-25ebfeb2833e",
+      "id": "9089cfc9-9c4b-43bf-b346-c98b2143dcb8",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -239,7 +239,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "de60dd86-6366-447d-a23d-5397c1718cfb",
+      "id": "96c9375b-37a3-4683-b15c-7a15259805a4",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 1,
       "start_time": "08:00:00",
@@ -250,7 +250,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f55d062e-4acf-4f1b-b72d-99d5f7572f71",
+      "id": "d04d56df-f590-42e0-bdcc-7d9ff0316c27",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 3,
       "start_time": "08:00:00",
@@ -261,7 +261,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2a11228e-ded1-4944-b1ee-7da0c7be86db",
+      "id": "78526385-42ce-48e1-9dad-cda1e9390339",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -272,7 +272,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9b9cc328-3a74-4ea1-bc5d-3ae8dc4048ec",
+      "id": "c8959a81-ee35-4807-97c4-91de5cd9c398",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 4,
       "start_time": "09:00:00",
@@ -283,7 +283,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "59a17ef9-9320-4b1e-a01f-c2a4db7d2357",
+      "id": "e12ea4ab-f3ae-45b1-9bc6-aff5b345957e",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -294,7 +294,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "420a81cd-9005-4b00-80d8-704525459441",
+      "id": "c851cd1f-7d4f-4bd7-961e-4d890ac36d5f",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -305,7 +305,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1f02d87e-f664-43fa-8790-460cfd37d749",
+      "id": "cce90e86-54ce-4340-a95e-9b82a720f9bf",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 2,
       "start_time": "12:00:00",
@@ -316,7 +316,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d53dc72d-b3cc-4ac6-a206-16a7f71574e2",
+      "id": "0501a9f7-4d41-46b3-8729-98a2a032d46b",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -327,7 +327,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "23c40328-b4cd-427b-aecb-76b9e8708553",
+      "id": "c0731c80-95a2-4c59-87ed-ac634adf6b61",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 2,
       "start_time": "14:00:00",
@@ -338,7 +338,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "67af2ddf-3f68-4299-9b2f-3a0f52abb2ad",
+      "id": "d0144b84-3354-4e8d-9700-ef98f10b4741",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -349,7 +349,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e9f45009-2290-484a-b6da-69bbeb87a882",
+      "id": "85773dfe-2f7f-4d4d-b5a5-d8a09d297dea",
       "faculty_id": "59e82c04-9d93-4826-981e-556bcd843dc0",
       "day_of_week": 3,
       "start_time": "16:00:00",
@@ -360,7 +360,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d71ff3a9-361b-47f2-8597-42d2d8dacfa8",
+      "id": "985fbd28-d04d-4123-a22c-2121e3d02d39",
       "faculty_id": "4717e386-94ac-4663-b1dc-97ea89588ab1",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -371,7 +371,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "75e12e07-cd83-4ffb-ae0a-1b6be8eda1f7",
+      "id": "1f5a3f38-9c79-4104-bd01-6eb4bcfd3901",
       "faculty_id": "4717e386-94ac-4663-b1dc-97ea89588ab1",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -382,7 +382,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "780da33f-a1ad-4745-b7b9-136ee486d6ba",
+      "id": "830cd92c-f124-4036-a546-8abd753207c9",
       "faculty_id": "4717e386-94ac-4663-b1dc-97ea89588ab1",
       "day_of_week": 2,
       "start_time": "12:00:00",
@@ -393,7 +393,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ecb08be7-6fa5-4bfb-a3f6-c50eb43db1ba",
+      "id": "a6194559-0e2a-4b78-8efb-6f3833b93895",
       "faculty_id": "4717e386-94ac-4663-b1dc-97ea89588ab1",
       "day_of_week": 3,
       "start_time": "12:00:00",
@@ -404,7 +404,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5c05e58e-5f60-4cf4-8f0a-77e01710ef28",
+      "id": "19f7e51f-e859-4db9-9934-b01ff812a9a0",
       "faculty_id": "4717e386-94ac-4663-b1dc-97ea89588ab1",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -415,7 +415,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "63e4a071-d387-4eac-83b9-8dcd5eb1fe13",
+      "id": "add50a4f-9afa-4d79-9f7d-f8f891bd8da6",
       "faculty_id": "4717e386-94ac-4663-b1dc-97ea89588ab1",
       "day_of_week": 2,
       "start_time": "14:30:00",
@@ -426,7 +426,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8768d52e-028e-48d2-a944-fd8a3805d5b7",
+      "id": "adf4199a-6bf4-468a-8582-016702284ed0",
       "faculty_id": "4717e386-94ac-4663-b1dc-97ea89588ab1",
       "day_of_week": 4,
       "start_time": "14:30:00",
@@ -437,7 +437,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5c291a3b-622c-4915-8709-b7173d4aea95",
+      "id": "495de78f-5cd7-4835-8a67-0dcb922ef3fe",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -448,7 +448,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d35a1a4d-e4a6-4231-bedb-a63c2b132f48",
+      "id": "c983822b-f56a-40f3-a02c-988c2ae08127",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 1,
       "start_time": "09:00:00",
@@ -459,7 +459,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "17bff3d1-c196-478d-aa22-c6a9ea8d8470",
+      "id": "fc3b6b1b-ad24-4b4d-9dae-f0f773f45bff",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 2,
       "start_time": "09:00:00",
@@ -470,7 +470,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a91b6da9-e479-4c44-90b6-c7b5eefd29c5",
+      "id": "a2cf6412-0f40-4e18-b962-5f776057f1ac",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -481,7 +481,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e042991d-b4d3-4269-b886-82d5d759b311",
+      "id": "15be430d-bd43-446b-a9a6-06dc25ffc7f9",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -492,7 +492,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9ad04e4a-1bd5-467f-9708-e8afd51ea327",
+      "id": "3f146f92-64d9-4ff0-9adb-a99f311f682c",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -503,7 +503,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2460ca56-7221-4cfe-9ea7-22aa464b6de9",
+      "id": "6e15b545-e438-452f-8a75-223f9ead846f",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -514,7 +514,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "260592d1-8ff3-4761-a83e-a46734ada832",
+      "id": "258742c0-fa19-4b8b-8c77-d73de31c2110",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 2,
       "start_time": "12:00:00",
@@ -525,7 +525,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "04726c0f-640a-4509-9f20-3c548e538de4",
+      "id": "700fabc4-7cdb-408f-81aa-30539daa0b1b",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -536,7 +536,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "216dc302-67fb-45ba-a937-0113a8c46cc8",
+      "id": "44a2ddf2-d36b-415f-8e39-5856b6e6ea20",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -547,7 +547,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c6aa93a8-5c3b-441e-a9c4-458d7f80a656",
+      "id": "ba189cf2-135e-4845-9a83-4fcf1a28534e",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -558,7 +558,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "59af4b15-7bad-4064-8dd4-28e52200e072",
+      "id": "f452f586-c4d9-4622-ab9d-88c9530808ff",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 1,
       "start_time": "15:00:00",
@@ -569,7 +569,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8ae9f434-7cb8-40e3-a69d-2c3fb4b33ba3",
+      "id": "1d1c206c-864e-4e88-8dfb-9923fe40bbd0",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 1,
       "start_time": "17:00:00",
@@ -580,7 +580,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e85a6239-32d5-431c-8b50-b41da9c0cc1c",
+      "id": "174a4cfb-8812-42e5-b21b-e090e2f0d9be",
       "faculty_id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "day_of_week": 3,
       "start_time": "17:00:00",
@@ -591,7 +591,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ff1ffea3-d593-45c1-af5a-ee7b5a313efa",
+      "id": "be75e6f7-7a3c-4034-adaf-c4d5fc87b1da",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -602,7 +602,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "eca5da37-3706-4fb7-bae3-245dcb559a68",
+      "id": "ee144bf8-4053-4aa9-a8e1-94f5f41da358",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -613,7 +613,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c2cc3190-4b9b-4493-a61b-d53b09406233",
+      "id": "a54226d4-f6a6-44ce-9495-4c4d20204c0d",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -624,7 +624,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "adaefc55-ba6c-4e73-a0a3-7b906b7bbc40",
+      "id": "05783ed7-7f2f-4710-a3ee-1dbedd183fbd",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -635,7 +635,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1a570960-a546-479c-b9f9-db63990e9bd8",
+      "id": "44b9e7e1-38a5-4062-b36b-8e97236750dc",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -646,7 +646,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8ffadc4b-9c3a-4f99-ba47-77dcde5be1aa",
+      "id": "78b399c9-e4b4-44cf-b39d-4261470f5291",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -657,7 +657,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3dddf542-f923-46e5-a316-7614be58deb3",
+      "id": "ec0bbcc0-fe34-4d65-bb22-b722c5dce854",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 4,
       "start_time": "12:00:00",
@@ -668,7 +668,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fdd95764-1107-4516-9a37-ef103c05c2d4",
+      "id": "8bc9b28e-c4ec-4021-95b6-aaaa8c8ad64a",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -679,7 +679,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d9cde819-4e4b-44d2-a88e-78890d7a4404",
+      "id": "3e444676-bfae-4229-81a9-52deadc45805",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -690,7 +690,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "829e35ae-bb5e-489e-9d3f-55fddda23be2",
+      "id": "cce8f188-806c-405c-960c-0b413528af0e",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -701,7 +701,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8ca2392b-b740-4e80-b1b2-bae873d33316",
+      "id": "bb2319dd-e9bd-47bd-8703-3dc18d7d8037",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 2,
       "start_time": "14:30:00",
@@ -712,7 +712,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fefb4cff-47a0-48a2-9795-5811cfde0356",
+      "id": "bbc532bc-6677-4943-954b-3d3da3227221",
       "faculty_id": "2205fec8-e2bd-4950-8cf0-cf99296ef21a",
       "day_of_week": 5,
       "start_time": "16:00:00",
@@ -723,7 +723,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f4c45f35-5eb9-4aa0-a1ce-b08f31742a7d",
+      "id": "f7444c48-c7a5-4bdd-becb-9a0e24a11e8f",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -734,7 +734,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d32c153c-3dbe-4270-b373-8bc2bd734769",
+      "id": "f3b496dc-2618-44c7-afba-b0bf93f7c2d7",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -745,7 +745,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f93d11e8-4d41-4e27-af74-b4d0d7c199bc",
+      "id": "2e03e617-1ba7-45ce-af5d-8681e93563c0",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 1,
       "start_time": "07:30:00",
@@ -756,7 +756,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "462341cd-bf4a-41d0-9980-d7437686183f",
+      "id": "664f245f-dfc1-451b-832b-95ba6e21b127",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 4,
       "start_time": "07:30:00",
@@ -767,7 +767,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "60e180fd-ed8b-4e66-be8c-680e5a45033f",
+      "id": "a2129ded-46f6-47aa-8652-7f07f18b40f1",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -778,7 +778,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2764aecf-29f4-49a0-8ac3-9ee5762af1a4",
+      "id": "c0cc24d7-7ac1-4b2d-8b97-2fb3e9b8e098",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -789,7 +789,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9fa71bab-9913-4527-b147-f51897bd7391",
+      "id": "b1bb765c-a5fa-4c51-8059-eca6814dd1de",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -800,7 +800,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2abe36d6-ac63-44af-a02d-ac90a51b70d1",
+      "id": "cf3d1967-4de1-4591-a84e-704dd4bf31d4",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -811,7 +811,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "66bfc9b3-7a31-4bce-bdb9-30fdf8d63dcc",
+      "id": "da0735cf-5ca9-4236-8864-6521e7d19742",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 2,
       "start_time": "11:30:00",
@@ -822,7 +822,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8a9fa12f-19db-48bc-910e-e3d079fe94e2",
+      "id": "a6da3f64-dca1-40f6-a04b-1887d8614ff4",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -833,7 +833,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "63d999bf-3fbd-401a-bfd0-316b0571ef1f",
+      "id": "d5a8aea2-b0cc-4f89-8425-430950bf1cad",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -844,7 +844,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b8230763-2c48-490a-9f66-f74280ed43fb",
+      "id": "cd4a2872-d950-427f-80b4-1749a919bf92",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -855,7 +855,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e7c41a48-702e-419a-8299-fdff6417a64c",
+      "id": "cf7ff49e-714c-4a7e-a55d-8786d2e15e2b",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 1,
       "start_time": "14:30:00",
@@ -866,7 +866,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9abcb6fd-3fe4-4f8e-9757-84418a5c0ce9",
+      "id": "9cdd2b3f-3c52-47de-b553-c3eed4390f38",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 3,
       "start_time": "14:30:00",
@@ -877,7 +877,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "33de8b5d-caec-483a-ac9e-f04195bdf8df",
+      "id": "ef8d8b53-0f96-442d-b561-2075b4675bb0",
       "faculty_id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "day_of_week": 4,
       "start_time": "16:00:00",
@@ -888,7 +888,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d581c215-6e73-494a-8911-6c958949c647",
+      "id": "ecf0c2c9-0b51-42fe-a957-f708b4bf6dfc",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -899,7 +899,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ab3a07b1-3988-4097-9cba-47467249b7ad",
+      "id": "fa5d6751-897a-41b4-b82e-24425ff49241",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -910,7 +910,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "db6d4de2-c1f3-4702-9f37-fa5782c757f3",
+      "id": "98c53ca6-a3a2-4e68-97e8-407b49bfbf49",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 5,
       "start_time": "09:00:00",
@@ -921,7 +921,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "45fc5cf4-76c9-452e-9971-c5a0753bc316",
+      "id": "33e5e8e2-0c69-4640-9bad-7a055682ef36",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -932,7 +932,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1aa8ecd5-ab96-4501-93e5-e02d2a72c8c0",
+      "id": "bc9f67a1-2c29-468a-aeab-6ed307cdc358",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -943,7 +943,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e7268205-74d6-4d2b-85d6-d99d2c635003",
+      "id": "e35c8c22-14bf-4a2f-be6d-d032aee875c7",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 1,
       "start_time": "12:00:00",
@@ -954,7 +954,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "232d8bed-4df5-4813-9d8a-2be87cf65f86",
+      "id": "df815030-b5f3-4b12-a7ed-fbf0be034058",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 2,
       "start_time": "12:00:00",
@@ -965,7 +965,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d10f3984-4375-434d-800f-9bc60516f368",
+      "id": "c296aabc-a551-4477-a802-f6493086f1a3",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -976,7 +976,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "060aaac8-2dd5-4dd9-9dfd-a4b44081945c",
+      "id": "9f993d7c-449d-417c-a4c0-d0f7ed7494d5",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -987,7 +987,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b72b4359-2a45-4460-809a-9258dacfd3a5",
+      "id": "8b5e2521-8432-4d90-abec-2fc7bb599185",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -998,7 +998,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ea5d8f6f-a555-45af-82f4-f84b6c44990d",
+      "id": "e392813e-48e7-46db-976c-b6cd26d03339",
       "faculty_id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -1009,7 +1009,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "bfbd6739-1160-46df-a7d6-1967baa923ac",
+      "id": "5246995c-36f4-4e89-8f97-5b659e2aad62",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -1020,7 +1020,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "cfe07702-98a2-4e71-b444-565de4e6154c",
+      "id": "3e2d873d-fa0e-466e-9a4e-bbc0a5b2967b",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -1031,7 +1031,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6dcd9922-cd84-470f-9bc6-386beb4007a1",
+      "id": "4ac76e57-3bd3-4be6-96ff-762d12925d73",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -1042,7 +1042,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6541cc24-1258-4076-947d-0da5f5a607aa",
+      "id": "fb6847e1-8ec7-4ffd-b121-4fe01d0b2a2e",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -1053,7 +1053,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "24209baa-784f-4f1f-89b2-56d6f2d107ad",
+      "id": "1dbe72a5-cdd9-4123-8545-ddf89f039864",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -1064,7 +1064,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7b17cf59-864f-4f1e-9cec-3696f051bb65",
+      "id": "45915bf6-f6f9-4e77-8370-8e9dab80a17d",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -1075,7 +1075,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f1427827-c9f1-4ff4-8db0-f40df47af8a2",
+      "id": "1653f132-2cf6-443b-b3e0-b73dc497a402",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -1086,7 +1086,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9b1e8e4e-c41a-4159-b363-8044ed057731",
+      "id": "7fc0b886-ec96-46e3-a12d-5aec8da292bb",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -1097,7 +1097,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6a2ce558-6db5-4fd6-8015-fbad7f3fed4b",
+      "id": "a67d3bd2-238a-4d74-a38a-b3cafebc14bd",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -1108,7 +1108,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a02fa365-b49e-4559-bfa7-04f18833ad19",
+      "id": "b1f7750b-faad-4887-ab92-6b90bfac33ab",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 1,
       "start_time": "14:30:00",
@@ -1119,7 +1119,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f6104950-41de-4999-92e7-08ccb1d93faf",
+      "id": "da2b2627-a2ec-4c5d-89e5-adb271818d77",
       "faculty_id": "20e51aff-c6b9-4245-97cb-30046c9a5711",
       "day_of_week": 3,
       "start_time": "14:30:00",
@@ -1130,7 +1130,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8f9c96e1-bcf3-4ae8-97b4-f9321a97ae0c",
+      "id": "de7ec5f2-c6bb-470e-a11c-e45137e4b7b9",
       "faculty_id": "69e81a01-6ffe-49c4-b73b-934a0b3c0f05",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -1141,7 +1141,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6149ddb3-183b-4641-abb9-8677cadf5cfe",
+      "id": "2bae3a7b-7f77-401b-9f98-29829a975074",
       "faculty_id": "69e81a01-6ffe-49c4-b73b-934a0b3c0f05",
       "day_of_week": 5,
       "start_time": "08:30:00",
@@ -1152,7 +1152,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fed9d1b5-d8c9-4ae1-929d-cd2bb91bc8f2",
+      "id": "b7b46004-0bd2-486b-912c-a755e9771c98",
       "faculty_id": "69e81a01-6ffe-49c4-b73b-934a0b3c0f05",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -1163,7 +1163,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a48242fa-3f8e-49a0-99ac-78d683800ec8",
+      "id": "96a41c02-887a-4d22-a740-be1657f2f04e",
       "faculty_id": "69e81a01-6ffe-49c4-b73b-934a0b3c0f05",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -1174,7 +1174,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fabd7a3b-99c0-44c8-bd6b-7f58f891da3d",
+      "id": "2f4df792-ac31-4bee-aeec-1dfd5dc0e007",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -1185,7 +1185,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a0a09545-34b0-47a3-8cba-7a3cd0d0b84e",
+      "id": "d789c76c-d599-4503-9c36-a9b410c1f128",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -1196,7 +1196,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "716c9ae3-37e2-4bdb-9f9d-708080e06459",
+      "id": "75dfa3fc-d325-44e3-be09-5d4b11009e86",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 1,
       "start_time": "09:00:00",
@@ -1207,7 +1207,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3f4c9c53-7816-42e6-bfc6-38df9e20a665",
+      "id": "8f0a7d91-1a7f-4ad1-9594-f166ca1e32fe",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -1218,7 +1218,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ac4d5361-a3f2-4e18-8368-96f42850ba6a",
+      "id": "aae43622-15f6-4763-bcf2-b8ae03178c5b",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -1229,7 +1229,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "abbb8c8f-8671-412f-b6d4-5266695db927",
+      "id": "443533cc-b63c-41f9-89b6-d4d918de1735",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 1,
       "start_time": "11:00:00",
@@ -1240,7 +1240,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e68d2286-c075-4a90-999a-53f736f284ff",
+      "id": "fb132daa-5972-4f03-baef-2b4df2da5e3e",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -1251,7 +1251,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a2649775-be5f-46da-8cfe-d683f89673bc",
+      "id": "a1b1b0cc-b624-4e8f-9045-0601ef3ca0de",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -1262,7 +1262,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c0672a38-470c-464a-9a6f-7bef1c2944e4",
+      "id": "3f92123d-759d-486a-8303-ba87a7bd6b2d",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -1273,7 +1273,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8aeaa8d5-ff12-41d3-943a-c8eb25e25839",
+      "id": "ea3e848a-7e77-4083-b00e-465f838b8be7",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -1284,7 +1284,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "38f3a743-5225-45d0-8a8a-39bed760af10",
+      "id": "ae195dfc-f40f-4e30-81c5-95ab032000c6",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 2,
       "start_time": "16:00:00",
@@ -1295,7 +1295,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a72461ee-5cae-4e3d-9380-e12e38bb5140",
+      "id": "5caf9241-5dd3-477b-94ad-6be51667c978",
       "faculty_id": "c074a856-c9fc-4f89-a319-728ec1f35320",
       "day_of_week": 4,
       "start_time": "16:00:00",
@@ -1306,7 +1306,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "56a1220e-a709-48bc-a2f4-adccacce0a20",
+      "id": "cd7aa9ed-42b6-4482-9a6b-2606e79bf11e",
       "faculty_id": "eb03abcc-033e-498a-af52-31d5c95e6d53",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -1317,7 +1317,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2fe00c58-5e01-4b28-935c-626e44f2af36",
+      "id": "b30e3cf1-901d-4a0c-8ced-72cb84c92dcd",
       "faculty_id": "eb03abcc-033e-498a-af52-31d5c95e6d53",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -1328,7 +1328,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5e050ba5-e18b-4ead-a7b5-8df51764e0ae",
+      "id": "9ac66b60-f264-475e-aefc-629759fbb029",
       "faculty_id": "eb03abcc-033e-498a-af52-31d5c95e6d53",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -1339,7 +1339,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c84afea8-5057-4919-8d4b-ea590ac1f267",
+      "id": "f8239089-8144-48fa-9426-c0ba9cd43fa5",
       "faculty_id": "eb03abcc-033e-498a-af52-31d5c95e6d53",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -1350,7 +1350,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8841dc4f-c8e7-4f86-a29a-414197b3a3a2",
+      "id": "e47ebbb2-57a5-4ecf-a11d-92734e83137c",
       "faculty_id": "eb03abcc-033e-498a-af52-31d5c95e6d53",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -1361,7 +1361,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "aa069147-fc90-4209-8a75-2f7e889b9a59",
+      "id": "31caa65c-ef51-429e-94ba-39e06d846b17",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -1372,7 +1372,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8003ff6c-c771-46a5-b3ca-c6b24eb7ac08",
+      "id": "92335a6f-fd5e-440e-b3e1-c34ba0714748",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -1383,7 +1383,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "61f13a7e-0b7c-46b1-be5c-b6e9b4262d6e",
+      "id": "a00e2cee-9e72-4989-b7d3-62727b3f8f44",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -1394,7 +1394,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c7462c2f-3ce5-48fc-8c23-41ad74d2220c",
+      "id": "133b1910-281d-40cc-a46f-0e55a8a23ed6",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -1405,7 +1405,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fa992455-8d75-4b9a-9bb0-58d70b9ebe11",
+      "id": "2d337fc9-c1d0-477d-b338-e32ca7f4052f",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -1416,7 +1416,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9d8ca722-c809-4735-b8cf-2de2ec61f0bb",
+      "id": "f1319ea9-1a2f-4b6e-bf14-6e203820d65b",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 4,
       "start_time": "12:30:00",
@@ -1427,7 +1427,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d96efab4-87a5-4ac9-bca6-113bcceb6168",
+      "id": "562f4cb4-86bc-4958-a9d1-53f7280249fb",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -1438,7 +1438,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "350d3e86-f43e-42bf-b6f4-050c58a98357",
+      "id": "4d9d7fb5-e4d6-437f-9664-e8d6ca9ccf60",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -1449,7 +1449,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5ba7af3e-0a1d-4de6-be54-f2476121a4c5",
+      "id": "a4c62481-1519-4007-acf8-d47647eeebed",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -1460,7 +1460,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5661b061-417d-4a45-9757-b11038f303c8",
+      "id": "f2384965-cde5-47be-8e44-125b66e78a92",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -1471,7 +1471,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1af5f232-c8df-4c77-a569-80a516d26ec1",
+      "id": "55ed7f3c-b46f-412a-aa6b-67c00d24d6a3",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 3,
       "start_time": "17:00:00",
@@ -1482,7 +1482,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a98fbdb1-d05a-4392-8fbb-956b107e6132",
+      "id": "9e219c5c-dd97-4583-9e09-e6f534c698da",
       "faculty_id": "3852ee3e-ac7f-4b1d-9171-3f260208e36d",
       "day_of_week": 4,
       "start_time": "17:00:00",
@@ -1493,7 +1493,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3adc94f2-9e18-4c03-a32e-2f24aca7b450",
+      "id": "a586cb98-066a-458b-bd7f-ad24611cecc4",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -1504,7 +1504,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "760c5c05-cb0e-4221-88c0-797bb03ff94f",
+      "id": "5927c597-36a0-4922-a119-797bea0e02d8",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -1515,7 +1515,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "98ad8506-0f31-454b-9bfc-a11410e3783a",
+      "id": "26884496-498f-43ae-ac79-189c860ee868",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 1,
       "start_time": "12:00:00",
@@ -1526,7 +1526,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "51b3f7f3-cd32-422c-861e-0c400cc5e251",
+      "id": "51643205-70bd-4c76-bbdc-79c07dbc31ff",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 2,
       "start_time": "12:00:00",
@@ -1537,7 +1537,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ce744885-759d-42b6-8a54-2144167ebacb",
+      "id": "afa71261-93f3-4bd8-b085-0c07cb7cfe1d",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -1548,7 +1548,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d87397db-1b30-4de8-9564-5064578b8720",
+      "id": "6c3db73d-dd86-48a8-9e4f-87ec810d4258",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -1559,7 +1559,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d100beec-e962-4a16-8f4f-83f6679b2d3d",
+      "id": "1313b0c0-f67d-42a2-b9ca-f465f0213802",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -1570,7 +1570,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "84646340-f48e-4a24-8238-57a5b7e947bf",
+      "id": "af55fce9-c281-49f6-b8b6-35b8c0a22636",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 2,
       "start_time": "14:00:00",
@@ -1581,7 +1581,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9730dc48-9e3e-474d-8829-99aaf985aaa5",
+      "id": "13f0a9a0-8bd9-4139-bcab-3f532152d9bb",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -1592,7 +1592,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "924d25cb-0f0d-4df0-926e-9c7832ed9c67",
+      "id": "0cc218ab-b4c1-407c-b3eb-44ddfe6efc7d",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -1603,7 +1603,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fd23f8d1-03a4-4515-8921-3c289ca42f47",
+      "id": "75320a3c-4124-42a6-9ec1-27846873a7c7",
       "faculty_id": "132d85c6-5509-4734-bf28-1d6391b68d6d",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -1614,7 +1614,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9e88403c-1b74-45b8-bea2-09796e8b7063",
+      "id": "f977a8ca-8f02-42c9-bce2-f379f117b8a4",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -1625,7 +1625,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "72e764ce-5112-4cba-971a-79af5b9fd123",
+      "id": "6435fd7d-8377-4647-b601-f64f3b6e9e7e",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -1636,7 +1636,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f95f9d86-80ab-45fc-9fda-02e1e8975f14",
+      "id": "c954d301-7537-42bf-aec2-e89339f5a4e0",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -1647,7 +1647,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "37ec5256-e31c-4ef8-9236-d94e9033b6dc",
+      "id": "02e75818-c6f3-4f3f-b556-b7b53082cfc3",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -1658,7 +1658,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6c0b4c07-4b1b-45f7-b681-efd64d659de4",
+      "id": "bf213a21-7b7a-40bd-a6a5-cd6e5854e4a5",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -1669,7 +1669,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d17e86b3-5fae-4f8e-8a1a-3b7f48afee78",
+      "id": "5ec718db-4974-4943-bae9-4cd02d42edda",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -1680,7 +1680,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8aca0d01-abe2-4d65-ba77-e09f5b717248",
+      "id": "1bf44c68-22a8-400c-8e77-02f22e3bf99e",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -1691,7 +1691,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d04a8b61-c4f0-4493-a1fe-605fa33634cd",
+      "id": "0e7f2dd5-2803-4370-86a7-0abc41d89159",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -1702,7 +1702,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "00a45b7b-acf4-4e15-9e41-a52e091f4f12",
+      "id": "7b743861-9b88-44f0-947b-950ca3a2049c",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -1713,7 +1713,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a22dda78-f584-462d-8da8-2d9fe8146339",
+      "id": "9e6d4ccc-151c-4c87-87a2-f41c4b7a7f0c",
       "faculty_id": "a53a83fa-899a-455d-bb22-ccab63597a35",
       "day_of_week": 3,
       "start_time": "16:00:00",
@@ -1724,7 +1724,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2acefdda-cbfb-440f-a6f8-e009d2c0131d",
+      "id": "8243f7be-ebd2-467f-a4b2-ee69416c1aec",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -1735,7 +1735,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c21563b8-bebb-4b76-8a42-64fd7438e8ee",
+      "id": "16bdb00b-8f13-489e-9009-f4015d567cbe",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -1746,7 +1746,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b4eae020-40f8-4359-964f-1f2dc5ca0173",
+      "id": "f162886c-c8b2-4df8-87bc-046d15fd0a01",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 2,
       "start_time": "08:30:00",
@@ -1757,7 +1757,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5955c561-d762-43aa-95a1-7d25a3fbe8ac",
+      "id": "7aebb4db-ff0e-4c99-bb4f-02d4bc70fc6a",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -1768,7 +1768,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ec60ea9d-992b-42d0-b22b-61eb4ead87c1",
+      "id": "dc8bbe71-4e66-4269-976a-6e2be57dd2f4",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -1779,7 +1779,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3a2ce2f7-3530-4204-8daf-b2866d13e13f",
+      "id": "8c6e1595-ee28-4d46-a252-f00c42505c5c",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 5,
       "start_time": "12:30:00",
@@ -1790,7 +1790,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b61e0ba3-2f3f-45b6-ae4a-80ba2ee5b6b1",
+      "id": "6a456b97-46d7-4783-ae01-74aa80c4f7c5",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -1801,7 +1801,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "89997420-89aa-4aa4-8d3c-c708738e4cdf",
+      "id": "0109cb48-c0d5-49a7-a80c-db53829014b6",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -1812,7 +1812,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a9b743ff-a376-4301-9733-3ffb6ebdf353",
+      "id": "87fb7795-0c7a-4ab4-add6-6d9a61ec46ce",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 1,
       "start_time": "14:30:00",
@@ -1823,7 +1823,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4ccd8162-5d69-4533-ae29-e59469df89c7",
+      "id": "394c8354-3d70-4c69-b528-24317ae0bac8",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 3,
       "start_time": "14:30:00",
@@ -1834,7 +1834,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "35e76fb3-88f7-4d8f-a66e-f8b2dc56c9c8",
+      "id": "9b6b0be8-d3a8-4eae-83a9-55952739c715",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 5,
       "start_time": "14:30:00",
@@ -1845,7 +1845,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4ffc3f0e-e0bc-4be0-b187-f017837ffa4c",
+      "id": "532b44ef-bac5-4bd1-8297-947280ce4261",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -1856,7 +1856,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "cfe6ca98-95a7-4a1b-97a1-da6abb67493c",
+      "id": "87e8debd-c2a8-4a18-b1ac-e0e1b05df601",
       "faculty_id": "3f2f98c7-a9ac-4df8-81db-29235254c9dc",
       "day_of_week": 5,
       "start_time": "16:00:00",
@@ -1867,7 +1867,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "dabd79db-e899-4aa0-b21f-108cb45d75b1",
+      "id": "89d79f68-f134-498d-ad86-be50de8514c4",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -1878,7 +1878,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "97b93d31-4d84-4d62-aba9-65694953d077",
+      "id": "56254382-acc4-440b-a22c-1777c1150915",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -1889,7 +1889,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d9ab7359-6666-497c-9fee-f49867e979aa",
+      "id": "ec60570c-f6db-4a07-9c29-8e0d45769b02",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -1900,7 +1900,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d9899903-c2fe-4f49-96fe-997af263ef54",
+      "id": "428ed77d-31fc-4ae3-997c-a1d6c1185895",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -1911,7 +1911,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "09f62748-de17-493d-b925-c52d614b0b48",
+      "id": "8e789d81-8dc1-417a-ad25-80253e19f1fa",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -1922,7 +1922,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1f213b05-8396-4a0f-8f90-3ce566cacb2b",
+      "id": "8e07962a-df44-428a-92fa-a994943713de",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -1933,7 +1933,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d5544c77-cff4-4481-928c-d3db83167f4e",
+      "id": "b7180922-28f8-4696-bd70-7741d6734afb",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -1944,7 +1944,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e2f3a651-2662-4ba7-84bf-4d7b0e57a341",
+      "id": "12b94e52-0d64-49c6-9298-52e3d99ac2b0",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -1955,7 +1955,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4eabd384-5515-48eb-b778-8df2681ed79e",
+      "id": "1539c704-ed59-4713-8573-3d1e04f6f2d5",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 1,
       "start_time": "15:00:00",
@@ -1966,7 +1966,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ffb199f0-2278-49b7-a16e-e9f2c95ccdab",
+      "id": "2b966652-6ced-4f65-8ddf-fd9d6eabd894",
       "faculty_id": "a3f977d7-4834-4804-bdae-38ee8ddbefad",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -1977,7 +1977,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3f60fe05-a64b-4db6-9a1e-20196e9aa67f",
+      "id": "3d2a8b74-a2df-42a2-9342-b3488b25b9e2",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -1988,7 +1988,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9ea5ae7c-afbe-442c-9de4-c065b5255940",
+      "id": "6165811b-752a-4ef0-9593-8fd920a52872",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -1999,7 +1999,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e6faac80-0f12-48fc-98d9-279bd9832a3d",
+      "id": "9217bf64-ab08-4260-afb2-4ce4d0777331",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -2010,7 +2010,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7644421c-5793-44bb-a1c5-2781757fcd35",
+      "id": "566292be-d435-4de3-aebb-f79296a75cc8",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 5,
       "start_time": "09:00:00",
@@ -2021,7 +2021,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c8efefcf-e011-4e6d-b9f4-6b0524f9caf1",
+      "id": "8608f7c5-4e6c-404d-8e9e-321d40f7db43",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -2032,7 +2032,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5b79d945-791e-48b1-819b-808777bd1597",
+      "id": "938f852f-458c-4f64-bc1a-9fe411319b80",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -2043,7 +2043,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "bf162c0b-5ac0-4c3f-ab4f-b33c03f6915a",
+      "id": "a45aa1a6-f4a1-4245-b76e-79c69ccdf6ca",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -2054,7 +2054,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f793b6da-16f9-45b0-ae88-3e414b1dbc22",
+      "id": "946a64d7-39c2-4871-bf79-220704cf07de",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -2065,7 +2065,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "80a88450-2462-46d6-99bd-c25003af1897",
+      "id": "65e2fe4a-59ff-4f24-9d24-9f6ca7df9650",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -2076,7 +2076,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c11c21a1-bbf3-4ce2-b488-ec42459e011a",
+      "id": "96c9f6d9-64c9-4b64-b651-fb767c18a837",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -2087,7 +2087,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ad48635f-3844-4394-ae50-2e7c6e9a4145",
+      "id": "8b6eb417-fee8-4865-9519-e61feca88644",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -2098,7 +2098,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5bc8ea63-8606-4cba-bd5d-e8952185bd42",
+      "id": "c7523d50-fdf1-4a3f-8367-01b9c97cba90",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 4,
       "start_time": "15:00:00",
@@ -2109,7 +2109,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c9e0996a-6be8-4991-b507-05dafd119098",
+      "id": "d00aa2e6-1465-476c-ab05-db19881545ad",
       "faculty_id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -2120,7 +2120,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "de79ea6c-62a4-4a80-a315-0383c2af2733",
+      "id": "5881a310-d20a-47d9-95ea-21ff9082a82b",
       "faculty_id": "74d9379e-cade-47c3-bff4-030c4ea75ceb",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -2131,7 +2131,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ca6c8330-5bdd-4735-8be0-87470e83fa94",
+      "id": "3311c1d7-7309-496d-b4d8-85a97e11e7e9",
       "faculty_id": "74d9379e-cade-47c3-bff4-030c4ea75ceb",
       "day_of_week": 3,
       "start_time": "12:30:00",
@@ -2142,7 +2142,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "25c20363-48bb-4f7e-84d8-cdfd4b411468",
+      "id": "e3dff619-f62d-4787-acff-fab68ef86d66",
       "faculty_id": "74d9379e-cade-47c3-bff4-030c4ea75ceb",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -2153,7 +2153,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "27f66163-add7-4f55-97f2-a9b3435af4fb",
+      "id": "5f420f65-87c5-4832-9e9b-f0a49310756c",
       "faculty_id": "74d9379e-cade-47c3-bff4-030c4ea75ceb",
       "day_of_week": 3,
       "start_time": "14:30:00",
@@ -2164,7 +2164,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c08363a5-2087-42ce-b763-6ea5a91c589e",
+      "id": "49f9d041-819b-4e14-bf60-fb8b743c6067",
       "faculty_id": "74d9379e-cade-47c3-bff4-030c4ea75ceb",
       "day_of_week": 2,
       "start_time": "15:00:00",
@@ -2175,7 +2175,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c8ddd071-2e54-4eb0-9a7d-6833d37b638d",
+      "id": "24f6a340-3b0a-464f-a943-464f3f5b7b8d",
       "faculty_id": "74d9379e-cade-47c3-bff4-030c4ea75ceb",
       "day_of_week": 1,
       "start_time": "17:00:00",
@@ -2186,7 +2186,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5d394178-6660-4647-b0ef-300c7cb8ba40",
+      "id": "77ad3fa1-cfc0-4af8-981a-f47143ae7e10",
       "faculty_id": "74d9379e-cade-47c3-bff4-030c4ea75ceb",
       "day_of_week": 2,
       "start_time": "17:00:00",
@@ -2197,7 +2197,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5ae47933-2aa2-4223-9fcb-eecd788a203e",
+      "id": "ef82466b-59a5-4fa6-a21c-2eaacd6d2dd2",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -2208,7 +2208,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "eebe3929-b9a6-4ecf-a3c1-7e0a6bd82618",
+      "id": "1c4a44f4-5283-4085-b13d-dce3c79537f6",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -2219,7 +2219,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2282ac06-c14f-44b2-b985-315b30a49a2c",
+      "id": "a0c4278f-6405-41f0-beec-f60055f96810",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 4,
       "start_time": "08:30:00",
@@ -2230,7 +2230,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b216d052-483b-4b74-8b8d-9391b3353c0f",
+      "id": "e2fdf13c-28bf-40b0-bae1-9d88c880d153",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -2241,7 +2241,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a266d12a-8a31-4fdb-a2a5-baf0a4bfd60d",
+      "id": "cac95147-cad3-4bd6-95f9-3a8646d5889d",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -2252,7 +2252,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5dcf5c03-725d-4138-b47f-1a61fb8d454c",
+      "id": "2c1ea756-93a9-4014-93cb-921eaa23b364",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -2263,7 +2263,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "45195536-2d46-4826-88d9-b4327a0cfb96",
+      "id": "eb2496c2-9eb7-4d91-8977-05e67b591b01",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -2274,7 +2274,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "14152f99-cf9e-4d9f-b283-c16370218e7f",
+      "id": "1ae847e3-7970-4b16-b208-29af27b38ebb",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 2,
       "start_time": "14:30:00",
@@ -2285,7 +2285,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "20017964-f499-4c59-9026-27fcb6c3c3de",
+      "id": "cfd168fe-9017-4693-b4ad-6339fd48cf87",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 5,
       "start_time": "14:30:00",
@@ -2296,7 +2296,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1ca57884-c183-42fa-a206-2d19cc170a34",
+      "id": "db5d1822-d365-4b8f-95e8-f09ca50e164c",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -2307,7 +2307,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6b1b28ac-6895-4dc7-b299-d0b48ccc0513",
+      "id": "c1ac6e0e-a52d-4d76-bbd4-53bcdfe06d68",
       "faculty_id": "a0487f0d-23cf-4703-af51-94837e382eaa",
       "day_of_week": 5,
       "start_time": "16:00:00",
@@ -2318,7 +2318,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ad5c5f42-0f50-44c1-aa80-b344de25eda1",
+      "id": "80018647-4987-465e-839c-702c29f4da67",
       "faculty_id": "8b7148d3-61f4-42b1-b363-6bfb8387ffbe",
       "day_of_week": 2,
       "start_time": "08:30:00",
@@ -2329,7 +2329,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "786aab04-2fe5-4832-8fa3-568520c35855",
+      "id": "c35adc04-4cfb-4a64-91df-256b187c1e35",
       "faculty_id": "8b7148d3-61f4-42b1-b363-6bfb8387ffbe",
       "day_of_week": 4,
       "start_time": "08:30:00",
@@ -2340,7 +2340,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "91721b9c-7a49-4676-b558-4e2ba78ba7f2",
+      "id": "5c251833-5039-4bb2-b363-4e0f2a7ffc75",
       "faculty_id": "8b7148d3-61f4-42b1-b363-6bfb8387ffbe",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -2351,7 +2351,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "22e6feeb-7a12-455b-a7ac-1a8578d9d4bc",
+      "id": "8bc2d2fd-4a5b-4f78-8fba-2abdab09e938",
       "faculty_id": "8b7148d3-61f4-42b1-b363-6bfb8387ffbe",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -2362,7 +2362,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7198358b-cb7e-41be-909a-41277b8435d7",
+      "id": "cf434b51-fca4-46c9-b764-35163ddc238c",
       "faculty_id": "8b7148d3-61f4-42b1-b363-6bfb8387ffbe",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -2373,7 +2373,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "59520df8-124e-406b-9a0f-cf677f5a14d8",
+      "id": "7389934f-e64e-48ce-b388-a40a30c96e25",
       "faculty_id": "8b7148d3-61f4-42b1-b363-6bfb8387ffbe",
       "day_of_week": 2,
       "start_time": "14:00:00",
@@ -2384,7 +2384,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4a07d1ec-23d1-4a74-b5a9-53c1c0dcec9d",
+      "id": "c9442f1d-1393-45f6-bd9f-8844fc55e03d",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -2395,7 +2395,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b24b3da9-7209-4dd9-a1b9-c0a462118cac",
+      "id": "6be0de6b-c910-4ff5-bf5c-120622e8d969",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -2406,7 +2406,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d429869b-4d66-4c6c-b6ec-e4acc7ddbdb0",
+      "id": "114efaa9-d188-4ee9-917d-052959295c8c",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -2417,7 +2417,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "55f00676-5bb0-42c3-bccf-ed95a243dffc",
+      "id": "28f627bd-fa4a-45ac-8c53-3354ddad779a",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 1,
       "start_time": "08:30:00",
@@ -2428,7 +2428,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "06a9a91c-a1dd-44c9-8fef-c144303ee31f",
+      "id": "f7c61ad3-a277-4780-b102-ca412dfa96a8",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 3,
       "start_time": "08:30:00",
@@ -2439,7 +2439,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d13f0d45-846a-4e52-8b7a-c8a8a701f84a",
+      "id": "c52401d5-1faa-4851-9b19-9db2b5cf102e",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 5,
       "start_time": "09:00:00",
@@ -2450,7 +2450,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "baad362f-6274-4822-99c7-98f01a6b88ae",
+      "id": "5b17b538-5644-435d-b03f-ddcdfbc1e3a9",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -2461,7 +2461,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "34639031-afe6-4e33-91b1-39fa59f59ace",
+      "id": "0643d533-895c-4215-927e-47d233bff48e",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -2472,7 +2472,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2f1c995b-b319-4f80-b48f-351ac9937f89",
+      "id": "fbc907ee-cbeb-43bd-879b-f951b2cec5e5",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 3,
       "start_time": "14:30:00",
@@ -2483,7 +2483,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e3e1b438-3941-4d15-9b19-d8d51ecf44f4",
+      "id": "8c3c3980-347d-442b-92b5-f1b3e7678a73",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -2494,7 +2494,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "864224ec-2eaa-46ee-b05d-9edda297c37f",
+      "id": "b69b6766-a26b-4023-a3b7-457dbc8fc717",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 2,
       "start_time": "16:00:00",
@@ -2505,7 +2505,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "009614cc-5275-44bc-b415-166351b036cd",
+      "id": "fe23e730-5b56-435c-8911-df645221c7e1",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 3,
       "start_time": "16:00:00",
@@ -2516,7 +2516,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8253762c-76d5-4b54-a5f0-aeef82f82226",
+      "id": "94076f81-3638-414a-ae8c-459b76cf703e",
       "faculty_id": "bc3c932b-4fc0-4bf6-97c0-02b9d6ade013",
       "day_of_week": 4,
       "start_time": "16:00:00",
@@ -2527,7 +2527,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "daf29434-6e45-4d9c-bdb8-b1310e0e7636",
+      "id": "76fc8506-f535-41fd-8136-e8a8226d1b0e",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -2538,7 +2538,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "bc143523-4068-4070-917a-de534bc7f80a",
+      "id": "89fac56a-db56-4a0e-9088-a5c0b21e3791",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 1,
       "start_time": "08:30:00",
@@ -2549,7 +2549,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d721cc3a-bf68-438b-b563-1a18246d7112",
+      "id": "871f8c44-5f09-4e30-9eb7-3d41a05013cc",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 3,
       "start_time": "08:30:00",
@@ -2560,7 +2560,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6df59d79-af65-454e-b00c-d0858135a17b",
+      "id": "f9dfd08c-d87b-47b8-823a-dced0fc1b87f",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -2571,7 +2571,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "84c1137a-9d4a-4bc3-9904-3a65becb2097",
+      "id": "b8b8a8f4-7402-43be-a11a-42b894994fa1",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -2582,7 +2582,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a597647f-ab90-432f-8e02-42101b70c0cd",
+      "id": "8c487b71-5472-4675-8436-82a3636e34a2",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -2593,7 +2593,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8216d8e1-b7c8-4a1a-9750-ab9a8799cd58",
+      "id": "6fb8f379-ff0d-41ac-90ae-36d0a3424d6d",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 1,
       "start_time": "10:30:00",
@@ -2604,7 +2604,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "919b96c3-bc38-4c9e-ada3-26c91bc4cb8f",
+      "id": "16c0a8f5-3f45-4133-baf3-e5057eef3187",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 3,
       "start_time": "10:30:00",
@@ -2615,7 +2615,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1d2c1697-5c97-4610-980b-2d3ac57511b9",
+      "id": "cc08452b-d560-4504-ac38-1aa57072e3bf",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 4,
       "start_time": "11:00:00",
@@ -2626,7 +2626,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ad0e3a64-5cfe-4d99-ba3f-0a20520ceb39",
+      "id": "53481995-83c3-43f7-9b68-913c7066a17e",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -2637,7 +2637,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6a6eb649-5cee-4988-9e7f-9b0bfa7fd6f2",
+      "id": "b7717acd-d2aa-4634-ae95-bc42a9fec16f",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -2648,7 +2648,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5d477b4d-6b0d-42f9-93b8-06a152b99c08",
+      "id": "3eb1460b-5d53-4281-8cae-ecfa99835cf5",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -2659,7 +2659,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "40ddb6db-7da2-4b87-82e3-9301e77d9ea0",
+      "id": "0ff09ea9-5de4-4188-8cf8-ff170b63656d",
       "faculty_id": "fb2b1b29-71ca-44eb-bbdd-668348e0348d",
       "day_of_week": 3,
       "start_time": "16:00:00",
@@ -2670,7 +2670,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "48f72c33-b67d-4f5a-8fa0-09a6d704dab5",
+      "id": "e7d31f4e-7754-4f33-af5f-3ebcca6a199f",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -2681,7 +2681,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "390854b8-4e67-4854-8455-678f9bbad582",
+      "id": "5f87f4d1-8288-4881-aefb-eed79f09bdd7",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 1,
       "start_time": "08:30:00",
@@ -2692,7 +2692,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9e45b09b-a4a7-4321-b67a-fa9f795a4936",
+      "id": "fcb988d9-907d-4a19-a3bb-7a747e280087",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 3,
       "start_time": "08:30:00",
@@ -2703,7 +2703,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fe4442fb-58c4-425d-9bad-35b93604dcb9",
+      "id": "3a5f8bd6-2800-4571-8b8b-25ede726022d",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -2714,7 +2714,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1e552dda-3e94-45f5-a71a-9725750f71ce",
+      "id": "ca93cd20-955e-42ac-9f4d-df7a8b570667",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -2725,7 +2725,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d885e9da-62c4-4d38-8bbf-48f6f20ea55f",
+      "id": "069fa587-aec3-4d34-a1f6-6bc7d3965a2a",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -2736,7 +2736,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "621792e4-0b66-4fc4-8513-f4e1cd80d203",
+      "id": "74cb0a15-829e-4c33-bead-efe2c0aeb8fd",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -2747,7 +2747,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a54ac491-2f0b-4bb7-a153-2049f8b0d064",
+      "id": "46548bb0-8263-479f-9f7d-a5c57826555b",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 2,
       "start_time": "14:00:00",
@@ -2758,7 +2758,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6549305b-3012-4869-8307-34c7e842afec",
+      "id": "a2940b69-9f5f-4b96-b62c-a54435207a5a",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -2769,7 +2769,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a8d267ab-ce5c-4f24-9c85-4e873dede565",
+      "id": "f57304c6-02ed-46c6-8e99-69f46f3de46d",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 4,
       "start_time": "15:00:00",
@@ -2780,7 +2780,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a1d8c656-b5ff-4afc-aed6-33f85735805e",
+      "id": "d049156c-6634-4825-990d-42669d9e1565",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -2791,7 +2791,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "dfa54b20-78e8-43a6-b93f-95585042c84a",
+      "id": "e5b86762-3071-46f8-8cba-46b47b0eebd1",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -2802,7 +2802,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "34069eff-802c-4fb3-a1f4-f146b3e47129",
+      "id": "8db88b9c-dc3d-49a1-8a81-2ccc8d7aa472",
       "faculty_id": "6dbe2d93-7709-4a38-baaa-8e1165e6466c",
       "day_of_week": 3,
       "start_time": "16:00:00",
@@ -2813,7 +2813,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "925a9fd7-125e-4922-8514-b42a4bc11e73",
+      "id": "81fa0294-a750-4d4a-a865-98d362e6bcde",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -2824,7 +2824,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4b2d5fd7-3313-4c62-9e1c-647740ab67d4",
+      "id": "f1d405b5-97bc-40a2-ab1b-218f3b78e08f",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -2835,7 +2835,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "402a416c-3387-48b6-8feb-a763e1ecf38e",
+      "id": "526c0544-a8f6-4de4-8c2b-51a3a4bd3fda",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 1,
       "start_time": "08:30:00",
@@ -2846,7 +2846,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2e48d759-40ae-4421-90d0-66272c42a638",
+      "id": "68cc5bf0-8d6c-48f7-a1a4-5a729b8e30b7",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 3,
       "start_time": "08:30:00",
@@ -2857,7 +2857,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "cb151ce3-efb6-4509-a39b-6518a9c5646e",
+      "id": "6f04b1ba-1ff0-4aad-9e84-763b9c8853c5",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -2868,7 +2868,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a231fdfd-8ad2-4f08-b56f-87161450e26d",
+      "id": "6f8afa22-51ce-432e-875f-3c37d1d6e56e",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -2879,7 +2879,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e0214a00-7235-4bd1-a47b-d20cc095a866",
+      "id": "4c374da6-7596-4cad-90d6-60888c99e656",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -2890,7 +2890,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "82ff9879-bc3f-4a67-b755-333ce5a8c1d3",
+      "id": "6e8a00f3-9ba7-4e02-ad4c-5d4ba872613e",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -2901,7 +2901,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b04c1665-f5ab-422b-b11a-09a622b516aa",
+      "id": "1c719a50-c1a8-46e6-8f28-36b42df076d1",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -2912,7 +2912,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "72869200-b412-4dd8-8938-f0674438a5f7",
+      "id": "7cf1da4e-ddaa-48c7-9e63-ae5737b807a1",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 1,
       "start_time": "14:30:00",
@@ -2923,7 +2923,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d96df4fe-eb64-4b0b-afb5-da706364336a",
+      "id": "42e53911-f144-42fb-a9c2-6b5ac8372c1c",
       "faculty_id": "da80d781-880f-401e-87e7-3deb8125f4e3",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -2934,7 +2934,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e908be85-1cc2-4172-9c97-4298df81a6a5",
+      "id": "ac4fbe19-300e-4875-be32-921952462624",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -2945,7 +2945,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4ebc75ca-00c3-446b-91ba-cd058add6aae",
+      "id": "ac192d07-3efa-45c4-a943-6342d57619ba",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -2956,7 +2956,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "36128e60-5372-4de0-8f8f-0465f44e34b5",
+      "id": "a5e42fef-1c59-4854-909c-78c4f44c5143",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -2967,7 +2967,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "15e93e29-06c5-48ed-bbeb-db6d1bf92b60",
+      "id": "2332f985-2914-44e7-afa4-3abb71888b45",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 5,
       "start_time": "11:00:00",
@@ -2978,7 +2978,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "88e4fffe-16a6-4099-acf0-ba5a30258104",
+      "id": "e3b3cb8a-52d9-494c-86b8-cadcf8150369",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -2989,7 +2989,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "558f549d-2bc8-477a-831d-25433a97e301",
+      "id": "060996fb-3123-4f5f-851c-5b4f42e2071e",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -3000,7 +3000,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2b4f11e8-4f47-4063-9d43-722aed74a019",
+      "id": "976a1636-2a79-45ec-a009-77c86ba1a7a1",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -3011,7 +3011,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "33d2f207-68cb-4305-8659-4495a7a51756",
+      "id": "06bc6cf3-f86e-4e3c-857f-68dabc968b9c",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 5,
       "start_time": "14:30:00",
@@ -3022,7 +3022,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "cefa5ef3-3dfb-4eb5-9c49-78d1b45af130",
+      "id": "3f50f037-d93d-415c-b475-cb623f95bbed",
       "faculty_id": "961b596f-ac15-4a4d-9bc4-c7004ee00c57",
       "day_of_week": 2,
       "start_time": "15:00:00",
@@ -3033,7 +3033,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "dc340bee-fe9a-4552-8c37-4d0c3cc31e78",
+      "id": "d09e673a-c37f-4345-a1a5-bb3db290b651",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -3044,7 +3044,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "17b6d9bb-27b0-454e-b77e-b094925a5bc1",
+      "id": "aac5cd35-397c-4bf5-b2e9-cb1b03c8e561",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -3055,7 +3055,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "0985abb9-8c6f-4708-b687-5a97d70ea58d",
+      "id": "774b1d85-fb40-4697-8824-db0c4c890776",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -3066,7 +3066,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d2cb150a-b3ce-43dd-9dc1-6c6ef22ba647",
+      "id": "6597bce7-53bc-4a09-9822-e0ceba102f7d",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -3077,7 +3077,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "df409cf3-43d8-4e58-8b76-97c0bb9ce2a1",
+      "id": "4ce2734a-eee5-48ff-a351-4c97143a4556",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -3088,7 +3088,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3bc59a40-127e-4d14-b1f3-0ba488db253c",
+      "id": "513b1f02-29b0-4bae-af14-f7a9a160a4db",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -3099,7 +3099,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "846c03df-808f-4d5a-986a-8186c35dd213",
+      "id": "d4f51ffe-177f-444a-af6c-eadeb9cfb859",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 1,
       "start_time": "12:00:00",
@@ -3110,7 +3110,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c034990d-ea89-4641-93be-5b3da230092f",
+      "id": "25137bc8-3df3-4419-bded-9d36220ef24d",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -3121,7 +3121,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "387d82c2-03ff-45c2-b6b6-f72150275e55",
+      "id": "924cda9a-df95-45a7-b665-5e6b8a34fa01",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 2,
       "start_time": "15:00:00",
@@ -3132,7 +3132,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9c3997b5-cbdf-4059-acf6-38dea0eb7f6c",
+      "id": "fd5610f4-7a93-4553-84ef-e3b077df044c",
       "faculty_id": "cde2175b-e3e1-4e2f-9514-e65de70e9612",
       "day_of_week": 3,
       "start_time": "15:00:00",
@@ -3143,7 +3143,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9d73a1a1-cf19-4af7-a4ae-50443e5c38ec",
+      "id": "87c38498-9b04-4477-91c2-315a50d26d84",
       "faculty_id": "77b6b9aa-578a-471a-8deb-a5420a7e3c0b",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -3154,7 +3154,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c529db24-dfd8-4352-8e04-43a2336592b4",
+      "id": "d88f9722-71b1-4671-8d53-e76c8ea23a52",
       "faculty_id": "77b6b9aa-578a-471a-8deb-a5420a7e3c0b",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -3165,7 +3165,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "dd0ad86f-7f8a-4302-affe-39b1f4e8ad44",
+      "id": "50b35e57-8b64-48de-b6a2-6a3a5f936adb",
       "faculty_id": "77b6b9aa-578a-471a-8deb-a5420a7e3c0b",
       "day_of_week": 1,
       "start_time": "12:00:00",
@@ -3176,7 +3176,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2ad4df8c-e693-4fa1-9b52-cb37bcc3ef3a",
+      "id": "2e8a496c-b2e7-4b60-aa53-e5412eb3ab45",
       "faculty_id": "77b6b9aa-578a-471a-8deb-a5420a7e3c0b",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -3187,7 +3187,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "52dd9e43-e968-4c2c-abe5-9a8c3388bcb5",
+      "id": "62185597-9395-4a5c-90a8-b95139adaba7",
       "faculty_id": "77b6b9aa-578a-471a-8deb-a5420a7e3c0b",
       "day_of_week": 4,
       "start_time": "16:00:00",
@@ -3198,7 +3198,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "97ed0cf3-fd0e-4fb0-8f7f-72b8a05f54cb",
+      "id": "142906c4-58f2-414d-a876-42036c06434b",
       "faculty_id": "77b6b9aa-578a-471a-8deb-a5420a7e3c0b",
       "day_of_week": 5,
       "start_time": "16:00:00",
@@ -3209,7 +3209,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "def6f5ba-ad6e-4489-ae6f-710a59306f66",
+      "id": "d887254b-dfcb-4de8-824e-799c97a2ed6d",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -3220,7 +3220,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4b7db558-b722-4357-b3c0-9a66ec1a1f92",
+      "id": "7826da24-8209-4b74-b39b-a0869ac27178",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -3231,7 +3231,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "11afb3fd-d253-4c24-ad98-939ebafb04cc",
+      "id": "31bf5826-7fee-4c94-b3c8-a9b8e045cf85",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -3242,7 +3242,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5af41fa7-0ced-46d5-be88-6df1de8c5acc",
+      "id": "fdfa988a-e804-40b8-ad97-6a17c6bb0748",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 3,
       "start_time": "07:30:00",
@@ -3253,7 +3253,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7049f255-ada5-474b-8d31-4acf06ab771a",
+      "id": "0852b362-d8f3-4227-84f1-9da7b602a25b",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -3264,7 +3264,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ea41ece5-377d-49d7-b833-9ff5c0022cc5",
+      "id": "b3ac4102-26c3-4935-8735-9807f3891c0e",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -3275,7 +3275,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8fcc28e5-c4d0-4401-b3ec-5f17dff0f63b",
+      "id": "50d41ee1-5370-4a52-a6c3-06e5d255e66e",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -3286,7 +3286,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "0cf7bf92-7484-4b6c-9d77-9b543d2e0c80",
+      "id": "c68c9692-5438-45fd-85c9-6095096e7bb1",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -3297,7 +3297,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "47d76801-c985-4358-aa53-33d47c2f675a",
+      "id": "a27441b3-e7ec-47c5-82b5-89a3d914d839",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -3308,7 +3308,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3b6689bc-bc46-4263-b571-78afd4e2d947",
+      "id": "7ed436aa-8d56-4656-9d03-451d96556017",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -3319,7 +3319,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c1268642-2392-437b-a086-7831c7b45312",
+      "id": "c32d8585-8ee0-40ba-b066-5cd17bc5dd28",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -3330,7 +3330,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "42ee215e-a0fe-4134-8c33-dbda2090400c",
+      "id": "d67061f8-d61a-427c-9068-17998ccddb73",
       "faculty_id": "5b1e93fa-5f89-41b0-b6c0-19e620c1d3ee",
       "day_of_week": 5,
       "start_time": "16:00:00",
@@ -3341,7 +3341,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4ea0a392-6380-4433-bcae-660487ba6a9f",
+      "id": "d733dc2d-4a1b-4ffc-aad7-ed0246c7c936",
       "faculty_id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
       "day_of_week": 1,
       "start_time": "08:00:00",
@@ -3352,7 +3352,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e55ed2a5-0e0c-4af4-a558-1d146c30fd90",
+      "id": "b9a355b3-4a53-49be-96af-7dddb9593459",
       "faculty_id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -3363,7 +3363,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ad2d8488-28ee-462c-9eb5-64da2fd35ca5",
+      "id": "520fcc2c-d9ad-4ad6-9646-0ff368bec0dd",
       "faculty_id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -3374,7 +3374,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a7575747-efb4-495d-a665-393a8bf109d9",
+      "id": "a02c56af-154d-46a8-86aa-9f2a63eac1c6",
       "faculty_id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -3385,7 +3385,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "bd04983f-4442-4926-bd6d-1f0bfb3c7310",
+      "id": "d47b3441-9826-4ef1-9540-105a898400a0",
       "faculty_id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
       "day_of_week": 4,
       "start_time": "15:00:00",
@@ -3396,7 +3396,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9629e251-8249-4804-a061-b224bc644860",
+      "id": "993bfce1-a4da-40ca-8b09-3cb60dd13099",
       "faculty_id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -3407,7 +3407,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3f158430-2699-43be-a1ae-d3c5128c689b",
+      "id": "3b5cec1d-88c7-452a-b0f4-06d3dbc65b02",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -3418,7 +3418,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b30fd96c-0d05-4746-b555-f147fb3c5292",
+      "id": "ccaf3d53-4789-4425-962e-c56e0588433b",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -3429,7 +3429,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "aba3934a-0543-4117-aae5-9274aa5e511a",
+      "id": "af00be87-5e75-4501-84a9-e357b403eece",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -3440,7 +3440,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e0246d0f-c451-4d66-a880-69b3b4786afc",
+      "id": "630e8f7e-4a43-4459-8463-9f5de221f0fd",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -3451,7 +3451,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2bca8e3f-1ca0-4706-aeb3-f8c55a54c8e2",
+      "id": "b9f0b4df-0d70-46c5-957d-5edef535d394",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -3462,7 +3462,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b46cf919-5540-4d56-bee4-45460cc28153",
+      "id": "c6114960-de17-4426-8623-b5a15a1ccfec",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 3,
       "start_time": "08:00:00",
@@ -3473,7 +3473,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5c539512-b70a-4d87-b446-232ce745c466",
+      "id": "ab6bf328-d1c6-40eb-a076-d8f350bbe37c",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -3484,7 +3484,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9bd9fbb7-ecfe-408c-9b8b-dcf66043ee01",
+      "id": "28e0b683-445d-488e-bc0e-2689fe27cc1c",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -3495,7 +3495,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1b21bbd0-b59b-435f-b9f2-e1e4faec28b0",
+      "id": "e372247c-81ef-485a-b0fb-abf61121ee14",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -3506,7 +3506,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3dd2b94e-03b4-4bab-8014-b583a09d51fc",
+      "id": "3488065a-bd46-4692-ad78-7f4c3d260b2f",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -3517,7 +3517,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d2c036ba-691d-44c5-828a-887fd6c6b6f5",
+      "id": "8fee96c5-8ffc-4d02-b8ad-423c9ad8285c",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -3528,7 +3528,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "66dc0797-b3f0-427e-887b-bbd904b6e9ad",
+      "id": "4754d32f-035f-4c0e-b5c9-6cd3e3c2b283",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -3539,7 +3539,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "086cbece-7f60-4f44-aa7b-406bc30db814",
+      "id": "3ff53f7d-fe74-47a2-910d-abc918696195",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -3550,7 +3550,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "bc1145dd-7d47-4576-af7c-e5a9d4f5cb07",
+      "id": "35a5e185-092c-40e1-8fef-a30170ab97cb",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 4,
       "start_time": "15:00:00",
@@ -3561,7 +3561,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7fe59dae-37ce-493b-b1ed-9f1b9878d152",
+      "id": "26821d3f-4c09-48de-ad6d-6425db5009b4",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 2,
       "start_time": "16:00:00",
@@ -3572,7 +3572,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "13594722-fffe-4558-a8fb-18f6201de084",
+      "id": "354579b3-7c01-4682-b9de-97b983757ae9",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 4,
       "start_time": "16:00:00",
@@ -3583,7 +3583,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "120fb98b-24ce-4da8-a231-e779699ddfb9",
+      "id": "8e40a8a5-bb08-47c9-a04a-1b526841d5fc",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 1,
       "start_time": "17:00:00",
@@ -3594,7 +3594,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "67e258a4-26e3-4d43-a1c1-c79e4e809e13",
+      "id": "c0ce35b7-a875-459a-be57-178f3427c292",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 2,
       "start_time": "17:00:00",
@@ -3605,7 +3605,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "25c7a7d3-f21d-4290-82ae-bc7239ab1293",
+      "id": "09391348-625b-427c-96c3-96ab403a5ae5",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 3,
       "start_time": "17:00:00",
@@ -3616,7 +3616,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "39c163a2-bc2b-498e-b770-8e88b564a9cf",
+      "id": "d8179075-d20a-4e88-a369-7727c2fb72be",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 4,
       "start_time": "17:00:00",
@@ -3627,7 +3627,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d51521ba-9488-43b8-8752-73cd1b17ed0b",
+      "id": "b999d513-b15c-45e1-94cc-33342cedff6b",
       "faculty_id": "c938486d-2ab7-4cb8-a33e-57c2829a535c",
       "day_of_week": 5,
       "start_time": "17:00:00",
@@ -3638,7 +3638,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2fabff7d-2dc8-4450-a36f-b1cc7c1d7795",
+      "id": "9f8a4e56-7c8b-4abc-972c-a2609fca0c2a",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 4,
       "start_time": "07:30:00",
@@ -3649,7 +3649,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3f30ba6b-c2ba-4a86-87fe-a101efbf935a",
+      "id": "0f5ca5e7-92f6-4b9c-863a-277b7596e516",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 1,
       "start_time": "08:00:00",
@@ -3660,7 +3660,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "047d3d9e-c0c6-44d2-90ed-760ea678c3f5",
+      "id": "6b35c061-92d0-4e5d-a71a-8dc7da82dccb",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 2,
       "start_time": "09:00:00",
@@ -3671,7 +3671,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a699ef2f-175c-42fa-9752-a841b894c36b",
+      "id": "ba848797-0ee6-4c45-a106-54330ce7889f",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 3,
       "start_time": "09:00:00",
@@ -3682,7 +3682,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7638e97a-480d-4467-8538-962dff9851c9",
+      "id": "5964e03f-c5af-4665-9d98-60448b33e816",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 4,
       "start_time": "09:30:00",
@@ -3693,7 +3693,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1cf69c4f-9390-4140-aa49-c34fef5e6de6",
+      "id": "402f250a-1953-4626-a5e6-08684af774a1",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -3704,7 +3704,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "44d934bf-a0b0-4263-a0f6-e542dfa21fdd",
+      "id": "5c917b0a-018c-42bb-986b-1324b5d10695",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 2,
       "start_time": "11:00:00",
@@ -3715,7 +3715,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "0d2bb13b-2569-4238-9e47-6361321e68b1",
+      "id": "91f010b6-8a25-4ac4-b57f-03383c28cf98",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 4,
       "start_time": "12:00:00",
@@ -3726,7 +3726,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6e48948a-4a67-4990-a204-9caf454302f1",
+      "id": "29f2b5fd-3bc8-4cb8-aecf-22664664b20b",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -3737,7 +3737,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "160eb3f9-4457-4f9b-aab4-5e5f4914de80",
+      "id": "616c4bcf-d896-4776-b9ed-f1a280864b89",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -3748,7 +3748,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b9a375ff-f09a-477f-a5ab-87e274897dfe",
+      "id": "817f1f57-8e7e-471d-b435-f218281d1584",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -3759,7 +3759,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "cd97a488-e02e-4776-84b4-106cc85e7ed5",
+      "id": "5a4a5f3d-781b-4dbc-84c1-60de8ee92d8a",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 2,
       "start_time": "14:30:00",
@@ -3770,7 +3770,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e2f13689-1913-453e-835f-c0fe89415f66",
+      "id": "d80fa3e4-6c23-46f0-95bc-54b4ac39e54c",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 1,
       "start_time": "15:00:00",
@@ -3781,7 +3781,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8dac36f7-efb0-49c6-9f5b-a8f45cbcafc0",
+      "id": "7ee8f050-5ec5-4fad-a674-3faba2622715",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 3,
       "start_time": "15:00:00",
@@ -3792,7 +3792,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f8a661bd-0d22-4961-96cf-e1b59fc50bfa",
+      "id": "7a80a7b5-d02f-4a9f-9a0b-e9a00324e3e0",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 4,
       "start_time": "15:00:00",
@@ -3803,7 +3803,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "05916fd8-cae0-4f3c-8339-615f0a18b4ac",
+      "id": "c9d6ce35-44d1-4018-98f0-4073511ece05",
       "faculty_id": "a6a8486a-4143-4137-bdb0-d8eccc569b0c",
       "day_of_week": 3,
       "start_time": "16:00:00",
@@ -3814,7 +3814,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "73f0c770-6fb5-4607-b11b-74fe9833a9fb",
+      "id": "197e702a-fc2f-40ff-8b42-bb7ef255849f",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -3825,7 +3825,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a4f4e623-b7c1-45d8-845e-f158c6fceb21",
+      "id": "2e829ae5-346d-4906-962e-3cafa554a8d1",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 2,
       "start_time": "08:00:00",
@@ -3836,7 +3836,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3c5095de-4a56-43f0-8586-5e8dafd94bc9",
+      "id": "75b60709-c9d3-40c8-bb5e-e2568f620181",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 3,
       "start_time": "08:00:00",
@@ -3847,7 +3847,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f9dfc0f9-35e5-47c7-92da-9c8b0d745507",
+      "id": "fd1b5a62-14fc-43f4-b1cf-e5f1061a5b30",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 4,
       "start_time": "08:00:00",
@@ -3858,7 +3858,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "04534fdd-d628-4f39-b97c-6a2e71b892d5",
+      "id": "cc6d199f-ad8d-42ff-8212-59658e49e03a",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -3869,7 +3869,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9e0c9566-a83d-46a2-ba51-5d0d29c8c373",
+      "id": "1a05c9cf-d8dc-4551-a121-1f6432e583e8",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -3880,7 +3880,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "aa090877-155a-4ed3-a3e1-a8d4fa3b5c9f",
+      "id": "4db98b2a-aeb1-483a-ba3e-74cd42fbbff5",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -3891,7 +3891,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2eaeb58c-300b-4765-b298-560de6f2b67b",
+      "id": "a83bb343-352a-4537-8ece-7b8f2728755e",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 4,
       "start_time": "12:00:00",
@@ -3902,7 +3902,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "24914c69-7080-43ff-9b03-475f09352184",
+      "id": "db70e6f1-b81f-4cdb-a05a-5ed149b66b10",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -3913,7 +3913,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "202aa857-53ac-4617-b13a-6f6dffac3b9d",
+      "id": "5b5b71cf-14a0-4589-84a4-67e5a66d2fd6",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -3924,7 +3924,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b846f868-97ce-4a71-bac0-08c9e59098fe",
+      "id": "0027f180-bda4-4852-93ea-1e2846971eb7",
       "faculty_id": "c3cbdff4-9401-411d-ac8c-0281c70ed475",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -3935,7 +3935,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5eaf0370-185a-4595-9fb8-5afe1ee3fd2a",
+      "id": "58099c8d-cb50-4382-af29-2747e756d798",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -3946,7 +3946,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c6e71654-cbb4-403e-a0b3-5caa1f348bbd",
+      "id": "1216d81e-7f3c-403a-88cb-4e6e70362abd",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -3957,7 +3957,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9c478138-af44-47aa-8df8-0a615028bb47",
+      "id": "81bc6eee-43bf-4595-bb07-6bea09f85435",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -3968,7 +3968,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ff94e0d3-09cc-4c61-a358-027e57811a9f",
+      "id": "877653ef-cc2d-41e0-ac1b-5ce86a746141",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -3979,7 +3979,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2a98edb7-bf5d-4aff-8609-591154a28937",
+      "id": "edad339a-bb10-4d71-93c7-e45b14bb81e8",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 1,
       "start_time": "12:00:00",
@@ -3990,7 +3990,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "99ffa5d2-3e80-4cb4-b948-15740e9950cb",
+      "id": "3be87aaa-e5ed-45a0-8f18-0509835e84cc",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 3,
       "start_time": "12:00:00",
@@ -4001,7 +4001,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c65aef8e-9e70-4d89-9bf3-d94d7b507700",
+      "id": "16b29a95-ef58-47f1-9acd-af8b9af82d79",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 5,
       "start_time": "12:00:00",
@@ -4012,7 +4012,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7fd721d1-834a-43f2-954c-8050083449fd",
+      "id": "70572e84-1d7d-4a12-9fb6-b98e3ee0912d",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 4,
       "start_time": "13:30:00",
@@ -4023,7 +4023,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "35ffa65f-b61e-48c1-a9f1-4a944da9c1ab",
+      "id": "67cbaf8a-f1a2-4574-bb3b-bf0a39604bb2",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 1,
       "start_time": "14:00:00",
@@ -4034,7 +4034,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "c2c7757e-a08a-44e5-95f4-f71080007f6c",
+      "id": "61bfac4f-3655-4aa2-8706-39a8e0a9492c",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 2,
       "start_time": "14:00:00",
@@ -4045,7 +4045,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b149f876-af11-435d-b0e2-716b4bee3314",
+      "id": "da212a8d-0dbc-4378-9020-f2de5dc68bf3",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -4056,7 +4056,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e21ff19d-0b8e-4906-81c3-48646f752380",
+      "id": "d2a0e2f1-d764-4df6-9ee6-d49867a5915d",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 4,
       "start_time": "14:30:00",
@@ -4067,7 +4067,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4d191857-9c4a-44ab-b5f9-0d5f07991ef4",
+      "id": "4a31c6fd-1211-45d2-b159-e06d799702b8",
       "faculty_id": "fad9efbc-afe9-4fd1-94a0-98565b58b568",
       "day_of_week": 3,
       "start_time": "15:00:00",
@@ -4078,7 +4078,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "549ab125-7b3d-4772-b7f6-3c99b68a4613",
+      "id": "c1c096b3-76ac-4304-aaf5-7de15bf3023c",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -4089,7 +4089,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ae8ca654-5286-49de-ae2e-e1baa48fe953",
+      "id": "f475c9fb-acbe-4a2a-b54d-56328578a162",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -4100,7 +4100,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "57826b15-3670-44d3-af0e-3c9c59053c6e",
+      "id": "f36cacea-b626-42e3-a959-6640675bda72",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -4111,7 +4111,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "19caee49-1222-41fe-b879-e6da81b046d4",
+      "id": "93f7b083-f9f6-45df-9dcd-4dfa40a25523",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 4,
       "start_time": "07:00:00",
@@ -4122,7 +4122,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1488d429-1949-4592-9285-1160e0c4ecfc",
+      "id": "12c2ffad-9e1c-4424-9e2c-f23d2f076951",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -4133,7 +4133,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "01770f3a-aa7e-4ed6-97f3-8e016e0a60a5",
+      "id": "4e52677e-d84c-42fa-9cbe-2541cb9d7f90",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 3,
       "start_time": "09:00:00",
@@ -4144,7 +4144,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "aaf85e3f-3d1f-48e1-b33a-9fb17de0c3af",
+      "id": "2a7d5cbf-71e4-4006-9612-df2adc4610d9",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -4155,7 +4155,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1aa3d0db-b44a-446f-9505-e1333db37e62",
+      "id": "349a5e01-44ce-4627-bb12-c5ae16cd849b",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -4166,7 +4166,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a8b36bd0-9d34-4379-be69-a4c5365cf457",
+      "id": "2ad02ed7-0ba9-4557-a48b-8cd9a31f0d44",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -4177,7 +4177,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d0a98c15-8076-4647-a049-0a95fddced26",
+      "id": "d7cdd95d-4881-41a9-a442-8c944c0b64f6",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 4,
       "start_time": "12:00:00",
@@ -4188,7 +4188,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f5bbfe4d-cc2e-4935-a33d-9a97d2f6d120",
+      "id": "858c033b-4fa6-4f9e-8584-8b73c47d64e7",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -4199,7 +4199,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a7c3fb13-abbe-4679-89ae-16b5de06776f",
+      "id": "284d3ece-2c21-4aa5-8d07-c08fbc726dd3",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -4210,7 +4210,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4a6844a1-7b4b-4d48-b558-c87450595d78",
+      "id": "bf920ef8-c47b-4c68-a82e-b5df5c16afd3",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -4221,7 +4221,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ac56249a-46b4-441e-ad68-9cdae787e4a2",
+      "id": "c01e95b5-c416-402e-b285-d706279667dd",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -4232,7 +4232,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "dae7ae8c-b22c-45c9-b064-0ceb53ea00e3",
+      "id": "134efdb9-469b-4e31-ba46-7f24a68c4b4b",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -4243,7 +4243,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d2c424f3-ab57-4550-8c81-cf0b691d435f",
+      "id": "9e7835ff-21c5-438d-9c02-2c3cc7809208",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 1,
       "start_time": "14:30:00",
@@ -4254,7 +4254,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "101cdd0c-9cd4-4281-823f-de47d8dfcd04",
+      "id": "eff5cd13-4989-4808-b36a-0cf3748eb4d1",
       "faculty_id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
       "day_of_week": 2,
       "start_time": "16:00:00",
@@ -4265,7 +4265,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "56591914-3fba-4fb7-a433-09e967f3328c",
+      "id": "c31bb90d-568a-442f-85f7-4f577f0cbba5",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -4276,7 +4276,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "fbba021f-83b5-4a7f-8f2e-595e6009789a",
+      "id": "e7ac2927-82f5-4d23-9519-4547d746addf",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -4287,7 +4287,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "db14d678-6f0e-4e13-91b3-715452dfa6d8",
+      "id": "5e186142-eb25-48d9-9c84-aaae4dd54af4",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 1,
       "start_time": "08:00:00",
@@ -4298,7 +4298,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "431b7777-5bb0-471a-ae00-88f96b6f852d",
+      "id": "a429887b-0e57-491b-a9aa-b2824577898e",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 2,
       "start_time": "08:00:00",
@@ -4309,7 +4309,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "826be049-bb4d-43ed-a5f1-1d2e8dc952f7",
+      "id": "67153609-97b3-4e83-ad91-313fd74b7690",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -4320,7 +4320,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "550a3c14-3b88-4eee-9a1c-ffa58545c17b",
+      "id": "2171f90b-13a1-401c-8404-587320b28db7",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -4331,7 +4331,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4771d139-73b0-4909-a051-3699b909c2d4",
+      "id": "73024090-a88f-4802-a16c-a133686fe70d",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -4342,7 +4342,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2658a1fd-7b0d-48bd-9485-875ecde9b647",
+      "id": "3501db09-d1d5-4cc6-a16e-8e277b029877",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -4353,7 +4353,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "125bf2d0-debb-41c7-b3a9-82c8cb040a75",
+      "id": "dac705c9-7930-47e4-a028-541e6ee03b1f",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 2,
       "start_time": "12:00:00",
@@ -4364,7 +4364,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "73111d8c-d237-4e27-a09b-2003eaa0b530",
+      "id": "e262ff79-8067-4c01-9b83-ced7e794ca72",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -4375,7 +4375,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a6d1d860-743a-4a63-841c-f642a9e6368c",
+      "id": "46f8db85-ff58-4373-be00-3935897197d3",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 2,
       "start_time": "14:00:00",
@@ -4386,7 +4386,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "65e524f0-7784-4e67-9a3e-3be1b37f28ea",
+      "id": "03d64a62-9db2-43f3-a630-c0a8ff0597d5",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 3,
       "start_time": "14:00:00",
@@ -4397,7 +4397,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6013e5a9-5420-42be-ade7-42d32ced883f",
+      "id": "7e4dfe01-26ed-4ff5-a8fe-bf173c659789",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 4,
       "start_time": "14:00:00",
@@ -4408,7 +4408,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "41afa3f6-1890-45d6-b175-f4eaeb00a20d",
+      "id": "35b7f65e-3891-4979-85e0-25d2e2c9d280",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 5,
       "start_time": "14:00:00",
@@ -4419,7 +4419,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8766abee-115f-413b-9f72-40cc071113dc",
+      "id": "3d1a510c-eb81-4d05-8c21-fae3c0cf4d04",
       "faculty_id": "7d89046b-4fa9-43d1-867f-ca1fa0b5a06b",
       "day_of_week": 4,
       "start_time": "15:00:00",
@@ -4430,7 +4430,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "297a6501-da32-45cc-8fe5-0bcadf9ac786",
+      "id": "9c94c387-b851-411e-b6c3-d4f9017cd66d",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -4441,7 +4441,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b7375d7f-614d-4fd8-bb9a-5d91834182df",
+      "id": "9c9fde02-d3f1-4468-892d-dfa392cfe19b",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 3,
       "start_time": "07:00:00",
@@ -4452,7 +4452,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ef24067d-9f65-40f3-b50c-deffbc770778",
+      "id": "34fdb247-e847-437d-a73c-a9aabdd8fe64",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -4463,7 +4463,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f041abff-7761-4a4c-9adf-e9129c59eaf9",
+      "id": "d3fefbf2-2c2d-4699-9562-4df48d82d44e",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 5,
       "start_time": "08:30:00",
@@ -4474,7 +4474,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "114a2380-750b-485c-823a-c7f71280a60b",
+      "id": "a0686d75-eb5c-471d-8ad8-d3d32db7004c",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -4485,7 +4485,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "00193b86-d08a-4bc4-bd3d-e14e470bf9a5",
+      "id": "2fc8031f-207e-45ba-b087-af40a0768332",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 4,
       "start_time": "10:00:00",
@@ -4496,7 +4496,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "f55e306b-04e6-410a-881b-4830ad08a6ae",
+      "id": "eed19b3c-e500-4493-b003-fb86784e8c0e",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -4507,7 +4507,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "4ee87bcf-541b-406c-a085-fb76277b30a9",
+      "id": "844f1a35-5687-437f-94c8-2d3d211aa49a",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -4518,7 +4518,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "cff8f563-7650-46a3-985c-00aa124d8a4e",
+      "id": "73addb9b-d201-4e88-b3e4-20d413b437ed",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -4529,7 +4529,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "2f7ba4dd-7eb9-4a4b-825a-1a4de2ed685e",
+      "id": "fb3788cf-ecae-4bb2-97d3-e7ce48e5a8aa",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 4,
       "start_time": "13:00:00",
@@ -4540,7 +4540,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "addf0e84-10b9-4e71-969c-4c96b3ae486f",
+      "id": "e2d719fb-ff94-4e62-b055-465a32f51a88",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -4551,7 +4551,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1918d02c-d92e-41ef-8d1a-b36373c976a4",
+      "id": "120d750f-b4bd-47f6-b43f-c4ddc11cc6c3",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 2,
       "start_time": "14:30:00",
@@ -4562,7 +4562,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5abd6a3c-eaa2-41fc-a911-df1bb180cf08",
+      "id": "a22bc97e-67dc-41be-9343-15d7aab83797",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 4,
       "start_time": "14:30:00",
@@ -4573,7 +4573,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "41cc9494-4a8b-4ead-8751-0a73ebc0b8df",
+      "id": "7aa8154b-52e7-4e37-86e3-b3e0bc9ba33d",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 1,
       "start_time": "16:00:00",
@@ -4584,7 +4584,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "5f4d4232-013c-4f7c-ab02-af0910b7a1b0",
+      "id": "7d1dd22f-eb2d-4615-bc29-140a85371ee8",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 2,
       "start_time": "16:00:00",
@@ -4595,7 +4595,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7093f1d7-699f-4072-8c00-31642c18cbc9",
+      "id": "92807561-95a5-42c7-84ca-026308480ea7",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 1,
       "start_time": "17:00:00",
@@ -4606,7 +4606,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "e9ebf94a-e1c7-4144-a32c-a74b10a0ef85",
+      "id": "35cb8977-47c2-44e8-9127-fe1db595dd06",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 2,
       "start_time": "17:00:00",
@@ -4617,7 +4617,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6fc3f20c-ea01-4995-aa76-66f28c660658",
+      "id": "9b6bf9b5-e519-425e-b82b-535864497c40",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 3,
       "start_time": "17:00:00",
@@ -4628,7 +4628,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "0b2bb2ac-c87d-4f22-a22a-6e0829f3ba48",
+      "id": "ff544a81-d2a8-438f-82a5-266330892b53",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 4,
       "start_time": "17:00:00",
@@ -4639,7 +4639,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "6dfed4f5-e88b-4e1e-8d35-00fbccf93277",
+      "id": "f0a9e5ea-6c80-487f-86b4-fb90c0f18cf6",
       "faculty_id": "46392a63-344d-4746-bfdb-ecbcc517a6f5",
       "day_of_week": 5,
       "start_time": "17:30:00",
@@ -4650,7 +4650,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ee75937d-620b-4923-90d0-8687864a3147",
+      "id": "dd20df41-7007-476b-b994-9c002ec2f179",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 1,
       "start_time": "07:00:00",
@@ -4661,7 +4661,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "51118199-46e7-4423-a706-4c31003e5df1",
+      "id": "5049b7a8-9bf0-4c28-bac6-80916165d980",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 2,
       "start_time": "07:00:00",
@@ -4672,7 +4672,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "adf34d60-e81f-49e4-8a32-371517e63cce",
+      "id": "9f3e199d-9c00-4111-adbe-67759c88def8",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "07:00:00",
@@ -4683,7 +4683,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "1f71648a-ba8a-4c0f-b083-ce8c543af9c7",
+      "id": "d1de03f9-ef74-4669-8740-6a7490d25ef7",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 3,
       "start_time": "08:00:00",
@@ -4694,7 +4694,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "25099577-89ca-4ab7-8c9a-99da330e72a0",
+      "id": "f58d05c0-f7aa-4dd4-ad90-5346b08c3df6",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "08:00:00",
@@ -4705,7 +4705,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9e7d588a-6d79-4e51-8ddc-0d0ddae5ffe9",
+      "id": "07a85384-4c7b-47f6-afd9-2e83cdc77d5e",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 1,
       "start_time": "10:00:00",
@@ -4716,7 +4716,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "59134407-540a-4958-b325-bbc4452c5152",
+      "id": "f9032dad-ff67-4696-92b8-e6d05652f9fd",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 2,
       "start_time": "10:00:00",
@@ -4727,7 +4727,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "99c33613-bae1-4352-9c50-f2f75416c67c",
+      "id": "3a0ab89e-3ddf-41ae-ba44-a09a641fd3b3",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 3,
       "start_time": "10:00:00",
@@ -4738,7 +4738,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "57b39a62-959d-4592-9a16-98c6a2d618df",
+      "id": "e4bd08d0-f8b3-404e-ad35-6338d8ede756",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "10:00:00",
@@ -4749,7 +4749,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "d15e0987-723e-43d9-b779-cccb86b7fd51",
+      "id": "00a1099d-6bcf-40fc-a7a6-8f4f17125a52",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "11:00:00",
@@ -4760,7 +4760,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a77886f6-66a8-4206-a66f-9665494f4ead",
+      "id": "bf05bf57-17a6-452f-9dfc-e291ef92f8f8",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 2,
       "start_time": "12:00:00",
@@ -4771,7 +4771,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "da39c4b2-ad41-49c3-a560-ed08bf8f3672",
+      "id": "f389c775-f175-4e9c-acdf-20e0d4598330",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 1,
       "start_time": "13:00:00",
@@ -4782,7 +4782,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "9955c8d6-b062-43a3-a194-30dccba80b93",
+      "id": "55d892e7-6fbc-49b7-8321-391e14a959ea",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 2,
       "start_time": "13:00:00",
@@ -4793,7 +4793,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ead3e571-63ce-458b-b2e0-4c3f37b06b2d",
+      "id": "ad9aef6b-da42-4a4f-981a-86f2f59693ea",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 3,
       "start_time": "13:00:00",
@@ -4804,7 +4804,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "a0c33058-34d5-41cf-ad38-12f44c7c350a",
+      "id": "4cca68c0-c6b3-4997-a975-2b46eeca927a",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "13:00:00",
@@ -4815,7 +4815,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "b21a8aa4-38cc-488f-b1cd-ba5b97e40b99",
+      "id": "7709a9a4-975a-4024-871d-bdf918fdec0d",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "15:00:00",
@@ -4826,7 +4826,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7142fe07-5249-4105-9d58-40d3c63979a6",
+      "id": "8b97e146-edce-4e9c-9904-71f4fb9cc74d",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 2,
       "start_time": "16:00:00",
@@ -4837,7 +4837,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "db1f3af1-c60d-43b7-9daf-e7cae9e4dbec",
+      "id": "cb34118f-7271-4eb1-8410-3f972e04c973",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "16:30:00",
@@ -4848,7 +4848,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "ad9fccfd-4014-46cf-b987-b0b90e61a96f",
+      "id": "90255f64-94eb-48ec-809e-91e4b2c3736a",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 1,
       "start_time": "17:00:00",
@@ -4859,7 +4859,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "7fe119d1-b18f-44a1-a8c2-845acd9a3b61",
+      "id": "9c44213e-7e90-438f-b823-c9fec3f39c9b",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 3,
       "start_time": "17:00:00",
@@ -4870,7 +4870,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "043ad252-770a-4ca5-ab83-20b3fef34bfe",
+      "id": "91248c5c-50e3-4884-a085-ad5ecc4a81a9",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 2,
       "start_time": "17:30:00",
@@ -4881,7 +4881,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "3fffab3f-88a6-4309-b055-34c7f48a9dbc",
+      "id": "d4c3338a-9f10-4c40-af89-e814af040c29",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 4,
       "start_time": "17:30:00",
@@ -4892,7 +4892,7 @@
       "semester": "2026-2027-1"
     },
     {
-      "id": "8cfc3ba5-f229-4d85-9c95-0931007d0f6d",
+      "id": "df341bc3-ceda-4b55-bb96-690fa9eea1fd",
       "faculty_id": "8c2a578e-6f47-4b3a-aa5c-794fa8bd10f4",
       "day_of_week": 5,
       "start_time": "17:30:00",
@@ -10437,81 +10437,74 @@
   },
   "events": [
     {
-      "id": "afd9cd98-5d64-4d6c-8d66-49e1505a8a2a",
-      "event_date": "2026-09-15",
-      "title": "Mid-Term Examination (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "4515b0a0-6e63-445d-bb40-ec5ab970d8c5",
-      "event_date": "2026-09-16",
-      "title": "Mid-Term Examination (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "05adabcc-f1ab-48d3-b29f-4eaa86795f9c",
-      "event_date": "2026-09-17",
-      "title": "Mid-Term Examination (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "ae045ecd-8bd2-44a0-aed9-f95cd1ba2785",
-      "event_date": "2026-11-10",
-      "title": "Final Examination, Graduating (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "76d73756-2048-4364-844e-5ad6da8f51c9",
-      "event_date": "2026-11-11",
-      "title": "Final Examination, Graduating (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "61fe6c01-5a66-4de3-b2bd-183b411e84b3",
-      "event_date": "2026-11-12",
-      "title": "Final Examination, Graduating (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "e8d48f59-0635-4efb-8f10-7f82d6a07e46",
-      "event_date": "2026-11-17",
-      "title": "Final Examination, Non-Graduating (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "fbca3370-d51f-4b1a-821c-b0a246f21615",
-      "event_date": "2026-11-18",
-      "title": "Final Examination, Non-Graduating (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "c62987ea-b481-4c85-b59c-eac5f70f089f",
-      "event_date": "2026-11-19",
-      "title": "Final Examination, Non-Graduating (Undergraduate)",
-      "event_type": "exam_period",
-      "disrupts_schedule": true
-    },
-    {
-      "id": "303c8303-ac93-40fe-b748-8529c56d7b6a",
+      "id": "8e9bbe79-ec2c-42e7-a1cc-f5dcd96621d5",
       "event_date": "2026-07-20",
       "title": "Academic window start: Start of Classes, Undergraduate (official)",
       "event_type": "other",
       "disrupts_schedule": false
     },
     {
-      "id": "ab178492-f907-4e14-b863-4d392a41e7a2",
+      "id": "6fddcdaa-d1cd-4ef6-9c4a-8f43aaf650fd",
       "event_date": "2026-11-19",
       "title": "Academic window end (interpretation): last published undergraduate final examination date",
       "event_type": "other",
       "disrupts_schedule": false
+    },
+    {
+      "id": "3114ead2-cf95-40bb-9ff6-b8ff460f6e9c",
+      "event_date": "2026-09-15",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "b5044d8c-130f-46e5-a342-728c6c3210ab",
+      "event_date": "2026-09-16",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "6246a1fe-ccbf-4899-9401-ff1fe394a419",
+      "event_date": "2026-09-17",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "d0724b6d-8f88-48aa-ac56-9590d5669e9f",
+      "event_date": "2026-11-10",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "2dcf1c44-c858-4898-a21e-949126595a73",
+      "event_date": "2026-11-11",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "b6b698cf-3909-47ab-9a60-0683240effe6",
+      "event_date": "2026-11-12",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "6403ca8a-2c0e-4a19-b030-e4364d3e4912",
+      "event_date": "2026-11-17",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "6878639a-b693-4dd1-a36e-49f5975a6a67",
+      "event_date": "2026-11-18",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
+      "disrupts_schedule": true
     },
     {
       "id": "7536057b-52fd-4ff1-b72e-6efb25d6ab8b",
@@ -10644,6 +10637,13 @@
       "event_date": "2026-12-31",
       "title": "Last Day of the Year",
       "event_type": "holiday",
+      "disrupts_schedule": true
+    },
+    {
+      "id": "abb11c18-2799-44f4-9c5f-58963112a88f",
+      "event_date": "2026-11-19",
+      "title": "Examination period (official academic calendar)",
+      "event_type": "exam_period",
       "disrupts_schedule": true
     }
   ]
