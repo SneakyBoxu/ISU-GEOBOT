@@ -71,6 +71,14 @@ export const api = {
   adminDeletePoi: (token, id, note) =>
     request(`/admin/pois/${id}`, { method: 'DELETE', body: { note }, token }),
 
+  // The location photograph travels on its own endpoint, not as a field on the
+  // location itself: the record must exist before there is an id to store the
+  // image under, and every other POI route is capped at a body of 64kb.
+  adminSetPoiPhoto: (token, id, body) =>
+    request(`/admin/pois/${id}/photo`, { method: 'POST', body, token }),
+  adminClearPoiPhoto: (token, id) =>
+    request(`/admin/pois/${id}/photo`, { method: 'DELETE', token }),
+
   // Faculty self-service (RA 10173 right to object)
   myFaculty: (token) => request('/admin/me/faculty', { token }),
   setMyVisibility: (token, body) =>

@@ -34,7 +34,7 @@ import { z } from 'zod';
 
 import { db, log, ml } from '../utilities/service-clients.js';
 import { requireAuth, requireRole } from '../middleware/authentication.js';
-import { createPoi, deletePoi, reindexPoi, republishPoi, unpublishPoi, updatePoi } from '../services/campus-places-service.js';
+import { clearPoiPhoto, createPoi, deletePoi, reindexPoi, republishPoi, setPoiPhoto, unpublishPoi, updatePoi } from '../services/campus-places-service.js';
 import { clearRosterCache } from '../services/intent-query-router.js';
 
 export const admin = Router();
@@ -276,6 +276,41 @@ admin.post('/document/apply', requireAuth, requireRole('admin', 'researcher'),
       log.warn({ user: req.user.id, filename: body.filename,
                  chunks: result?.chunks_written }, 'document INGESTED');
       res.json(result);
+    } catch (err) { next(err); }
+  });
+
+// ---------------------------------------------------------------------------
+// The location photograph
+//
+// Deliberately NOT a field on poiSchema. The location has to exist before there
+// is an id to name the object after; the POI routes otherwise sit under a body
+// limit measured in kilobytes; and replacing a photograph is its own audit
+// event rather than an edit to a text field.
+// ---------------------------------------------------------------------------
+
+const poiPhotoSchema = z.object({
+  // ~8 MB of image is ~11 MB of base64.
+  contentB64: z.string().min(1).max(11_500_000),
+  alt: z.string().max(200).optional(),
+});
+
+admin.post('/pois/:id/photo', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const body = poiPhotoSchema.parse(req.body);
+      const result = await setPoiPhoto(req.params.id, {
+        contentB64: body.contentB64,
+        alt: body.alt,
+        userId: req.user.id,
+      });
+      res.json(result);
+    } catch (err) { next(err); }
+  });
+
+admin.delete('/pois/:id/photo', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      res.json(await clearPoiPhoto(req.params.id, req.user.id));
     } catch (err) { next(err); }
   });
 

@@ -207,7 +207,7 @@ api.get('/map/pois', limit(config.rateLimit.generalMax), async (req, res, next) 
   try {
     const { data, error } = await db
       .from('poi')
-      .select('id, slug, name, poi_type, lat, lng, building_function, description, is_featured, icon, data_origin, is_published, department:department_id (name)')
+      .select('id, slug, name, poi_type, lat, lng, building_function, description, is_featured, icon, image_url, image_alt, data_origin, is_published, department:department_id (name)')
       .order('name');
     if (error) throw error;
 
@@ -233,6 +233,10 @@ api.get('/map/pois', limit(config.rateLimit.generalMax), async (req, res, next) 
         description: p.description,
         department: p.department?.name ?? null,
         isFeatured: p.is_featured,
+        // A public URL into the campus-photos bucket, or null. The bytes are
+        // never carried here: this payload goes to every visitor on load.
+        imageUrl: p.image_url ?? null,
+        imageAlt: p.image_alt ?? null,
         isSynthetic: p.data_origin === 'synthetic',
       })),
     });

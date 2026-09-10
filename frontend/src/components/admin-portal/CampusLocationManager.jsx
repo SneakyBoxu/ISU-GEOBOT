@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, EyeOff, List, Map as MapIcon, MapPin, Plus, RefreshCw, RotateCcw, Save, Search, Settings2, Trash2 } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
+import PoiPhotoField from './PoiPhotoField.jsx';
 import { currentSession, signOut } from '../../frontend-utilities/supabaseClient.js';
 import PortalShell, { SignOutButton } from '../layout-patterns/PortalLayoutFrame.jsx';
 import PortalLogin from '../shared-components/UserRoleLoginModal.jsx';
@@ -53,6 +54,9 @@ export default function LocationManager() {
   const [departments, setDepartments] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
+  // Tracked beside the form, not in it: the photograph uploads on its own
+  // endpoint, so it is never part of the payload the form submits.
+  const [editingPhoto, setEditingPhoto] = useState(null);
   const [query, setQuery] = useState('');
   // The right pane is a MAP first and a list second. Placing a building is a
   // question about where it sits relative to the others, and a text list of
@@ -90,10 +94,16 @@ export default function LocationManager() {
       isFeatured: Boolean(poi.is_featured),
       surveyMethod: poi.survey_method ?? 'unknown', dataOrigin: poi.data_origin, note: '',
     });
+    setEditingPhoto({
+      imageUrl: poi.image_url ?? null,
+      imageAlt: poi.image_alt ?? '',
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const cancel = () => { setEditingId(null); setForm(EMPTY); setMsg(null); };
+  const cancel = () => {
+    setEditingId(null); setForm(EMPTY); setMsg(null); setEditingPhoto(null);
+  };
 
   async function submit(e) {
     e.preventDefault();
@@ -355,6 +365,22 @@ export default function LocationManager() {
                           placeholder="What is inside, who it serves, anything a student would want to know." />
               )}
             </Field>
+          </Fieldset>
+
+          <Fieldset legend="Photo">
+            <PoiPhotoField
+              poiId={editingId}
+              session={session}
+              imageUrl={editingPhoto?.imageUrl ?? null}
+              imageAlt={editingPhoto?.imageAlt ?? ''}
+              onSaved={(poi) => {
+                setEditingPhoto({
+                  imageUrl: poi?.image_url ?? null,
+                  imageAlt: poi?.image_alt ?? '',
+                });
+                load();
+              }}
+            />
           </Fieldset>
 
           <Fieldset legend="Data provenance">

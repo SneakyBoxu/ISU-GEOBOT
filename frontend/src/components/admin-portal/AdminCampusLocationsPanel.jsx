@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, EyeOff, List, Map as MapIcon, Plus, RefreshCw, RotateCcw, Save, Search, Trash2 } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
+import PoiPhotoField from './PoiPhotoField.jsx';
 import EditorMap from './CampusMapEditor.jsx';
 import { ICON_CHOICES } from '../main-assistant/mapMarkerGlyphs.js';
 import {
@@ -37,6 +38,9 @@ export default function AdminCampusLocationsPanel({ session }) {
   const [departments, setDepartments] = useState([]);
   const [form, setForm] = useState(EMPTY);
   const [editingId, setEditingId] = useState(null);
+  // Tracked beside the form, not in it: the photograph uploads on its own
+  // endpoint, so it is never part of the payload the form submits.
+  const [editingPhoto, setEditingPhoto] = useState(null);
   const [query, setQuery] = useState('');
   const [view, setView] = useState('map');
   const [busy, setBusy] = useState(false);
@@ -69,9 +73,15 @@ export default function AdminCampusLocationsPanel({ session }) {
       isFeatured: Boolean(poi.is_featured),
       surveyMethod: poi.survey_method ?? 'unknown', dataOrigin: poi.data_origin, note: '',
     });
+    setEditingPhoto({
+      imageUrl: poi.image_url ?? null,
+      imageAlt: poi.image_alt ?? '',
+    });
   }
 
-  const cancel = () => { setEditingId(null); setForm(EMPTY); setMsg(null); };
+  const cancel = () => {
+    setEditingId(null); setForm(EMPTY); setMsg(null); setEditingPhoto(null);
+  };
 
   const clearDraftPin = () => {
     setForm((f) => ({ ...f, lat: '', lng: '' }));
@@ -268,6 +278,22 @@ export default function AdminCampusLocationsPanel({ session }) {
                           placeholder="What is inside, who it serves, anything a student would want to know." />
               )}
             </Field>
+          </PanelFieldset>
+
+          <PanelFieldset legend="Photo">
+            <PoiPhotoField
+              poiId={editingId}
+              session={session}
+              imageUrl={editingPhoto?.imageUrl ?? null}
+              imageAlt={editingPhoto?.imageAlt ?? ''}
+              onSaved={(poi) => {
+                setEditingPhoto({
+                  imageUrl: poi?.image_url ?? null,
+                  imageAlt: poi?.image_alt ?? '',
+                });
+                load();
+              }}
+            />
           </PanelFieldset>
 
           <PanelFieldset legend="Data provenance">

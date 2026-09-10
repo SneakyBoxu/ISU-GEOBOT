@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CornerUpRight, MapPin, MessageSquarePlus, X, ZoomIn } from 'lucide-react';
 import { Button } from '../ui-primitives/index.js';
 import { categoryColor, iconFor } from './mapMarkerGlyphs.js';
@@ -34,14 +34,43 @@ function coord(lat, lng) {
 }
 
 export default function LocationCard({ poi, onClose, onAsk, onZoom, onDirections }) {
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const url = poi?.imageUrl ?? null;
+
+  // A new pin gets a fresh chance at its own photograph: without this, one
+  // broken image would suppress the banner for every location opened after it.
+  useEffect(() => setPhotoFailed(false), [url]);
+
   if (!poi) return null;
   const Icon = iconFor(poi.type, poi.icon);
+  const showPhoto = Boolean(url) && !photoFailed;
 
   return (
     // Sized against the MAP, not the window: on a phone the index rail takes
     // 44px off the left and the pin itself needs room either side, so a card
     // measured off the viewport hangs over the edge before auto-pan can fix it.
     <div className="animate-enter pointer-events-auto w-[min(19rem,calc(100vw-6rem))] overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
+      {/*
+        ABOVE the header, not inside the body. The body below is
+        `max-h-[13rem] overflow-y-auto`, so an image placed in it would eat the
+        description's scroll height. Here the root's `overflow-hidden
+        rounded-xl` clips the photograph to the card's corners for free.
+
+        Absent for most locations, and that is the normal state rather than a
+        missing asset — the card has to look deliberate without one. onError
+        hides it too, so an object deleted from the bucket degrades to exactly
+        the card that shipped before photographs existed.
+      */}
+      {showPhoto && (
+        <img
+          src={url}
+          alt={poi.imageAlt || `Photograph of ${poi.name}`}
+          loading="lazy"
+          onError={() => setPhotoFailed(true)}
+          className="h-32 w-full border-b border-line object-cover"
+        />
+      )}
+
       <div className="flex items-start gap-3 px-4 pb-2 pt-3.5">
         <span
           aria-hidden

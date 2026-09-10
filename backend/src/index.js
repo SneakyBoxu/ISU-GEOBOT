@@ -22,6 +22,9 @@ app.use(cors({ origin: config.corsOrigins, credentials: false }));
 // loosening the limit for the whole API.
 app.use('/api/admin/schedule', express.json({ limit: '20mb' }));
 app.use('/api/admin/document', express.json({ limit: '36mb' }));
+// A downscaled location photograph is a few hundred kilobytes; 8mb is
+// headroom, and the storage bucket enforces the same ceiling again.
+app.use('/api/admin/pois', express.json({ limit: '8mb' }));
 app.use(express.json({ limit: '64kb' }));
 app.use(pinoHttp({ logger: log, autoLogging: { ignore: (r) => r.url === '/api/health' } }));
 
