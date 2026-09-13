@@ -62,6 +62,14 @@ const MENU_H = { poi: 264, point: 152 };
  * Esri serves as a grey square, making it look like the tiles had failed. They
  * had not. The map was exactly where it was told to go.
  */
+/**
+ * Parse a coordinate field, treating "not filled in" as NaN rather than zero.
+ *
+ * The explicit empty check is the whole point: Number('') is 0, not NaN. Drop
+ * it and a blank latitude box silently becomes latitude 0 -- a real coordinate
+ * in the Atlantic off West Africa -- so the pin vanishes from Echague and the
+ * form reports no error, because 0 is a perfectly valid number.
+ */
 function toCoord(v) {
   if (v === '' || v === null || v === undefined) return NaN;
   const n = Number(v);

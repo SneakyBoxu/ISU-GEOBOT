@@ -1,3 +1,23 @@
+/**
+ * The campus map. Leaflet, 34 published locations, and walking directions.
+ *
+ * READ-ONLY, AND THAT IS ENFORCED ELSEWHERE. Nothing here can create, move or
+ * delete a location. Editing happens in the Admin Dashboard behind a
+ * role-checked endpoint, and backend/tests/campus-location-protocol.test.js is
+ * the evidence: it asks the assistant to delete a building in five different
+ * ways and asserts every location survives.
+ *
+ * WHY THE SMALL CONTROLLER COMPONENTS. react-leaflet only exposes the Leaflet
+ * map instance through the useMap() hook, and a hook can only be called from a
+ * component INSIDE <MapContainer>. So each thing that needs to command the map
+ * -- fit the campus, fly to a pin, frame a route -- is a tiny component that
+ * renders nothing and exists purely to hold that hook. They are not
+ * over-abstraction; they are the only place the map object is reachable.
+ *
+ * The offsetX those controllers take is the width of the index panel. Without
+ * it the map centres a building under the panel covering it, and the pin the
+ * visitor clicked ends up hidden behind the list they clicked it from.
+ */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -107,6 +127,9 @@ function originIcon(isGps, name = 'Start') {
   });
 }
 
+// Clicking empty map clears the selection -- but not while directions are on
+// screen, where a stray click would throw away the route the visitor is
+// following.
 function BackgroundClick({ onClear, navActive }) {
   useMapEvents({
     click: () => {
@@ -169,6 +192,9 @@ function RouteBoundsController({ routeCoordinates, offsetX = 0 }) {
   return null;
 }
 
+// Hands the Leaflet instance up to the parent, which needs it for the zoom
+// buttons and the locate control rendered OUTSIDE <MapContainer>, where
+// useMap() cannot reach.
 function MapHandle({ onReady }) {
   const map = useMap();
   useEffect(() => { onReady(map); }, [map, onReady]);

@@ -1,3 +1,24 @@
+/**
+ * The API server. Everything the browser can reach passes through this file.
+ *
+ * It is the only process that holds the Supabase service-role key and the Groq
+ * key, which is the whole reason the browser is not allowed to talk to either
+ * directly: the frontend ships its bundle to anyone who visits, so a key in it
+ * is a published key.
+ *
+ * MIDDLEWARE ORDER IS THE BEHAVIOUR OF THIS FILE. Express runs `app.use` in the
+ * order written, so each block below depends on the ones above it:
+ *
+ *   helmet        security headers, before anything can respond
+ *   compression   before routes, so their output is compressed
+ *   cors          before routes, so a disallowed origin is rejected early
+ *   body parsers  before routes, or req.body is undefined in every handler
+ *   pino-http     after the parsers so it can log a parsed request
+ *   /api          the routes themselves
+ *   404           last, because it matches everything that fell through
+ *
+ * Moving the 404 above `/api` makes every endpoint return "not found".
+ */
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
@@ -20,6 +41,10 @@ app.use(cors({ origin: config.corsOrigins, credentials: false }));
 // departmental workbook is ~550kb of xlsx, which is ~730kb once base64'd --
 // so it gets its own parser mounted ahead of the global one rather than
 // loosening the limit for the whole API.
+// THE FIRST MATCHING PARSER WINS, so these three path-scoped parsers must stay
+// ABOVE the global 64kb one. Move the global parser above them and every upload
+// fails with 413 Payload Too Large -- while every other endpoint keeps working,
+// which makes it look like an upload bug rather than an ordering bug.
 app.use('/api/admin/schedule', express.json({ limit: '20mb' }));
 app.use('/api/admin/document', express.json({ limit: '36mb' }));
 // A downscaled location photograph is a few hundred kilobytes; 8mb is
@@ -30,6 +55,8 @@ app.use(pinoHttp({ logger: log, autoLogging: { ignore: (r) => r.url === '/api/he
 
 app.use('/api', api);
 
+// Last, deliberately: this matches every path, so anything mounted after it is
+// unreachable.
 app.use((_req, res) => res.status(404).json({ error: 'not found' }));
 
 const server = app.listen(config.port, async () => {
@@ -64,6 +91,9 @@ const server = app.listen(config.port, async () => {
   if (!config.groq.apiKey) log.warn('GROQ_API_KEY unset — generation will fail.');
 });
 
+// Finish in-flight requests before exiting rather than dropping them. Without
+// this, Ctrl+C during a demo kills a request mid-answer and the browser shows a
+// network error instead of a clean shutdown.
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => server.close(() => process.exit(0)));
 }

@@ -24,11 +24,18 @@ function panelWidthPx() {
 }
 
 export default function Workspace() {
+  // The URL is the source of truth for what is focused, not component state.
+  // That is what makes a place card shareable: /app?poi=<id> reopens the map on
+  // the same building, and the landing page deep-links into here the same way.
   const [params, setParams] = useSearchParams();
   const [pois, setPois] = useState([]);
   const [focusId, setFocusId] = useState(params.get('poi'));
   const [draft, setDraft] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  // Lazy initialiser, and the `typeof window` guard is not superstition: this
+  // runs once at mount, and reading window during a non-browser render would
+  // throw. The index starts open on a laptop and closed on a phone, where it
+  // would otherwise cover the map it is meant to index.
   const [panelOpen, setPanelOpen] = useState(
     () => typeof window !== 'undefined' && window.innerWidth >= 768,
   );
@@ -48,10 +55,19 @@ export default function Workspace() {
   const dirParam = params.get('directions') === 'true' || params.get('nav') === 'true';
   const qParam = params.get('q');
 
+  // Every marker in one request, once per mount. The empty dependency array is
+  // the point: re-fetching on each render would re-request 34 locations on
+  // every keystroke in the search box. A failure degrades to an empty map
+  // rather than an error screen -- the chat still works without markers.
   useEffect(() => {
     api.pois().then((d) => setPois(d.pois ?? [])).catch(() => setPois([]));
   }, []);
 
+  // Filtering happens in the browser because all 34 locations are already here.
+  // useMemo keeps it off the render path for every unrelated state change --
+  // opening the chat should not re-filter the list. At a few thousand POIs this
+  // would need to move to the server, which is why /map/pois exists as its own
+  // endpoint rather than being folded into the page.
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     return pois.filter(
@@ -62,6 +78,9 @@ export default function Workspace() {
     );
   }, [pois, query, category]);
 
+  // `replace: true` so panning around the campus does not fill the browser
+  // history with one entry per building; Back should leave the map, not walk
+  // backwards through every pin the visitor touched.
   function focus(id) {
     setFocusId(id);
     setParams(id ? { poi: id } : {}, { replace: true });
@@ -71,6 +90,9 @@ export default function Workspace() {
   function ask(poi) {
     setFocusId(poi.id);
     setParams({ poi: poi.id }, { replace: true });
+    // The nonce is what makes asking about the SAME building twice work. The
+    // chat dock sends on a change of draft, and without a changing nonce the
+    // second identical question is not a change, so nothing is sent.
     setDraft({ text: `Tell me about the ${poi.name}.`, nonce: Date.now() });
     setChatOpen(true);
     if (typeof window !== 'undefined' && window.innerWidth < 768) setPanelOpen(false);

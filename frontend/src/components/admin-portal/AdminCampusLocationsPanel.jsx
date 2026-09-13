@@ -89,12 +89,22 @@ export default function AdminCampusLocationsPanel({ session }) {
     setForm((f) => ({ ...f, lat: '', lng: '' }));
   };
 
+  // Create and update share one form and one handler; editingId is the only
+  // thing that decides which endpoint is called. That is deliberate -- two
+  // near-identical forms is how the two copies of this editor drifted apart
+  // before they were merged.
   async function submit(e) {
+    // Without this the browser does a full page navigation on submit and the
+    // single-page app reloads, losing the session and the form.
     e.preventDefault();
     setBusy(true); setMsg(null);
     const payload = {
       name: form.name.trim(), poiType: form.poiType,
       lat: Number(form.lat), lng: Number(form.lng),
+      // Empty strings become null, not "". The database distinguishes "this
+      // building has no stated function" from "its function is the empty
+      // string", and the place card generated for retrieval reads the null and
+      // omits the sentence rather than emitting a dangling phrase.
       buildingFunction: form.buildingFunction.trim() || null,
       departmentId: form.departmentId || null,
       description: form.description.trim() || null,
@@ -106,12 +116,20 @@ export default function AdminCampusLocationsPanel({ session }) {
       const res = editingId
         ? await api.adminUpdatePoi(session.access_token, editingId, payload)
         : await api.adminCreatePoi(session.access_token, payload);
+      // The server reports whether it re-embedded the place card, and the
+      // message says so. A photo swap does NOT re-embed -- a picture is not
+      // retrievable text -- so the absence of that clause is information.
       setMsg({ kind: 'ok', text: res.message ?? `Saved.${res.reindexed ? ` Place-card re-embedded (${res.indexed} chunk${res.indexed === 1 ? '' : 's'}).` : ''}` });
       cancel(); await load();
     } catch (err) { setMsg({ kind: 'error', text: err.message }); }
     finally { setBusy(false); }
   }
 
+  // UNPUBLISH, NOT DELETE, despite the trash icon. The row and its audit trail
+  // survive; only its visibility changes, and it can be republished. Hard
+  // deletion is a separate endpoint that also removes the place card, its
+  // chunks and the stored photograph, because leaving those behind would orphan
+  // a document the assistant could still retrieve for a building with no pin.
   async function removePoi(poi) {
     if (!window.confirm(`Unpublish "${poi.name}"?\n\nIt will be hidden from the public campus map and the assistant's answers. The record is kept and can be republished anytime.`)) return;
     setBusy(true); setMsg(null);

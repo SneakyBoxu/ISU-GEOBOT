@@ -1,3 +1,17 @@
+/**
+ * The Admin Dashboard — every write surface in the system, behind one sign-in.
+ *
+ * This used to be three separate pages: a campus-location portal, a faculty
+ * validation portal, and a schedule importer. They were folded into one because
+ * they share an audience of one or two people, and three sign-ins for three
+ * pages is three chances to be signed into the wrong one.
+ *
+ * WHAT IS AND IS NOT ACCESS CONTROL. Nothing in this file protects anything.
+ * The tabs decide what is DRAWN; the server decides what is ALLOWED. Every
+ * endpoint these panels call is behind requireAuth + requireRole in
+ * backend/src/routes/admin-routes.js, so editing this file to show a tab you
+ * do not have the role for gets you a tab full of 403s, not access.
+ */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Building2, ClipboardCheck, FileSpreadsheet, LayoutDashboard, LogOut, Megaphone,
@@ -61,6 +75,13 @@ export default function AdminDashboard() {
     setSession(null);
   }, []);
 
+  // Session has THREE states, and this line is why the login form does not
+  // flash on every page load:
+  //   undefined  still asking Supabase — draw nothing yet
+  //   null       asked, and nobody is signed in — draw the login
+  //   object     signed in — draw the dashboard
+  // Collapse undefined into null and a signed-in admin sees the sign-in form
+  // for a moment on every refresh, which looks like a broken session.
   if (session === undefined) return null;
 
   if (!session) {
@@ -75,6 +96,9 @@ export default function AdminDashboard() {
     );
   }
 
+  // Fall back to the first tab rather than rendering nothing if activeTab ever
+  // names a tab that no longer exists — which is what happens when a tab is
+  // removed from TABS but the id survives somewhere.
   const currentTab = TABS.find((t) => t.id === activeTab) ?? TABS[0];
   const Icon = currentTab.icon;
 
