@@ -23,8 +23,8 @@ HERE = Path(__file__).resolve().parent
 OUT = HERE.parent.parent / "screenshots"
 
 DIAGRAMS = [
-    ("diagram_architecture.html", "diagram-architecture", 880),
-    ("diagram_pipeline.html", "diagram-pipeline", 975),
+    ("diagram_architecture.html", "diagram-architecture", 660),
+    ("diagram_pipeline.html", "diagram-pipeline", 730),
 ]
 
 
@@ -37,14 +37,14 @@ def main() -> None:
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         for src, name, height in DIAGRAMS:
-            ctx = browser.new_context(viewport={"width": 1660, "height": height},
+            ctx = browser.new_context(viewport={"width": 1500, "height": height},
                                       device_scale_factor=2)
             page = ctx.new_page()
             page.goto((HERE / src).as_uri(), wait_until="networkidle")
             page.wait_for_timeout(500)
             path = OUT / f"{name}.png"
             page.screenshot(path=str(path))
-            print(f"  {name:24} {path.stat().st_size // 1024:>5} KB  1660x{height}")
+            print(f"  {name:24} {path.stat().st_size // 1024:>5} KB  1500x{height}")
             ctx.close()
         browser.close()
 
