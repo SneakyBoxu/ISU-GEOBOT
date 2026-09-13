@@ -136,15 +136,29 @@ def obj_label(slide, n, y=Inches(1.40)):
        f"{n:02d} OBJECTIVE", size=11, bold=True, color=ACCENT)
 
 
-def picture(slide, name, x, y, max_w, max_h, border=True):
-    """Fit an image inside the box without distorting it. Missing files become
-    a visible placeholder rather than a silently empty slide."""
+def picture(slide, name, x, y, max_w, max_h, border=True, todo=None):
+    """
+    Fit an image inside the box without distorting it.
+
+    A missing file becomes an INSTRUCTION, not an empty rectangle. The note says
+    which screen to open, what to type and what the shot has to show, so whoever
+    fills it in does not have to reconstruct the intent from the caption. An
+    obviously unfinished slide is also safer than a blank one that looks
+    deliberate.
+    """
     path = SHOTS / f"{name}.png"
     if not path.exists():
-        rect(slide, x, y, max_w, max_h, fill=WHITE, line=LINE)
-        tb(slide, x + Inches(0.3), y + max_h / 2 - Inches(0.2), max_w - Inches(0.6),
-           Inches(0.4), f"[ {name} — not captured yet ]", size=13, color=MUTED,
-           align=PP_ALIGN.CENTER)
+        rect(slide, x, y, max_w, max_h, fill=WHITE, line=WARN)
+        tb(slide, x + Inches(0.34), y + Inches(0.30), max_w - Inches(0.68),
+           Inches(0.3), "SCREENSHOT STILL TO ADD", size=11, bold=True, color=WARN)
+        body = todo or f"Capture {name} and rebuild the deck."
+        tb(slide, x + Inches(0.34), y + Inches(0.68), max_w - Inches(0.68),
+           max_h - Inches(1.0), body, size=14, color=INK, spacing=1.45)
+        tb(slide, x + Inches(0.34), y + max_h - Inches(0.52), max_w - Inches(0.68),
+           Inches(0.3),
+           f"Save as  screenshots/{name}.png   then re-run  "
+           "python machine-learning/build_defense_deck.py",
+           size=11, color=MUTED, font=MONO)
         return False
     iw, ih = Image.open(path).size
     scale = min(max_w / iw, max_h / ih)
@@ -187,7 +201,7 @@ def gather():
     run = one("select id, run_label from geobot.eval_run where run_label='run-03-simulation'")
     f["run"] = run.get("run_label")
     rid = run.get("id")
-    f["stages"], f["avail"], f["ragas"] = {}, {}, {}
+    f["stages"], f["avail"], f["ragas"], f["bycat"] = {}, {}, {}, {}
     if rid:
         for r in db.fetch_all(
                 "select mode, count(*) n, round(avg(t_guard_ms),1) guard, "
@@ -206,6 +220,18 @@ def gather():
                 "where r.run_id=%s and q.category='faculty_availability' group by r.mode",
                 (rid,)):
             f["avail"][r["mode"]] = r
+        # Per-category, pivoted so each row carries both arms. The pooled mean
+        # hides that 33 of 39 queries never reach the classifier at all.
+        f["bycat"] = {}
+        for r in db.fetch_all(
+                "select q.category, "
+                "  count(*) filter (where r.mode='standard') n, "
+                "  round(avg(r.t_total_ms) filter (where r.mode='standard'),1) std_total, "
+                "  round(avg(r.t_total_ms) filter (where r.mode='enhanced'),1) enh_total, "
+                "  round(avg(r.t_guard_ms + r.t_rf_ms) filter (where r.mode='enhanced'),1) enh_stages "
+                "from geobot.eval_result r join geobot.eval_query q on q.id=r.eval_query_id "
+                "where r.run_id=%s group by q.category", (rid,)):
+            f["bycat"][r["category"]] = r
         for r in db.fetch_all(
                 "select r.mode, count(*) n, "
                 "round(avg(g.faithfulness)::numeric,3) faithfulness, "
@@ -323,56 +349,77 @@ def s_diagram(prs, title, name):
     picture(s, name, MARGIN, Inches(1.36), W - 2 * MARGIN, Inches(5.24))
 
 
-def s_shot(prs, objective, name, caption):
+def s_shot(prs, objective, name, caption, todo=None):
     s = blank(prs); heading(s, "System Screenshots")
     obj_label(s, objective)
     tb(s, MARGIN, Inches(1.74), Inches(2.52), Inches(3.6), caption,
        size=13, color=MUTED, spacing=1.35)
-    picture(s, name, Inches(3.40), Inches(1.36), W - Inches(3.40) - MARGIN, Inches(5.24))
+    picture(s, name, Inches(3.40), Inches(1.36), W - Inches(3.40) - MARGIN,
+            Inches(5.24), todo=todo)
 
 
 def s_results(prs, f):
+    """
+    Response time, split BY QUESTION TYPE rather than pooled.
+
+    The pooled mean is misleading and was reported that way in an earlier draft.
+    Pooling averages the 6 queries that actually reach the classifier together
+    with the 33 that never touch it, and the resulting end-to-end delta is
+    smaller than the standard deviation of the generation call that dominates
+    every row. Split by category, the picture is unambiguous.
+    """
     s = blank(prs); heading(s, "Results — Response Time")
     obj_label(s, 2)
-    std, enh = f["stages"].get("standard"), f["stages"].get("enhanced")
-    rows = [("Pipeline stage", "Standard", "Enhanced", "Δ")]
-    if std and enh:
-        for k, label in (("guard", "Presence guard"), ("rf", "Random Forest"),
-                         ("retrieve", "Vector retrieval"), ("llm", "Answer generation"),
-                         ("total", "End-to-end mean")):
-            a, b = float(std[k]), float(enh[k])
-            rows.append((label, f"{a:,.1f} ms", f"{b:,.1f} ms", f"{b - a:+,.1f}"))
-    y = Inches(1.80)
-    xs = [MARGIN + Inches(0.20), MARGIN + Inches(2.95), MARGIN + Inches(4.40),
-          MARGIN + Inches(5.80)]
+    tb(s, MARGIN, Inches(1.72), W - 2 * MARGIN, Inches(0.4),
+       "Split by question type, because only one type reaches the classifier.",
+       size=15, color=MUTED)
+
+    rows = [("Question type", "n", "Standard", "Enhanced", "Δ", "Guard + RF")]
+    for cat, label in (("general_institutional", "General institutional"),
+                       ("campus_navigation", "Campus navigation"),
+                       ("faculty_availability", "Faculty availability")):
+        c = f["bycat"].get(cat, {})
+        if not c:
+            continue
+        a, b = float(c["std_total"]), float(c["enh_total"])
+        rows.append((label, str(c["n"]), f"{a:,.1f} ms", f"{b:,.1f} ms",
+                     f"{b - a:+,.1f}", f"{float(c['enh_stages']):,.1f} ms"))
+
+    y = Inches(2.26)
+    xs = [MARGIN + Inches(0.20), MARGIN + Inches(3.05), MARGIN + Inches(3.75),
+          MARGIN + Inches(5.45), MARGIN + Inches(7.15), MARGIN + Inches(8.60)]
     for i, row in enumerate(rows):
         head = i == 0
-        last = row[0] == "End-to-end mean"
-        if head or last:
-            rect(s, MARGIN, y, Inches(7.05), Inches(0.46),
+        avail = row[0] == "Faculty availability"
+        if head or avail:
+            rect(s, MARGIN, y, W - 2 * MARGIN, Inches(0.50),
                  fill=WHITE if head else WASH, line=LINE if head else None)
         for j, cell in enumerate(row):
-            tb(s, xs[j], y + Inches(0.09), Inches(2.5), Inches(0.32), cell,
-               size=12.5, bold=head or last, color=MUTED if head else INK,
+            tb(s, xs[j], y + Inches(0.12), Inches(2.8), Inches(0.32), cell,
+               size=13, bold=head or avail, color=MUTED if head else INK,
                font=MONO if (j and not head) else SANS)
-        y += Inches(0.52)
+        y += Inches(0.56)
 
+    tb(s, MARGIN, Inches(4.62), Inches(6.05), Inches(1.30),
+       "Navigation queries do zero classifier work in both arms — guard and "
+       "forest are 0.0 ms — yet still differ by 119 ms. That is the noise "
+       "floor of the hosted generation call, whose own standard deviation runs "
+       "138–520 ms.", size=13.5, color=INK, spacing=1.35)
+
+    rect(s, Inches(6.95), Inches(4.58), Inches(5.76), Inches(1.34), fill=WHITE, line=ACCENT)
+    tb(s, Inches(7.20), Inches(4.74), Inches(5.3), Inches(0.28),
+       "WHAT THE BASELINE WAS DOING FASTER", size=10, bold=True, color=ACCENT)
     av_s = f["avail"].get("standard", {})
     av_e = f["avail"].get("enhanced", {})
-    rect(s, Inches(8.10), Inches(1.80), Inches(4.61), Inches(2.55), fill=WHITE, line=ACCENT)
-    tb(s, Inches(8.38), Inches(1.98), Inches(4.1), Inches(0.28),
-       "THE FINDING THAT MATTERS", size=10, bold=True, color=ACCENT)
-    if av_s:
-        tb(s, Inches(8.38), Inches(2.34), Inches(4.1), Inches(0.85),
-           f"{av_s.get('answered', 0)} of {av_s.get('n', 6)}", size=34, bold=True,
-           color=INK, font=DISPLAY)
-        tb(s, Inches(8.38), Inches(3.02), Inches(4.1), Inches(1.2),
-           "availability questions answered by the standard architecture.\n"
-           f"The Enhanced architecture answered {av_e.get('answered', 0)}.",
-           size=13.5, color=MUTED, spacing=1.3)
-    statement(s, MARGIN, Inches(5.06), W - 2 * MARGIN, Inches(1.16),
-              "The Enhanced arm is slower, and that is the honest result. What the extra "
-              "time buys is a class of question the baseline cannot answer at all.")
+    tb(s, Inches(7.20), Inches(5.06), Inches(5.3), Inches(0.82),
+       f"Refusing. It answered {av_s.get('answered', 0)} of {av_s.get('n', 6)}; the "
+       f"Enhanced arm answered {av_e.get('answered', 0)}. Mean answer length: 44 "
+       "characters against 114.",
+       size=13, color=INK, spacing=1.3)
+
+    statement(s, MARGIN, Inches(6.06), W - 2 * MARGIN, Inches(0.74),
+              "The enhancement costs nothing on the questions it does not touch, and "
+              "255 ms on the ones the baseline cannot answer at all.")
 
 
 def s_ragas(prs, f):
@@ -446,7 +493,12 @@ def s_privacy(prs, f):
         tb(s, MARGIN, yy, Inches(0.24), Inches(0.3), "—", size=14, color=ACCENT)
         tb(s, MARGIN + Inches(0.30), yy, Inches(5.85), Inches(0.6), p,
            size=14, color=INK, spacing=1.25)
-    picture(s, "06-chat-refusal", Inches(7.0), Inches(1.70), Inches(5.71), Inches(3.5))
+    picture(s, "06-chat-refusal", Inches(7.0), Inches(1.70), Inches(5.71),
+            Inches(3.5),
+            todo="Open the assistant at /app." "\n\n" +
+                 "Type:   Where is SIM-22?" "\n\n" +
+                 "The shot must show the refusal, with both the question and the "
+                 "answer visible in the same frame.")
     statement(s, MARGIN, Inches(5.42), W - 2 * MARGIN, Inches(1.06),
               "Across all twelve availability responses, no answer named a room, building, "
               "floor or office — and the egress filter recorded zero interceptions.")
@@ -511,7 +563,12 @@ def build():
     s_diagram(prs, "AI Pipeline", "diagram-pipeline")
     s_shot(prs, 1, "05-chat-availability",
            "The classifier answering an availability question. One of three coarse "
-           "states plus the next consultation window — and no location.")
+           "states plus the next consultation window — and no location.",
+           todo="Open the assistant at /app and SIGN IN - availability is not "
+                "answered anonymously." "\n\n" +
+                "Type:   Is SIM-33 available for consultation right now?" "\n\n" +
+                "The shot must show a coarse availability state and a next "
+                "consultation window, and must name no room, building or floor.")
     s_results(prs, f)
     s_ragas(prs, f)
     s_shot(prs, 3, "02-map-overview",

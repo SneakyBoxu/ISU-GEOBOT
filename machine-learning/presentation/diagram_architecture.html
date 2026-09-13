@@ -1,136 +1,241 @@
 <!doctype html>
 <meta charset="utf-8">
 <style>
-  /* Palette lifted from the reference deck so the diagram and the slides read
-     as one document rather than two. */
+  /* Monochrome with green/red reserved for decisions, matching the register the
+     panel has already seen. Colour is information here, never decoration. */
   :root{
-    --ink:#18222D; --muted:#596978; --accent:#3F5B74; --accent-deep:#2A4154;
-    --line:#CDD6DD; --ground:#FFFFFC; --panel:#FFFFFF; --wash:#EDF1F4;
+    --ink:#1A1A1A; --mid:#444; --soft:#666; --rule:#111; --hair:#BBB;
+    --paper:#FFF; --ok:#1E7A3C; --no:#C0392B; --tint:#F4F6F7;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    width:1500px;height:790px;background:var(--ground);
-    font-family:"Aptos","Segoe UI",system-ui,sans-serif;color:var(--ink);
-    padding:44px 52px;display:flex;flex-direction:column;
+    width:1660px;height:880px;background:var(--paper);
+    font-family:"Aptos","Segoe UI",Arial,sans-serif;color:var(--ink);
+    padding:26px 30px;
   }
-  .lede{font-size:15px;color:var(--muted);margin-bottom:26px;max-width:1100px;line-height:1.5}
-  .grid{display:grid;grid-template-columns:1fr 92px 1fr 92px 1fr;align-items:start;gap:0}
+  .head{text-align:center;margin-bottom:16px}
+  .head h1{font-size:31px;font-weight:800;letter-spacing:.02em}
+  .head p{font-size:15px;color:var(--mid);margin-top:2px}
 
-  .col{display:flex;flex-direction:column;gap:14px;align-self:stretch}
-  .tier{
-    background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--accent);
-    border-radius:3px;padding:20px 22px;display:flex;flex-direction:column;
+  .row{display:flex;align-items:stretch;gap:0;margin-bottom:12px}
+  .phase{
+    border:1.5px solid var(--rule);border-radius:7px;background:var(--paper);
+    display:flex;flex-direction:column;padding:0;overflow:hidden;
   }
-  .tier.ext{border-top-color:var(--muted)}
-  .port{font-family:"Consolas",monospace;font-size:12.5px;color:var(--accent);letter-spacing:.04em}
-  .tier.ext .port{color:var(--muted)}
-  .tname{font-size:23px;font-weight:600;margin:6px 0 4px;letter-spacing:-.01em}
-  .role{font-size:13.5px;color:var(--muted);line-height:1.45;margin-bottom:14px}
-  ul{list-style:none;display:flex;flex-direction:column;gap:8px}
-  li{font-size:13px;color:var(--ink);padding-left:15px;position:relative;line-height:1.35}
-  li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;
-             background:var(--accent);border-radius:50%}
-  .tier.ext li::before{background:var(--muted)}
+  .ph-hd{padding:8px 10px 7px;text-align:center;border-bottom:1px solid var(--hair)}
+  .ph-hd b{display:block;font-size:13px;font-weight:800;letter-spacing:.04em}
+  .ph-hd span{display:block;font-size:11px;font-weight:700;color:var(--mid);
+              line-height:1.28;margin-top:2px;letter-spacing:.01em}
+  .ph-bd{padding:9px 11px;flex:1;display:flex;flex-direction:column;gap:6px}
+  ul{list-style:none;display:flex;flex-direction:column;gap:4.5px}
+  li{font-size:11px;line-height:1.32;padding-left:10px;position:relative;color:var(--ink)}
+  li::before{content:"";position:absolute;left:0;top:5px;width:3.5px;height:3.5px;
+             background:var(--ink);border-radius:50%}
+  .out{
+    margin-top:auto;border-top:1px dashed var(--hair);padding-top:6px;text-align:center;
+    font-size:10.5px;line-height:1.34;color:var(--mid);
+  }
+  .out b{display:block;font-size:10px;letter-spacing:.06em;color:var(--ink);margin-bottom:2px}
+  .arrow{display:flex;align-items:center;justify-content:center;width:34px;flex:0 0 34px}
+  .arrow svg{display:block}
 
-  /* Arrow columns: a rule with a head, plus the protocol that crosses it. */
-  .arrow{display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:150px}
-  .arrow .lbl{font-family:"Consolas",monospace;font-size:11px;color:var(--muted);
-              letter-spacing:.06em;white-space:nowrap}
-  .shaft{position:relative;width:100%;height:2px;background:var(--line)}
-  .shaft::after{content:"";position:absolute;right:-1px;top:-5px;
-                border-left:9px solid var(--line);border-top:6px solid transparent;
-                border-bottom:6px solid transparent}
+  /* nested blocks, as in phases 5 and 7 of the reference */
+  .sub{border:1px solid var(--hair);border-radius:4px;padding:5px 7px;background:var(--tint)}
+  .sub b{display:block;font-size:10.5px;font-weight:800;margin-bottom:1px}
+  .sub span{font-size:10px;color:var(--mid);line-height:1.3}
+  .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+  .trio .sub{padding:5px;text-align:center}
 
-  .foot{margin-top:22px;display:flex;gap:16px;align-items:flex-start}
-  .keybox{border-left:3px solid var(--accent);padding:10px 0 10px 16px;font-size:13.5px;
-          color:var(--ink);line-height:1.5;max-width:1180px}
-  .keybox b{color:var(--accent-deep)}
+  .decide{display:flex;gap:14px;justify-content:center;margin-top:4px}
+  .dec{text-align:center;width:78px}
+  .dec .mark{width:21px;height:21px;border-radius:50%;border:2px solid;margin:0 auto 3px;
+             display:grid;place-items:center;font-size:12px;font-weight:800;line-height:1}
+  .dec.y .mark{border-color:var(--ok);color:var(--ok)}
+  .dec.n .mark{border-color:var(--no);color:var(--no)}
+  .dec b{display:block;font-size:10.5px;font-weight:800}
+  .dec.y b{color:var(--ok)} .dec.n b{color:var(--no)}
+  .dec span{font-size:9.5px;color:var(--mid);line-height:1.25;display:block}
+  .limits{font-size:10px;color:var(--mid);line-height:1.35;margin-top:5px}
+  .limits b{color:var(--ink)}
 
-  .dtitle{text-align:center;margin-bottom:4px}
-  .dtitle h1{font-family:"Aptos Display","Aptos","Segoe UI",sans-serif;font-size:42px;
-             font-weight:700;letter-spacing:-.015em;color:var(--ink);line-height:1.05}
-  .dtitle p{font-size:17px;color:var(--muted);margin-top:4px}
-  .legend{margin-top:18px;border:1px solid var(--line);border-radius:3px;background:var(--panel);
-          padding:11px 20px;display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;
-          font-size:12.5px;color:var(--muted)}
-  .legend b{color:var(--ink);font-weight:600}
-  .legend .sep{color:var(--line)}
+  .legend{
+    border:1.5px solid var(--rule);border-radius:6px;padding:9px 16px;margin-top:4px;
+    display:flex;flex-wrap:wrap;gap:6px 26px;justify-content:center;
+    font-size:11px;color:var(--mid);
+  }
+  .legend b{color:var(--ink);font-weight:800}
+  .sep{color:var(--hair)}
 </style>
 
-<div class="dtitle"><h1>SYSTEM ARCHITECTURE</h1><p>ISU-GeoBot &mdash; Campus Navigation and Faculty Availability Assistant</p></div>
-<p class="lede" style="text-align:center;max-width:none;margin-top:16px">Three processes, started independently, talking over HTTP. Only the API server holds database or model credentials &mdash; the browser
-never reaches Supabase or Groq directly, because a key shipped in a bundle is a published key.</p>
+<script>
+  // One arrow glyph, reused, so every connector is identical.
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.arrow').forEach(a => {
+      a.innerHTML = '<svg width="30" height="16"><line x1="0" y1="8" x2="21" y2="8" ' +
+        'stroke="#111" stroke-width="1.6"/><path d="M21,3 L30,8 L21,13 z" fill="#111"/></svg>';
+    });
+  });
+</script>
 
-<div class="grid">
-  <div class="col">
-    <div class="tier">
-      <span class="port">PORT 5173</span>
-      <h2 class="tname">React SPA</h2>
-      <p class="role">What the visitor sees. Holds no secrets.</p>
+<div class="head">
+  <h1>SYSTEM ARCHITECTURE</h1>
+  <p>ISU-GeoBot &mdash; Campus Navigation and Faculty Availability Assistant</p>
+</div>
+
+<!-- ============================ ROW 1 : phases 1-5 ======================== -->
+<div class="row">
+
+  <div class="phase" style="flex:1">
+    <div class="ph-hd"><b>PHASE 1</b><span>DATA INGESTION<br>&amp; PROVENANCE</span></div>
+    <div class="ph-bd">
       <ul>
-        <li>Leaflet campus map, 34 published locations</li>
-        <li>Conversational assistant dock</li>
-        <li>Admin Dashboard &mdash; locations, validation, schedule import</li>
-        <li>Anon key only; row-level security is deny-by-default</li>
+        <li>34 campus locations &mdash; coordinates, type, building function</li>
+        <li>ISU Student Handbook and Academic Calendar</li>
+        <li>Departmental workbook &rarr; 425 real class blocks</li>
+        <li>Simulation cohort SIM-01&hellip;SIM-37 with generated attendance</li>
+        <li>Every row stamped <b>data_origin</b> real or synthetic</li>
       </ul>
+      <div class="out"><b>OUTPUT</b>geobot schema, 27 tables,<br>real and synthetic separated</div>
     </div>
   </div>
 
-  <div class="arrow">
-    <span class="lbl">fetch / JSON</span>
-    <div class="shaft"></div>
-  </div>
+  <div class="arrow"></div>
 
-  <div class="col">
-    <div class="tier">
-      <span class="port">PORT 4000</span>
-      <h2 class="tname">Express API</h2>
-      <p class="role">The only process with credentials. Every rule lives here.</p>
+  <div class="phase" style="flex:1">
+    <div class="ph-hd"><b>PHASE 2</b><span>CHUNKING<br>&amp; EMBEDDING</span></div>
+    <div class="ph-bd">
       <ul>
-        <li>Deterministic query router</li>
-        <li>Vector retrieval and context fusion</li>
-        <li>Presence resolution and consent gating</li>
-        <li><b>Status masking boundary</b></li>
+        <li>Split on headings, 220-token ceiling enforced by constraint</li>
+        <li>Section heading copied onto every chunk it contains</li>
+        <li>all-MiniLM-L6-v2 &rarr; 384 dimensions, L2-normalised</li>
+        <li>One place card generated and embedded per location</li>
       </ul>
+      <div class="sub"><b>Same embedder at query time</b>
+        <span>Training and serving must share the model or retrieval fails silently.</span></div>
+      <div class="out"><b>OUTPUT</b>232 chunks, none over the<br>ceiling, none unembedded</div>
     </div>
   </div>
 
-  <div class="arrow">
-    <span class="lbl">HTTP / JSON</span>
-    <div class="shaft"></div>
+  <div class="arrow"></div>
+
+  <div class="phase" style="flex:1">
+    <div class="ph-hd"><b>PHASE 3</b><span>MODEL TRAINING<br>RANDOM FOREST</span></div>
+    <div class="ph-bd">
+      <ul>
+        <li>8 schedule features + 3 behavioural attendance features</li>
+        <li>300 trees, Gini impurity, min_samples_leaf = 2</li>
+        <li><b>class_weight = balanced</b> &mdash; consultation hours are rare</li>
+        <li>Time-based split; TimeSeriesSplit cross-validation</li>
+      </ul>
+      <div class="sub"><b>Gate before any metric</b>
+        <span>corpus_is_research_ready() refuses to emit a number from mixed data.</span></div>
+      <div class="out"><b>OUTPUT</b>rf_current.joblib +<br>rf_model_version.feature_list</div>
+    </div>
   </div>
 
-  <div class="col">
-    <div class="tier">
-      <span class="port">PORT 5001</span>
-      <h2 class="tname">Flask ML</h2>
-      <p class="role">Python, because both models are Python libraries.</p>
+  <div class="arrow"></div>
+
+  <div class="phase" style="flex:1.02">
+    <div class="ph-hd"><b>PHASE 4</b><span>INTENT ROUTING<br>DETERMINISTIC</span></div>
+    <div class="ph-bd">
       <ul>
-        <li>all-MiniLM-L6-v2 &mdash; 384-dim embeddings</li>
-        <li>Random Forest &mdash; 300 trees, Gini</li>
-        <li>Models load once and stay resident</li>
-        <li>Reloads the forest when retraining writes a new artifact</li>
+        <li>Gazetteer over the faculty roster</li>
+        <li>Intent lexicon over availability phrasing</li>
+        <li>No LLM call &mdash; ~2 ms, and the same query always routes the same way</li>
       </ul>
+      <div class="sub" style="text-align:center"><b>Does this need an availability status?</b></div>
+      <div class="decide">
+        <div class="dec y"><div class="mark">&#10003;</div><b>YES</b>
+          <span>Availability branch opens</span></div>
+        <div class="dec n"><div class="mark">&#10007;</div><b>NO</b>
+          <span>Documents only</span></div>
+      </div>
+      <div class="out"><b>OUTPUT</b>Route decision; two names<br>matched &rarr; ask, never guess</div>
     </div>
-    <div class="tier ext" style="flex:0 0 auto">
-      <span class="port">EXTERNAL</span>
-      <h2 class="tname" style="font-size:18px;margin-bottom:8px">Supabase &nbsp;&middot;&nbsp; Groq</h2>
-      <p class="role" style="margin:0">PostgreSQL + pgvector, 27 tables in the <code>geobot</code> schema.
-      <code>openai/gpt-oss-120b</code> at temperature&nbsp;0 writes the sentence &mdash; and only the sentence.</p>
+  </div>
+
+  <div class="arrow"></div>
+
+  <div class="phase" style="flex:1.16">
+    <div class="ph-hd"><b>PHASE 5</b><span>PARALLEL RESOLUTION<br>RETRIEVAL + AVAILABILITY</span></div>
+    <div class="ph-bd">
+      <div class="sub"><b>A &middot; Vector retrieval &mdash; both architectures</b>
+        <span>Exact cosine over every chunk. Top 5, similarity floor 0.25. No approximate
+        index: 232 chunks scan in ~170 ms and always return the true nearest.</span></div>
+      <div class="sub"><b>B &middot; Availability &mdash; Enhanced only</b>
+        <span>Two gates run <i>before</i> the forest, not after.</span></div>
+      <div class="trio">
+        <div class="sub"><b>Signed in?</b><span>Volume, not granularity</span></div>
+        <div class="sub"><b>Consented?</b><span>Active roster only</span></div>
+        <div class="sub"><b>Not paused?</b><span>RA 10173 objection</span></div>
+      </div>
+      <div class="limits"><b>If any gate fails</b> the estimate is never computed &mdash;
+        not computed and withheld. Recorded classifier time is 0.0&nbsp;ms.</div>
+      <div class="out"><b>OUTPUT</b>Retrieved passages +<br>raw class probabilities</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ ROW 2 : phases 6-8 ======================== -->
+<div class="row">
+
+  <div class="phase" style="flex:1">
+    <div class="ph-hd"><b>PHASE 6</b><span>STATUS MASKING BOUNDARY</span></div>
+    <div class="ph-bd">
+      <div class="sub"><b>Generalise to exactly three states</b>
+        <span>available_consultation &middot; in_scheduled_class &middot;
+        unavailable_off_schedule</span></div>
+      <ul>
+        <li>Probability vector discarded at the boundary, never forwarded</li>
+        <li>No room, building, floor or office is ever attached to a person</li>
+        <li>Model-derived answers are marked as estimates</li>
+      </ul>
+      <div class="out"><b>OUTPUT</b>One coarse state, or a refusal<br>worded like any other</div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <div class="phase" style="flex:1">
+    <div class="ph-hd"><b>PHASE 7</b><span>CONTEXT FUSION<br>&amp; GENERATION</span></div>
+    <div class="ph-bd">
+      <div class="sub"><b>Three sources, one prompt</b>
+        <span>Retrieved passages &middot; masked status &middot; campus gazetteer</span></div>
+      <ul>
+        <li>openai/gpt-oss-120b at temperature 0</li>
+        <li>The model writes the sentence; the database supplies the facts</li>
+        <li>Prompt forbids inventing a location under any phrasing</li>
+      </ul>
+      <div class="out"><b>OUTPUT</b>Natural-language answer,<br>grounded in supplied context</div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <div class="phase" style="flex:1.42">
+    <div class="ph-hd"><b>PHASE 8</b><span>EGRESS BOUNDARY, DELIVERY &amp; EVIDENCE</span></div>
+    <div class="ph-bd">
+      <div class="sub"><b>assertNoLeak() &mdash; eight forbidden keys</b>
+        <span>probabilities &middot; rf_proba &middot; predicted_class &middot; raw_prediction
+        &middot; room_label &middot; feature_list &middot; fused_prompt &middot; embedding</span></div>
+      <div class="decide">
+        <div class="dec y"><div class="mark">&#10003;</div><b>CLEAN</b>
+          <span>Response delivered to the browser</span></div>
+        <div class="dec n"><div class="mark">&#10007;</div><b>VIOLATION</b>
+          <span>Request fails loudly; nothing is sent</span></div>
+      </div>
+      <div class="limits"><b>A backstop, not the control.</b> Masking already happened in
+        Phase 6. This exists so a future bug fails visibly instead of leaking. Across
+        run-03-simulation it fired on <b>0 of 78</b> responses.</div>
+      <div class="out"><b>OUTPUT</b>Answer DTO to the browser, and one eval_result row per
+        stage &mdash; route, guard, forest, embed, retrieve, generate</div>
     </div>
   </div>
 </div>
 
 <div class="legend">
   <span><b>RAG</b> Retrieval-Augmented Generation</span><span class="sep">|</span>
-  <span><b>RLS</b> Row-Level Security</span><span class="sep">|</span>
-  <span><b>pgvector</b> PostgreSQL vector index</span><span class="sep">|</span>
-  <span><b>SPA</b> Single-Page Application</span><span class="sep">|</span>
-  <span><b>384-dim</b> embedding width of all-MiniLM-L6-v2</span>
-</div>
-
-<div class="foot">
-  <p class="keybox">Split into three because the embedder and the classifier are Python libraries with no usable Node equivalent, and a
-  <b>135&nbsp;MB model should load once</b> &mdash; not on every API restart. The cost is one network hop on the request path, which is
-  measured and reported rather than hidden.</p>
+  <span><b>RLS</b> Row-Level Security, forced on all 27 tables</span><span class="sep">|</span>
+  <span><b>data_origin</b> real or synthetic, on every table that can hold invented rows</span><span class="sep">|</span>
+  <span><b>DTO</b> the response object returned to the browser</span>
 </div>

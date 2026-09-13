@@ -1,131 +1,253 @@
 <!doctype html>
 <meta charset="utf-8">
 <style>
+  /* Same monochrome register as the architecture diagram. Green and red carry
+     decision outcomes only; nothing else is coloured. */
   :root{
-    --ink:#18222D; --muted:#596978; --accent:#3F5B74; --accent-deep:#2A4154;
-    --line:#CDD6DD; --ground:#FFFFFC; --panel:#FFFFFF; --wash:#EDF1F4;
-    --mask:#8A5410;
+    --ink:#1A1A1A; --mid:#444; --rule:#111; --hair:#BBB;
+    --paper:#FFF; --ok:#1E7A3C; --no:#C0392B; --tint:#F4F6F7; --warn:#8A5410;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    width:1500px;height:1010px;background:var(--ground);position:relative;
-    font-family:"Aptos","Segoe UI",system-ui,sans-serif;color:var(--ink);
+    width:1660px;height:975px;background:var(--paper);
+    font-family:"Aptos","Segoe UI",Arial,sans-serif;color:var(--ink);
+    padding:24px 30px;display:flex;flex-direction:column;
   }
-  svg.wires{position:absolute;inset:0;width:1500px;height:1010px}
-  .node{
-    position:absolute;background:var(--panel);border:1px solid var(--line);
-    border-left:4px solid var(--accent);border-radius:3px;padding:14px 16px;
-  }
-  .node .n{font-family:"Consolas",monospace;font-size:11px;color:var(--accent);letter-spacing:.08em}
-  .node h3{font-size:17px;font-weight:600;margin:3px 0 6px;letter-spacing:-.01em}
-  .node p{font-size:12.5px;color:var(--muted);line-height:1.42}
-  .node .tag{
-    display:inline-block;margin-top:9px;font-family:"Consolas",monospace;font-size:10.5px;
-    color:var(--accent-deep);background:var(--wash);padding:2px 7px;border-radius:2px;
-  }
-  .lede{position:absolute;left:46px;top:152px;width:1180px;font-size:15px;color:var(--muted);line-height:1.5}
+  .head{text-align:center;margin-bottom:14px}
+  .head h1{font-size:31px;font-weight:800;letter-spacing:.02em}
+  .head p{font-size:15px;color:var(--mid);margin-top:2px}
 
-  /* The masking boundary. Deliberately drawn ACROSS the availability branch
-     only -- the document branch never crosses it, and a diagram that routed
-     both through would misstate the control. */
-  .maskband{
-    position:absolute;left:836px;top:477px;width:0;height:262px;
-    border-left:2px dashed var(--mask);
-  }
-  .masklbl{
-    position:absolute;left:754px;top:742px;width:172px;text-align:center;
-    font-size:11.5px;color:var(--mask);font-weight:600;line-height:1.35;
-  }
-  .branchnote{
-    position:absolute;font-family:"Consolas",monospace;font-size:11px;
-    color:var(--muted);letter-spacing:.04em;
-  }
-  .foot{
-    position:absolute;left:46px;bottom:34px;width:1408px;
-    border-left:3px solid var(--accent);padding:11px 0 11px 16px;
-    font-size:13.5px;line-height:1.5;
-  }
-  .foot b{color:var(--accent-deep)}
+  .stage{border:1.5px solid var(--rule);border-radius:7px;background:var(--paper);
+         display:flex;flex-direction:column}
+  .st-hd{padding:7px 12px;border-bottom:1px solid var(--hair);text-align:center}
+  .st-hd b{font-size:13px;font-weight:800;letter-spacing:.03em}
+  .st-hd span{display:block;font-size:10.5px;color:var(--mid);margin-top:1px}
+  .st-bd{padding:9px 11px;flex:1;display:flex;flex-direction:column;gap:7px}
 
-  .dtitle{position:absolute;left:0;right:0;top:30px;text-align:center}
-  .dtitle h1{font-family:"Aptos Display","Aptos","Segoe UI",sans-serif;font-size:42px;
-             font-weight:700;letter-spacing:-.015em;color:var(--ink);line-height:1.05}
-  .dtitle p{font-size:17px;color:var(--muted);margin-top:4px}
-  .legend{position:absolute;left:46px;right:46px;bottom:118px;border:1px solid var(--line);border-radius:3px;background:var(--panel);
-          padding:11px 20px;display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;
-          font-size:12.5px;color:var(--muted)}
-  .legend b{color:var(--ink);font-weight:600}
-  .legend .sep{color:var(--line)}
+  .box{border:1px solid var(--hair);border-radius:4px;padding:6px 8px;background:var(--paper)}
+  .box.tint{background:var(--tint)}
+  .box b{display:block;font-size:11px;font-weight:800;margin-bottom:2px}
+  .box span{font-size:10px;color:var(--mid);line-height:1.34;display:block}
+  .box.mask{border:1.5px dashed var(--warn)}
+  .box.mask b{color:var(--warn)}
+
+  ul{list-style:none;display:flex;flex-direction:column;gap:4px}
+  li{font-size:10.5px;line-height:1.32;padding-left:10px;position:relative}
+  li::before{content:"";position:absolute;left:0;top:5px;width:3.5px;height:3.5px;
+             background:var(--ink);border-radius:50%}
+
+  .cols{display:flex;gap:9px}
+  .cols > *{flex:1}
+  .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .trio .box{text-align:center;padding:6px 5px}
+
+  /* decision diamond, drawn as a rotated square with upright text inside */
+  .diamond{width:132px;height:132px;position:relative;flex:0 0 132px;align-self:center}
+  .diamond .d{position:absolute;inset:14px;border:1.5px solid var(--rule);
+              transform:rotate(45deg);background:var(--paper)}
+  .diamond .t{position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+              font-size:10px;font-weight:800;line-height:1.28;padding:0 16px}
+
+  .branch{font-size:10.5px;font-weight:800;letter-spacing:.04em}
+  .branch.y{color:var(--ok)} .branch.n{color:var(--no)}
+  .note{font-size:10px;color:var(--mid);line-height:1.34}
+  .note b{color:var(--ink)}
+
+  .vgap{display:flex;justify-content:center;align-items:center;height:26px}
+  .row{display:flex;align-items:stretch;gap:0}
+  .arrow{display:flex;align-items:center;justify-content:center;flex:0 0 32px}
+
+  .legend{border:1.5px solid var(--rule);border-radius:6px;padding:8px 16px;margin-top:10px;
+          display:flex;flex-wrap:wrap;gap:5px 24px;justify-content:center;
+          font-size:10.5px;color:var(--mid)}
+  .legend b{color:var(--ink);font-weight:800}
+  .sep{color:var(--hair)}
 </style>
 
-<div class="dtitle"><h1>AI PIPELINE</h1><p>Enhanced Retrieval-Augmented Generation with Random Forest availability</p></div>
-<p class="lede">The only structural difference between the two architectures is the lower branch. Retrieval runs in both and is never conditional on the route,
-so the standard pipeline reaches the document corpus and nothing else.</p>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.arrow').forEach(a => {
+      a.innerHTML = '<svg width="28" height="14"><line x1="0" y1="7" x2="19" y2="7" ' +
+        'stroke="#111" stroke-width="1.6"/><path d="M19,2.5 L28,7 L19,11.5 z" fill="#111"/></svg>';
+    });
+    document.querySelectorAll('.down').forEach(a => {
+      a.innerHTML = '<svg width="14" height="26"><line x1="7" y1="0" x2="7" y2="18" ' +
+        'stroke="#111" stroke-width="1.6"/><path d="M2.5,18 L7,26 L11.5,18 z" fill="#111"/></svg>';
+    });
+  });
+</script>
 
-<svg class="wires">
-  <defs>
-    <marker id="ah" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
-      <path d="M0,0 L9,4 L0,8 z" fill="#CDD6DD"/>
-    </marker>
-  </defs>
-  <!-- query -> router -->
-  <line x1="254" y1="493" x2="292" y2="493" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
-  <!-- router -> fork -->
-  <line x1="508" y1="493" x2="548" y2="493" stroke="#CDD6DD" stroke-width="2"/>
-  <path d="M548,493 L548,341 L592,341" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
-  <path d="M548,493 L548,601 L592,601" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
-  <!-- branches -> fusion -->
-  <path d="M806,341 L952,341 L952,451" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
-  <path d="M806,601 L952,601 L952,541" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
-  <!-- fusion -> generate -> egress -->
-  <line x1="1120" y1="493" x2="1160" y2="493" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
-</svg>
-
-<div class="node" style="left:46px;top:445px;width:208px">
-  <span class="n">01</span><h3>User query</h3>
-  <p>Free text. The visitor is not asked to say whether they mean a place, a document or a person.</p>
+<div class="head">
+  <h1>AI PIPELINE</h1>
+  <p>Enhanced Retrieval-Augmented Generation with Random Forest availability estimation</p>
 </div>
 
-<div class="node" style="left:292px;top:433px;width:216px">
-  <span class="n">02</span><h3>Intent router</h3>
-  <p>A gazetteer of the faculty roster plus an intent lexicon answers one binary question.</p>
-  <span class="tag">~2 ms &middot; deterministic &middot; no LLM</span>
+<!-- ===================== ROW 1 : input, routing, decision ================= -->
+<div class="row">
+
+  <div class="stage" style="flex:0 0 232px">
+    <div class="st-hd"><b>INPUT</b><span>Natural-language question</span></div>
+    <div class="st-bd">
+      <ul>
+        <li>Where a building is</li>
+        <li>What an institutional document says</li>
+        <li>Whether a lecturer is available</li>
+        <li>Where a <i>person</i> is &mdash; asked, never answered</li>
+      </ul>
+      <div class="box tint"><b>No question type is declared</b>
+        <span>The visitor is not asked to classify their own question. Deciding
+        what was meant is the router's job.</span></div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <div class="stage" style="flex:1">
+    <div class="st-hd"><b>1) INTENT ROUTING &mdash; DETERMINISTIC, NO LLM</b>
+      <span>One binary decision, in about two milliseconds</span></div>
+    <div class="st-bd">
+      <div class="cols">
+        <div class="box"><b>Faculty gazetteer</b>
+          <span>Exact and fuzzy match against the roster of consented lecturers.</span></div>
+        <div class="box"><b>Intent lexicon</b>
+          <span>Availability phrasing: free, in, available, consultation, meet.</span></div>
+        <div class="box"><b>Ambiguity check</b>
+          <span>Two lecturers matched &rarr; return a clarifying question, never guess.</span></div>
+      </div>
+      <div class="note"><b>Why not an LLM router.</b> A classification call costs
+        150&ndash;300&nbsp;ms of the response-time budget this study has to report, on a
+        decision a lookup answers in two. It is also non-deterministic, so the same
+        query could route differently on two runs and no evaluation would be
+        reproducible. The roster is a known, closed, small list &mdash; a gazetteer
+        problem, not an open-ended NLU problem.</div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <div class="diamond">
+    <div class="d"></div>
+    <div class="t">Does this need an availability status?</div>
+  </div>
 </div>
 
-<div class="node" style="left:592px;top:269px;width:214px">
-  <span class="n">03</span><h3>Vector retrieval</h3>
-  <p>Query embedded to 384 dimensions, compared to every chunk by exact cosine similarity.</p>
-  <span class="tag">top 5 &middot; floor 0.25 &middot; both arms</span>
+<div class="vgap"><span class="down"></span></div>
+
+<!-- ===================== ROW 2 : parallel resolution ====================== -->
+<div class="stage">
+  <div class="st-hd"><b>2) PARALLEL RESOLUTION</b>
+    <span>Retrieval runs in BOTH architectures and is never conditional on the route.
+    Only branch B distinguishes Enhanced from standard.</span></div>
+  <div class="st-bd">
+    <div class="cols" style="align-items:stretch">
+
+      <div class="stage" style="flex:1;border-color:var(--hair)">
+        <div class="st-hd" style="border-bottom:1px solid var(--hair)">
+          <b>A &middot; DOCUMENT BRANCH</b><span class="branch n">NO &mdash; standard and Enhanced alike</span></div>
+        <div class="st-bd">
+          <div class="box"><b>Embed the query</b>
+            <span>all-MiniLM-L6-v2, 384 dimensions, L2-normalised &mdash; the same model
+            that embedded the corpus.</span></div>
+          <div class="box"><b>Exact cosine over every chunk</b>
+            <span>Top 5, similarity floor 0.25. No approximate index: at 232 chunks an
+            exact scan takes ~170&nbsp;ms and always returns the true nearest, where an
+            ANN index would add a failure mode and save nothing.</span></div>
+          <div class="box tint"><b>This branch never crosses the mask</b>
+            <span>Documents are not people. The masking protocol governs the status, not
+            the passages.</span></div>
+        </div>
+      </div>
+
+      <div class="stage" style="flex:1.12;border-color:var(--warn)">
+        <div class="st-hd" style="border-bottom:1px solid var(--hair)">
+          <b>B &middot; PERSON BRANCH</b><span class="branch y">YES &mdash; Enhanced architecture only</span></div>
+        <div class="st-bd">
+          <div class="box"><b>Three gates, all BEFORE prediction</b>
+            <span>Order matters: a failed gate means the estimate is never computed, not
+            computed and then withheld.</span></div>
+          <div class="trio">
+            <div class="box"><b>Signed in?</b><span>Masking limits granularity; an open
+              endpoint can be polled into a timeline</span></div>
+            <div class="box"><b>Consented?</b><span>Active roster only</span></div>
+            <div class="box"><b>Not paused?</b><span>RA 10173 right to object,
+              self-service</span></div>
+          </div>
+          <div class="cols">
+            <div class="box"><b>Resolve presence</b>
+              <span>Timetable lookup + official event overrides + campus awareness.</span></div>
+            <div class="box"><b>Random Forest</b>
+              <span>11 features &rarr; class probabilities. ~32&nbsp;ms per call.</span></div>
+          </div>
+          <div class="note"><span class="branch n">ANY GATE FAILS &rarr;</span>
+            <b>refuse, worded exactly like an unknown building.</b> Recorded classifier
+            time stays <b>0.0&nbsp;ms</b>, which is the evidence that nothing was computed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="node" style="left:592px;top:529px;width:214px;border-left-color:#8A5410">
-  <span class="n" style="color:#8A5410">04</span><h3>Availability</h3>
-  <p>Two gates run <em>before</em> the forest: signed in, and the lecturer has not paused disclosure.</p>
-  <span class="tag" style="color:#8A5410">Enhanced arm only</span>
-</div>
+<div class="vgap"><span class="down"></span></div>
 
-<div class="maskband"></div>
-<p class="masklbl">STATUS MASKING<br>BOUNDARY</p>
-<span class="branchnote" style="left:596px;top:243px">DOCUMENT BRANCH &mdash; never crosses the mask</span>
-<span class="branchnote" style="left:596px;top:696px;color:#8A5410">PERSON BRANCH &mdash; masked here</span>
+<!-- ===================== ROW 3 : mask, fuse, generate, egress ============= -->
+<div class="row">
 
-<div class="node" style="left:952px;top:433px;width:168px">
-  <span class="n">05</span><h3>Context fusion</h3>
-  <p>Passages and the masked status become one prompt.</p>
-</div>
+  <div class="stage" style="flex:0 0 300px">
+    <div class="st-hd"><b>3) STATUS MASKING</b><span>Branch B only</span></div>
+    <div class="st-bd">
+      <div class="box mask"><b>Generalise to three states</b>
+        <span>available_consultation<br>in_scheduled_class<br>unavailable_off_schedule</span></div>
+      <div class="note">The probability vector is <b>discarded here</b>. No room, building,
+        floor or office is ever attached to a person, under any phrasing.</div>
+    </div>
+  </div>
 
-<div class="node" style="left:1160px;top:433px;width:294px">
-  <span class="n">06</span><h3>Generation &rarr; egress check</h3>
-  <p>Groq writes the sentence at temperature&nbsp;0. The response is then serialised and refused if it contains any of eight forbidden keys.</p>
-  <span class="tag">probabilities &middot; room_label &middot; embedding &hellip;</span>
+  <div class="arrow"></div>
+
+  <div class="stage" style="flex:1">
+    <div class="st-hd"><b>4) CONTEXT FUSION</b><span>Three sources become one prompt</span></div>
+    <div class="st-bd">
+      <div class="trio">
+        <div class="box"><b>Passages</b><span>Top-5 retrieved chunks</span></div>
+        <div class="box"><b>Masked status</b><span>One coarse state, if any</span></div>
+        <div class="box"><b>Gazetteer</b><span>Campus place names</span></div>
+      </div>
+      <div class="box tint"><b>The status is passed as retrieved context</b>
+        <span>It IS retrieval &mdash; from the classifier rather than from pgvector. Recorded
+        on eval_run.status_as_context so RAGAS scores both arms fairly.</span></div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <div class="stage" style="flex:0.92">
+    <div class="st-hd"><b>5) GENERATION</b><span>Hosted, temperature 0</span></div>
+    <div class="st-bd">
+      <div class="box"><b>openai/gpt-oss-120b</b>
+        <span>Writes the sentence. The database supplies the facts.</span></div>
+      <div class="note">Dominates the response time at roughly 80 per cent, and is the
+        noisiest stage: its standard deviation runs 138&ndash;520&nbsp;ms.</div>
+    </div>
+  </div>
+
+  <div class="arrow"></div>
+
+  <div class="stage" style="flex:0.95;border-color:var(--warn)">
+    <div class="st-hd"><b>6) EGRESS BOUNDARY</b><span>assertNoLeak()</span></div>
+    <div class="st-bd">
+      <div class="box mask"><b>Eight forbidden keys</b>
+        <span>probabilities &middot; rf_proba &middot; predicted_class &middot;
+        raw_prediction &middot; room_label &middot; feature_list &middot; fused_prompt
+        &middot; embedding</span></div>
+      <div class="note"><b>A backstop, not the control.</b> Masking already happened at
+        stage 3. Fired on <b>0 of 78</b> responses in run-03-simulation.</div>
+    </div>
+  </div>
 </div>
 
 <div class="legend">
-  <span><b>Top&nbsp;5 / floor&nbsp;0.25</b> retrieval cut-offs</span><span class="sep">|</span>
-  <span><b>Three states</b> available for consultation &middot; in scheduled class &middot; unavailable</span><span class="sep">|</span>
-  <span><b>Egress keys</b> eight fields refused at the boundary</span>
+  <span><b>Top 5 / floor 0.25</b> retrieval cut-offs</span><span class="sep">|</span>
+  <span><b>Three states</b> the only availability values the system can emit</span><span class="sep">|</span>
+  <span><b>0.0 ms</b> recorded classifier time when a gate refuses &mdash; the audit trail of a computation that never happened</span><span class="sep">|</span>
+  <span><b>eval_result</b> one row per stage, per query, per architecture</span>
 </div>
-
-<p class="foot">The classifier is reached <b>only</b> by an availability question, and its estimate is never computed for a lecturer who has paused disclosure &mdash;
-the gate runs before prediction, not after. Asked <i>&ldquo;Where is SIM&#8209;22?&rdquo;</i> the router sends the query down the document branch, the recorded
-classification time is <b>0.0&nbsp;ms</b>, and the refusal is worded exactly like the refusal for an unknown building.</p>
