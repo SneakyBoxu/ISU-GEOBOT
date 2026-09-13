@@ -315,17 +315,18 @@ def s_objectives(prs, f):
          "Integrate a Random Forest classifier into the Retrieval-Augmented Generation "
          "pipeline so that faculty availability is estimated from temporal schedule data "
          "and behavioural attendance features."),
-        ("02", "Compare the architectures",
-         "Evaluate and compare the standard and Enhanced RAG architectures in terms of "
-         "Response Time and the RAGAS metrics of Context Precision, Context Recall, "
-         "Faithfulness and Answer Relevancy."),
+        ("02", "Establish what it makes answerable",
+         "Determine which class of query the Enhanced architecture can answer that a "
+         "retrieval-only architecture cannot, and measure the cost of that capability "
+         "in Response Time and in the RAGAS metrics."),
         ("03", "Deploy with a disclosure limit",
          "Deploy the Enhanced RAG architecture within the web-based ISU-GeoBot system, "
          "enforcing a status masking protocol and an egress boundary so that no physical "
          "location of a person is disclosed."),
-        ("04", "Evaluate functional accuracy",
-         "Evaluate the functional accuracy of the system's availability estimates against "
-         "direct field observation of classroom activity."),
+        ("04", "Evaluate accuracy, and its limits",
+         "Evaluate the classifier against the simulation cohort, conduct a field study "
+         "of the deployed system, and report the constraints that prevented an unbiased "
+         "real-world measurement of the model."),
     ]
     cw, chh, gap = Inches(5.98), Inches(1.94), Inches(0.20)
     for i, (num, title, body) in enumerate(objs):
@@ -504,6 +505,61 @@ def s_privacy(prs, f):
               "floor or office — and the egress filter recorded zero interceptions.")
 
 
+def s_field(prs, f):
+    """
+    The field study, stated as the method finding it is.
+
+    This slide exists because the honest version of SO4 is not an accuracy
+    number, and a panel is better served by seeing why than by being told the
+    sample was small. The engine column is the point: the clean sample observed
+    the deterministic path, not the model.
+    """
+    s = blank(prs); heading(s, "Field Study — What It Can and Cannot Show")
+    obj_label(s, 4)
+
+    rows = [("Protocol", "Period", "n", "Agreed", "Engine observed"),
+            ("Estimate-first", "28 Aug – 3 Sep", "84", "74",
+             "random_forest 55, override 15"),
+            ("Observation-first (blind)", "3 Sep – 8 Sep", "24", "23",
+             "schedule_only 24")]
+    y = Inches(1.80)
+    xs = [MARGIN + Inches(0.20), MARGIN + Inches(3.05), MARGIN + Inches(4.60),
+          MARGIN + Inches(5.35), MARGIN + Inches(6.45)]
+    for i, row in enumerate(rows):
+        head = i == 0
+        blind = row[0].startswith("Observation-first")
+        if head or blind:
+            rect(s, MARGIN, y, W - 2 * MARGIN, Inches(0.50),
+                 fill=WHITE if head else WASH, line=LINE if head else None)
+        for j, cell in enumerate(row):
+            tb(s, xs[j], y + Inches(0.12), Inches(3.0), Inches(0.32), cell,
+               size=12.5, bold=head or blind, color=MUTED if head else INK,
+               font=MONO if (j in (2, 3) and not head) else SANS)
+        y += Inches(0.56)
+
+    tb(s, MARGIN, Inches(3.58), Inches(6.05), Inches(1.25),
+       "Every blind observation watched an estimate from the deterministic "
+       "timetable lookup — not the Random Forest. No real lecturer has "
+       "attendance data, so the historical features are absent and the resolver "
+       "falls back to the schedule.", size=13.5, color=INK, spacing=1.35)
+
+    rect(s, Inches(6.95), Inches(3.54), Inches(5.76), Inches(1.45), fill=WHITE, line=WARN)
+    tb(s, Inches(7.20), Inches(3.72), Inches(5.3), Inches(0.28),
+       "THE TWO CONSTRAINTS", size=10, bold=True, color=WARN)
+    tb(s, Inches(7.20), Inches(4.06), Inches(5.3), Inches(0.86),
+       "The clean sample does not test the model." + chr(10) +
+       "The sample that tests the model is not clean.",
+       size=14, color=INK, spacing=1.45)
+
+    statement(s, MARGIN, Inches(5.16), W - 2 * MARGIN, Inches(0.84),
+              "23 of 24 blind observations agreed — a real result about the "
+              "deployed deterministic path, and not evidence about the classifier.")
+    tb(s, MARGIN, Inches(6.16), W - 2 * MARGIN, Inches(0.6),
+       "Both constraints were surfaced by provenance columns added for that purpose. "
+       "Neither is visible in the agreement rates alone.",
+       size=13, color=MUTED, spacing=1.3)
+
+
 def s_conclusion(prs, f):
     s = blank(prs); heading(s, "Expected Contribution / Conclusion")
     tb(s, MARGIN, Inches(1.42), W - 2 * MARGIN, Inches(0.85),
@@ -588,8 +644,10 @@ def build():
            "Announcement intake. OCR text is extracted in the browser and never stored; "
            "only the resolved event is written.")
     s_shot(prs, 4, "06-admin-validation",
-           "Field observation capture. The observed status starts empty and the system "
-           "estimate stays hidden until the observer commits — the rebuilt form.")
+           "Field observation capture, rebuilt. The observed status starts empty and the "
+           "system estimate stays hidden until the observer commits — the fix for "
+           "the anchoring defect found mid-study.")
+    s_field(prs, f)
     s_conclusion(prs, f)
     s_thanks(prs)
 
