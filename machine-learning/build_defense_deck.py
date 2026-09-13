@@ -9,24 +9,26 @@ WHAT THE TEMPLATE ASKS FOR:
      regarding your study, your Objectives, present screenshots of the system
      addressing the objectives."
 
-So the deck is organised around the OBJECTIVES, not around the software. One
-slide per objective, each carrying the evidence for it and, where the evidence
-is short, saying so on the slide rather than in the speaker's nerve.
+The deck is therefore organised around the OBJECTIVES, not around the software,
+and every screenshot slide is labelled with the objective it evidences.
 
-WHY THE NUMBERS ARE READ FROM THE DATABASE.
+HOUSE STYLE. The layout follows the deck format already used in this cohort: a
+left rule and dark side panel on the title slide, a bold sans heading with a
+short accent underline, a running footer carrying the study title and a page
+number, white cards with small-caps labels, and a serif voice reserved for the
+one-line claims. Matching it is deliberate -- a panel comparing presentations
+should be comparing the work, not the typography.
 
-Every figure on these slides -- location counts, corpus size, per-stage latency,
-the capability comparison -- is queried at build time from the same tables
-Chapter 4 was written from. Typing them into a deck by hand is how a slide and a
-paper come to disagree three minutes into a defense. If a number here is wrong,
-it is wrong in the thesis too, and that is the correct failure mode.
+WHY THE NUMBERS ARE READ FROM THE DATABASE. Every figure -- location counts,
+corpus size, per-stage latency, the capability comparison, the RAGAS scores --
+is queried at build time from the tables Chapter 4 was written from. A deck and
+a paper that disagree three minutes into a defense is the failure this avoids.
+If a number here is wrong, it is wrong in the thesis too, which is the correct
+failure mode.
 
-SCREENSHOTS ARE PLACEHOLDERS ON PURPOSE.
-
-Each objective slide reserves a framed area and prints, inside it, exactly which
-screen to capture and which query to type. Capturing them is five minutes of
-work that doubles as demo practice, and a screenshot taken by the person who has
-to narrate it is worth more than one taken by a script.
+The RAGAS slide reports whatever has actually been scored. Metrics still
+running are simply absent, and the slide says why rather than inventing a
+number to fill the table.
 """
 
 from __future__ import annotations
@@ -34,499 +36,518 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
 import database_connector as db
 
-OUT = Path(__file__).resolve().parent.parent / "ISU_GeoBot_Defense.pptx"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "ISU_GeoBot_Defense.pptx"
+SHOTS = ROOT / "screenshots"
 
-# ---------------------------------------------------------------- palette
-# Deep pine against a cool off-white. Chosen to survive a projector: the accent
-# is dark enough to read on a washed-out screen, which mid-tone blues are not.
-INK = RGBColor(0x14, 0x1A, 0x19)
-MUTED = RGBColor(0x58, 0x64, 0x60)
-FAINT = RGBColor(0x8A, 0x96, 0x92)
-ACCENT = RGBColor(0x0E, 0x6E, 0x5C)
-WARN = RGBColor(0x8A, 0x54, 0x10)
-GROUND = RGBColor(0xF7, 0xF9, 0xF8)
+# ------------------------------------------------------------------ palette
+INK = RGBColor(0x18, 0x22, 0x2D)
+ACCENT = RGBColor(0x3F, 0x5B, 0x74)
+ACCENT_DEEP = RGBColor(0x2A, 0x41, 0x54)
+MUTED = RGBColor(0x59, 0x69, 0x78)
+LINE = RGBColor(0xCD, 0xD6, 0xDD)
+WASH = RGBColor(0xE0, 0xE7, 0xEC)
+GROUND = RGBColor(0xFA, 0xF9, 0xF5)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-LINE = RGBColor(0xD5, 0xDE, 0xDB)
+WARN = RGBColor(0x8A, 0x54, 0x10)
 
-BODY_FONT = "Calibri"
-HEAD_FONT = "Georgia"
+SANS = "Aptos"
+DISPLAY = "Aptos Display"
+SERIF = "Georgia"
+MONO = "Consolas"
 
-W, H = Inches(13.333), Inches(7.5)          # 16:9
-MARGIN = Inches(0.72)
+W, H = Inches(13.333), Inches(7.5)
+MARGIN = Inches(0.62)
+RUNNING = "ISU-GEOBOT  ·  CAMPUS NAVIGATION AND FACULTY AVAILABILITY"
+
+_page = {"n": 0}
 
 
-# ----------------------------------------------------------------- helpers
-def textbox(slide, x, y, w, h, text, *, size=18, bold=False, color=INK,
-            font=BODY_FONT, align=PP_ALIGN.LEFT, spacing=1.15):
-    """A plain text box. python-pptx has no styled-text primitive, so this is it."""
+# ------------------------------------------------------------------ helpers
+def tb(slide, x, y, w, h, text, *, size=16, bold=False, color=INK, font=SANS,
+       align=PP_ALIGN.LEFT, spacing=1.18, italic=False, anchor=MSO_ANCHOR.TOP):
+    """A positioned text box. python-pptx has no styled-text primitive."""
     box = slide.shapes.add_textbox(x, y, w, h)
     tf = box.text_frame
     tf.word_wrap = True
-    for i, line in enumerate(text.split("\n")):
+    tf.vertical_anchor = anchor
+    for i, line in enumerate(str(text).split("\n")):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.alignment = align
         p.line_spacing = spacing
-        run = p.add_run()
-        run.text = line
-        run.font.size = Pt(size)
-        run.font.bold = bold
-        run.font.color.rgb = color
-        run.font.name = font
+        r = p.add_run()
+        r.text = line
+        r.font.size = Pt(size)
+        r.font.bold = bold
+        r.font.italic = italic
+        r.font.color.rgb = color
+        r.font.name = font
     return box
 
 
 def rect(slide, x, y, w, h, fill=None, line=None, width=Pt(1)):
-    """A rectangle, used for rules, panels and screenshot frames."""
-    from pptx.enum.shapes import MSO_SHAPE
-    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
+    s = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
     if fill is None:
-        shape.fill.background()
+        s.fill.background()
     else:
-        shape.fill.solid()
-        shape.fill.fore_color.rgb = fill
+        s.fill.solid(); s.fill.fore_color.rgb = fill
     if line is None:
-        shape.line.fill.background()
+        s.line.fill.background()
     else:
-        shape.line.color.rgb = line
-        shape.line.width = width
-    shape.shadow.inherit = False
-    return shape
-
-
-def blank(prs, ground=GROUND):
-    """A slide with no placeholders -- every element is positioned explicitly."""
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
-    bg = rect(slide, 0, 0, W, H, fill=ground)
-    # Send the background behind everything added later.
-    slide.shapes._spTree.remove(bg._element)
-    slide.shapes._spTree.insert(2, bg._element)
-    return slide
-
-
-def header(slide, eyebrow, title):
-    """Eyebrow, title, hairline. Repeated on every content slide."""
-    textbox(slide, MARGIN, Inches(0.42), W - 2 * MARGIN, Inches(0.3),
-            eyebrow.upper(), size=11, bold=True, color=ACCENT)
-    textbox(slide, MARGIN, Inches(0.76), W - 2 * MARGIN, Inches(0.8),
-            title, size=30, bold=True, color=INK, font=HEAD_FONT)
-    rect(slide, MARGIN, Inches(1.55), W - 2 * MARGIN, Emu(9525), fill=LINE)
-
-
-def shot_frame(slide, x, y, w, h, screen, query=None, proves=None):
-    """
-    A reserved area for a screenshot, labelled with what to capture.
-
-    The instruction lives INSIDE the frame so it cannot be separated from the
-    space it describes, and so an un-filled frame is obviously un-filled rather
-    than looking like a design choice.
-    """
-    rect(slide, x, y, w, h, fill=WHITE, line=LINE)
-    textbox(slide, x + Inches(0.22), y + Inches(0.2), w - Inches(0.44), Inches(0.3),
-            "SCREENSHOT", size=10, bold=True, color=FAINT)
-    body = f"Capture: {screen}"
-    if query:
-        body += f'\nType: "{query}"'
-    if proves:
-        body += f"\nShows: {proves}"
-    textbox(slide, x + Inches(0.22), y + Inches(0.52), w - Inches(0.44), h - Inches(0.7),
-            body, size=13, color=MUTED)
-
-
-def bullets(slide, x, y, w, items, *, size=16, gap=Inches(0.46)):
-    """Accent tick plus text, laid out by hand so the spacing is predictable."""
-    for i, item in enumerate(items):
-        yy = y + i * gap
-        textbox(slide, x, yy, Inches(0.28), Inches(0.4), "—", size=size, color=ACCENT)
-        textbox(slide, x + Inches(0.34), yy, w - Inches(0.34), Inches(0.4),
-                item, size=size, color=INK)
-
-
-def status_chip(slide, x, y, text, color):
-    """A small filled label -- used for the objective status."""
-    w = Inches(0.13) * len(text) + Inches(0.3)
-    rect(slide, x, y, w, Inches(0.34), fill=color)
-    textbox(slide, x + Inches(0.14), y + Inches(0.03), w, Inches(0.3),
-            text, size=12, bold=True, color=WHITE)
-    return w
-
-
-# ------------------------------------------------------------------- facts
-def gather():
-    """
-    Every number the deck prints, straight from the database.
-
-    Anything that cannot be read is returned as None and the slide says so,
-    rather than the deck silently showing a stale figure.
-    """
-    f = {}
-    one = lambda q: (db.fetch_all(q) or [{}])[0]
-
-    f["poi_published"] = one(
-        "select count(*) n from geobot.poi where is_published")["n"]
-    f["documents"] = one("select count(*) n from geobot.document")["n"]
-    f["chunks"] = one("select count(*) n from geobot.document_chunk")["n"]
-    f["faculty_real"] = one(
-        "select count(*) n from geobot.faculty where data_origin='real'")["n"]
-    f["faculty_sim"] = one(
-        "select count(*) n from geobot.faculty where data_origin='synthetic'")["n"]
-    f["blocks_real"] = one(
-        "select count(*) n from geobot.faculty_schedule where data_origin='real'")["n"]
-
-    run = one(
-        "select id, run_label, prompt_template_version from geobot.eval_run "
-        "where run_label = 'run-03-simulation'")
-    f["run_label"] = run.get("run_label")
-
-    if run.get("id"):
-        stage = db.fetch_all(
-            "select mode, count(*) n, round(avg(t_rf_ms),1) rf, "
-            "round(avg(t_guard_ms),1) guard, round(avg(t_total_ms),1) total "
-            "from geobot.eval_result where run_id = %s group by mode order by mode",
-            (run["id"],))
-        f["stages"] = {r["mode"]: r for r in stage}
-
-        # The capability finding: how many availability questions each arm
-        # actually answered, rather than refused.
-        ans = db.fetch_all(
-            "select r.mode, count(*) n, "
-            # Match on "sorry", not on "don't have": the model writes a
-            # TYPOGRAPHIC apostrophe (U+2019), so an ASCII "don''t" matches
-            # nothing and every refusal is counted as an answer. That bug put
-            # "standard answered 6 of 6" on a slide -- the exact opposite of
-            # the finding -- before it was caught against the raw text.
-            "  count(*) filter (where r.answer not ilike '%%sorry%%') answered "
-            "from geobot.eval_result r join geobot.eval_query q on q.id = r.eval_query_id "
-            "where r.run_id = %s and q.category = 'faculty_availability' "
-            "group by r.mode order by r.mode", (run["id"],))
-        f["availability"] = {r["mode"]: r for r in ans}
-
-    # ragas_score is one row per eval_result with a column per metric, so the
-    # arm comes from eval_result and the averages are per column. NULLs are
-    # skipped by avg(), which is what we want: a metric that has not been
-    # scored yet simply does not contribute.
-    f["ragas"] = db.fetch_all(
-        "select r.mode, count(*) n, "
-        "  round(avg(g.context_precision)::numeric,4) context_precision, "
-        "  round(avg(g.context_recall)::numeric,4)    context_recall, "
-        "  round(avg(g.faithfulness)::numeric,4)      faithfulness, "
-        "  round(avg(g.answer_relevancy)::numeric,4)  answer_relevancy "
-        "from geobot.ragas_score g "
-        "join geobot.eval_result r on r.id = g.eval_result_id "
-        "where r.run_id = %s group by r.mode order by r.mode",
-        (run.get("id"),)) if run.get("id") else []
-    return f
-
-
-# ------------------------------------------------------------------ slides
-def slide_title(prs, f):
-    s = blank(prs, ground=WHITE)
-    rect(s, 0, 0, Inches(0.16), H, fill=ACCENT)
-    textbox(s, Inches(1.1), Inches(1.9), Inches(11), Inches(0.4),
-            "SYSTEM DEFENSE", size=13, bold=True, color=ACCENT)
-    textbox(s, Inches(1.1), Inches(2.3), Inches(11), Inches(1.9),
-            "ISU-GeoBot", size=54, bold=True, color=INK, font=HEAD_FONT)
-    textbox(s, Inches(1.1), Inches(3.3), Inches(10.4), Inches(1.2),
-            "A campus navigation and faculty-availability assistant integrating a "
-            "Random Forest classifier into a Retrieval-Augmented Generation pipeline",
-            size=19, color=MUTED)
-    rect(s, Inches(1.1), Inches(4.55), Inches(2.2), Emu(19050), fill=LINE)
-    textbox(s, Inches(1.1), Inches(4.8), Inches(11), Inches(1.2),
-            "Christian Paul Simbulan  ·  Michael Allan Almario\n"
-            "College of Computing Studies, Information and Communication Technology\n"
-            "Isabela State University — Echague Main Campus",
-            size=15, color=MUTED, spacing=1.35)
-
-
-def slide_study(prs, f):
-    s = blank(prs)
-    header(s, "The study in brief", "The problem, and what was built")
-    textbox(s, MARGIN, Inches(1.95), Inches(5.9), Inches(2.6),
-            "A student looking for a lecturer has two questions, and the campus "
-            "answers neither well: where is the building, and is the lecturer "
-            "there now?\n\n"
-            "The second question is the hard one, because answering it carelessly "
-            "turns a navigation tool into a tracking tool.",
-            size=17, color=INK, spacing=1.3)
-    bullets(s, Inches(7.2), Inches(2.0), Inches(5.4), [
-        f"{f['poi_published']} campus locations on an interactive map",
-        f"{f['documents']} documents, {f['chunks']} embedded passages",
-        f"{f['blocks_real']} real CCSICT class blocks",
-        "Availability as one of three coarse states — never a room",
-    ])
-    rect(s, MARGIN, Inches(4.95), W - 2 * MARGIN, Inches(1.5), fill=WHITE, line=ACCENT)
-    textbox(s, MARGIN + Inches(0.3), Inches(5.12), Inches(1.6), Inches(0.3),
-            "THE CONTRIBUTION", size=11, bold=True, color=ACCENT)
-    textbox(s, MARGIN + Inches(0.3), Inches(5.45), W - 2 * MARGIN - Inches(0.6), Inches(0.9),
-            "A retrieval pipeline that answers availability questions from a "
-            "schedule-grounded classifier instead of from prose — under a masking "
-            "rule that makes disclosing a person’s physical location impossible by "
-            "construction, not by prompt instruction.",
-            size=16, color=INK, spacing=1.25)
-
-
-def slide_architecture(prs, f):
-    s = blank(prs)
-    header(s, "System architecture", "Three services, one database, one hosted model")
-    tiers = [
-        ("React · port 5173", "Leaflet map, chat, admin dashboard. Holds no secrets.", ACCENT),
-        ("Express · port 4000", "The only process with database credentials. Routing, "
-                                "retrieval, context fusion, the masking boundary.", ACCENT),
-        ("Flask · port 5001", "all-MiniLM-L6-v2 embedder and the Random Forest. "
-                              "Python, because both models are Python.", ACCENT),
-        ("Supabase", "PostgreSQL + pgvector. 27 tables in the geobot schema.", FAINT),
-        ("Groq", "openai/gpt-oss-120b at temperature 0. Writes the sentence only.", FAINT),
-    ]
-    y = Inches(1.95)
-    for name, body, colour in tiers:
-        rect(s, MARGIN, y, W - 2 * MARGIN, Inches(0.88), fill=WHITE, line=LINE)
-        rect(s, MARGIN, y, Emu(38100), Inches(0.88), fill=colour)
-        textbox(s, MARGIN + Inches(0.28), y + Inches(0.14), Inches(2.6), Inches(0.3),
-                name, size=14, bold=True, color=colour)
-        textbox(s, MARGIN + Inches(3.2), y + Inches(0.14), W - MARGIN * 2 - Inches(3.5),
-                Inches(0.6), body, size=14, color=MUTED)
-        y += Inches(0.98)
-    textbox(s, MARGIN, Inches(6.85), W - 2 * MARGIN, Inches(0.4),
-            "Split because the embedder and the forest are Python libraries with no "
-            "Node equivalent, and a 135 MB model should load once, not on every API restart.",
-            size=13, color=FAINT)
-
-
-def slide_pipeline(prs, f):
-    s = blank(prs)
-    header(s, "AI pipeline", "What happens between the question and the answer")
-    steps = [
-        ("01", "Route", "A gazetteer of the faculty roster plus an intent lexicon "
-                        "answers one binary question: does this need an availability "
-                        "status? No LLM call — 2 ms, and deterministic."),
-        ("02", "Retrieve", "The query is embedded (384 dims, L2-normalised) and "
-                           "compared to every chunk by exact cosine. Top 5, floor 0.25. "
-                           "Runs in BOTH architectures, always."),
-        ("03", "Classify", "Availability only, and only in the Enhanced arm. Two gates "
-                           "run BEFORE the forest: signed in, and the lecturer has not "
-                           "paused disclosure."),
-        ("04", "Fuse", "Retrieved passages and the masked status become one prompt. "
-                       "Three sources, one context."),
-        ("05", "Mask", "The response is checked for eight forbidden keys — "
-                       "probabilities, room_label, embeddings. A backstop, not the "
-                       "primary control."),
-    ]
-    y = Inches(1.9)
-    for num, name, body in steps:
-        textbox(s, MARGIN, y, Inches(0.6), Inches(0.4), num, size=15, bold=True, color=ACCENT)
-        textbox(s, MARGIN + Inches(0.62), y, Inches(1.8), Inches(0.4),
-                name, size=16, bold=True, color=INK)
-        textbox(s, MARGIN + Inches(2.5), y, W - MARGIN * 2 - Inches(2.5), Inches(0.85),
-                body, size=14, color=MUTED, spacing=1.2)
-        y += Inches(0.98)
-
-
-def objective_slide(prs, number, title, status, status_colour, evidence,
-                    shot_screen, shot_query=None, shot_proves=None, caveat=None):
-    s = blank(prs)
-    header(s, f"Objective {number}", title)
-    status_chip(s, MARGIN, Inches(1.78), status, status_colour)
-    bullets(s, MARGIN, Inches(2.42), Inches(6.1), evidence, size=15, gap=Inches(0.72))
-    shot_frame(s, Inches(7.1), Inches(1.95), Inches(5.5), Inches(3.5),
-               shot_screen, shot_query, shot_proves)
-    if caveat:
-        rect(s, MARGIN, Inches(5.72), W - 2 * MARGIN, Inches(1.15), fill=WHITE, line=WARN)
-        textbox(s, MARGIN + Inches(0.28), Inches(5.86), Inches(3), Inches(0.28),
-                "SAY THIS BEFORE THEY ASK", size=10, bold=True, color=WARN)
-        textbox(s, MARGIN + Inches(0.28), Inches(6.14), W - 2 * MARGIN - Inches(0.56),
-                Inches(0.8), caveat, size=14, color=INK, spacing=1.2)
+        s.line.color.rgb = line; s.line.width = width
+    s.shadow.inherit = False
     return s
 
 
-def slide_results(prs, f):
-    s = blank(prs)
-    header(s, "Results", "The enhancement costs latency and buys capability")
-    st = f.get("stages", {})
-    std, enh = st.get("standard"), st.get("enhanced")
-    rows = [("Stage", "Standard", "Enhanced", "Δ")]
+def blank(prs, ground=GROUND, numbered=True):
+    """A slide carrying the house chrome: ground, running footer, page number."""
+    s = prs.slides.add_slide(prs.slide_layouts[6])
+    bg = rect(s, 0, 0, W, H, fill=ground)
+    # Push the background behind everything added afterwards.
+    s.shapes._spTree.remove(bg._element)
+    s.shapes._spTree.insert(2, bg._element)
+    if numbered:
+        _page["n"] += 1
+        rect(s, MARGIN, H - Inches(0.60), W - 2 * MARGIN, Emu(9525), fill=LINE)
+        tb(s, MARGIN, H - Inches(0.52), Inches(9), Inches(0.3), RUNNING,
+           size=8.5, bold=True, color=MUTED)
+        tb(s, W - MARGIN - Inches(0.7), H - Inches(0.52), Inches(0.7), Inches(0.3),
+           str(_page["n"]), size=9.5, bold=True, color=MUTED, align=PP_ALIGN.RIGHT)
+    return s
+
+
+def heading(slide, title):
+    tb(slide, MARGIN, Inches(0.42), W - 2 * MARGIN, Inches(0.7),
+       title, size=32, bold=True, color=INK, font=DISPLAY)
+    rect(slide, MARGIN, Inches(1.18), Inches(0.62), Inches(0.045), fill=ACCENT_DEEP)
+
+
+def obj_label(slide, n, y=Inches(1.40)):
+    tb(slide, MARGIN, y, Inches(3), Inches(0.28),
+       f"{n:02d} OBJECTIVE", size=11, bold=True, color=ACCENT)
+
+
+def picture(slide, name, x, y, max_w, max_h, border=True):
+    """Fit an image inside the box without distorting it. Missing files become
+    a visible placeholder rather than a silently empty slide."""
+    path = SHOTS / f"{name}.png"
+    if not path.exists():
+        rect(slide, x, y, max_w, max_h, fill=WHITE, line=LINE)
+        tb(slide, x + Inches(0.3), y + max_h / 2 - Inches(0.2), max_w - Inches(0.6),
+           Inches(0.4), f"[ {name} — not captured yet ]", size=13, color=MUTED,
+           align=PP_ALIGN.CENTER)
+        return False
+    iw, ih = Image.open(path).size
+    scale = min(max_w / iw, max_h / ih)
+    w, h = int(iw * scale), int(ih * scale)
+    px, py = int(x + (max_w - w) / 2), int(y + (max_h - h) / 2)
+    if border:
+        rect(slide, px - Emu(9525), py - Emu(9525), w + Emu(19050), h + Emu(19050),
+             fill=WHITE, line=LINE)
+    slide.shapes.add_picture(str(path), px, py, w, h)
+    return True
+
+
+def card(slide, x, y, w, h, label, body, *, accent=ACCENT):
+    rect(slide, x, y, w, h, fill=WHITE, line=LINE)
+    tb(slide, x + Inches(0.22), y + Inches(0.15), w - Inches(0.44), Inches(0.24),
+       label.upper(), size=10, bold=True, color=accent)
+    tb(slide, x + Inches(0.22), y + Inches(0.43), w - Inches(0.44), h - Inches(0.58),
+       body, size=13, color=INK, spacing=1.25)
+
+
+def statement(slide, x, y, w, h, text, *, dark=False):
+    rect(slide, x, y, w, h, fill=ACCENT_DEEP if dark else WASH)
+    tb(slide, x + Inches(0.4), y + Inches(0.14), w - Inches(0.8), h - Inches(0.28),
+       text, size=16, bold=True, font=SERIF,
+       color=WHITE if dark else INK, align=PP_ALIGN.CENTER,
+       spacing=1.3, anchor=MSO_ANCHOR.MIDDLE)
+
+
+# -------------------------------------------------------------------- facts
+def gather():
+    one = lambda q, p=None: (db.fetch_all(q, p) or [{}])[0]
+    f = {}
+    f["poi"] = one("select count(*) n from geobot.poi where is_published")["n"]
+    f["docs"] = one("select count(*) n from geobot.document")["n"]
+    f["chunks"] = one("select count(*) n from geobot.document_chunk")["n"]
+    f["fac_real"] = one("select count(*) n from geobot.faculty where data_origin='real'")["n"]
+    f["fac_sim"] = one("select count(*) n from geobot.faculty where data_origin='synthetic'")["n"]
+    f["blocks"] = one("select count(*) n from geobot.faculty_schedule where data_origin='real'")["n"]
+
+    run = one("select id, run_label from geobot.eval_run where run_label='run-03-simulation'")
+    f["run"] = run.get("run_label")
+    rid = run.get("id")
+    f["stages"], f["avail"], f["ragas"] = {}, {}, {}
+    if rid:
+        for r in db.fetch_all(
+                "select mode, count(*) n, round(avg(t_guard_ms),1) guard, "
+                "round(avg(t_rf_ms),1) rf, round(avg(t_retrieve_ms),1) retrieve, "
+                "round(avg(t_llm_ms),1) llm, round(avg(t_total_ms),1) total "
+                "from geobot.eval_result where run_id=%s group by mode", (rid,)):
+            f["stages"][r["mode"]] = r
+        # "Answered" means the assistant did not refuse. Matched on "sorry"
+        # rather than "don't have": the model writes a TYPOGRAPHIC apostrophe,
+        # so an ASCII pattern matches nothing and every refusal counts as an
+        # answer -- which once put the exact inverse of this finding on a slide.
+        for r in db.fetch_all(
+                "select r.mode, count(*) n, "
+                "count(*) filter (where r.answer not ilike '%%sorry%%') answered "
+                "from geobot.eval_result r join geobot.eval_query q on q.id=r.eval_query_id "
+                "where r.run_id=%s and q.category='faculty_availability' group by r.mode",
+                (rid,)):
+            f["avail"][r["mode"]] = r
+        for r in db.fetch_all(
+                "select r.mode, count(*) n, "
+                "round(avg(g.faithfulness)::numeric,3) faithfulness, "
+                "round(avg(g.answer_relevancy)::numeric,3) answer_relevancy, "
+                "round(avg(g.context_recall)::numeric,3) context_recall, "
+                "round(avg(g.context_precision)::numeric,3) context_precision "
+                "from geobot.ragas_score g join geobot.eval_result r on r.id=g.eval_result_id "
+                "where r.run_id=%s group by r.mode", (rid,)):
+            f["ragas"][r["mode"]] = r
+    return f
+
+
+# ------------------------------------------------------------------- slides
+def s_title(prs, f):
+    s = blank(prs, ground=GROUND, numbered=False)
+    rect(s, 0, 0, Inches(0.22), H, fill=ACCENT_DEEP)
+    tb(s, Inches(0.95), Inches(1.28), Inches(7.6), Inches(0.3),
+       "SYSTEM THESIS DEFENSE", size=12.5, bold=True, color=ACCENT)
+    tb(s, Inches(0.95), Inches(1.70), Inches(8.1), Inches(3.0),
+       "ISU-GeoBot\nA Campus Navigation and\nFaculty Availability Assistant",
+       size=36, bold=True, color=INK, font=SERIF, spacing=1.16)
+    tb(s, Inches(0.95), Inches(4.72), Inches(7.9), Inches(0.9),
+       "Integrating a Random Forest classifier into a Retrieval-Augmented "
+       "Generation pipeline, under an enforced disclosure limit.",
+       size=15, color=MUTED, spacing=1.35)
+
+    rect(s, Inches(9.35), Inches(1.26), Inches(3.35), Inches(4.5), fill=ACCENT_DEEP)
+    tb(s, Inches(9.72), Inches(1.58), Inches(2.7), Inches(0.8),
+       "ISU-GeoBot", size=24, bold=True, color=WHITE, font=DISPLAY)
+    rect(s, Inches(9.72), Inches(2.56), Inches(0.75), Emu(19050), fill=ACCENT)
+    tb(s, Inches(9.72), Inches(2.84), Inches(2.8), Inches(2.5),
+       "Enhanced RAG\nRandom Forest availability\nStatus masking protocol\n"
+       "Interactive campus map\nOCR announcement intake",
+       size=13.5, color=WHITE, spacing=1.62)
+
+    y = Inches(6.24)
+    rect(s, Inches(0.95), y - Inches(0.22), W - Inches(1.9), Emu(9525), fill=LINE)
+    tb(s, Inches(0.95), y, Inches(4.2), Inches(0.8),
+       "Researchers:  Simbulan, Christian Paul\n"
+       "                       Almario, Michael Allan",
+       size=11.5, color=MUTED, spacing=1.35)
+    tb(s, Inches(5.45), y, Inches(4.5), Inches(0.8),
+       "Institution / Department: College of Computing Studies,\n"
+       "Information and Communication Technology", size=11.5, color=MUTED, spacing=1.35)
+    tb(s, Inches(10.15), y, Inches(2.9), Inches(0.5),
+       "Defense Date: September 16, 2026", size=11.5, color=MUTED)
+
+
+def s_background(prs, f):
+    s = blank(prs); heading(s, "Background of the Study")
+    tb(s, MARGIN, Inches(1.42), W - 2 * MARGIN, Inches(0.5),
+       "A student looking for a lecturer asks two questions. The campus answers "
+       "neither well.", size=19, bold=True, color=INK, font=SERIF)
+    cards = [
+        ("WHERE", "A campus of thirty-odd buildings, no signage a newcomer can follow, "
+                  "and no searchable index of what is inside them."),
+        ("WHETHER", "Whether a lecturer is in right now is unanswerable without walking "
+                    "to the office and checking."),
+        ("THE RISK", "Answering the second question carelessly turns a navigation tool "
+                     "into a tracking tool."),
+        ("THE DATA", f"{f['blocks']} real class blocks exist. Real attendance records do "
+                     "not — they were ruled out on privacy grounds."),
+        ("THE GAP", "Retrieval alone cannot answer availability. A timetable is not a "
+                    "document in the corpus."),
+        ("THE RULE", "An empty hour is not free time. It is the absence of a class, not "
+                     "the presence of a person."),
+    ]
+    cw, ch, gap = Inches(3.92), Inches(1.32), Inches(0.20)
+    for i, (label, body) in enumerate(cards):
+        card(s, MARGIN + (i % 3) * (cw + gap), Inches(2.10) + (i // 3) * (ch + gap),
+             cw, ch, label, body)
+    statement(s, MARGIN, Inches(5.28), W - 2 * MARGIN, Inches(1.02),
+              "The system must answer where a building is, and whether a lecturer is "
+              "available — without ever disclosing where that person is.")
+
+
+def s_objectives(prs, f):
+    s = blank(prs); heading(s, "Objectives")
+    objs = [
+        ("01", "Integrate the classifier",
+         "Integrate a Random Forest classifier into the Retrieval-Augmented Generation "
+         "pipeline so that faculty availability is estimated from temporal schedule data "
+         "and behavioural attendance features."),
+        ("02", "Compare the architectures",
+         "Evaluate and compare the standard and Enhanced RAG architectures in terms of "
+         "Response Time and the RAGAS metrics of Context Precision, Context Recall, "
+         "Faithfulness and Answer Relevancy."),
+        ("03", "Deploy with a disclosure limit",
+         "Deploy the Enhanced RAG architecture within the web-based ISU-GeoBot system, "
+         "enforcing a status masking protocol and an egress boundary so that no physical "
+         "location of a person is disclosed."),
+        ("04", "Evaluate functional accuracy",
+         "Evaluate the functional accuracy of the system's availability estimates against "
+         "direct field observation of classroom activity."),
+    ]
+    cw, chh, gap = Inches(5.98), Inches(1.94), Inches(0.20)
+    for i, (num, title, body) in enumerate(objs):
+        x = MARGIN + (i % 2) * (cw + gap)
+        y = Inches(1.50) + (i // 2) * (chh + gap)
+        rect(s, x, y, cw, chh, fill=WHITE, line=LINE)
+        tb(s, x + Inches(0.24), y + Inches(0.18), Inches(0.6), Inches(0.34),
+           num, size=15, bold=True, color=ACCENT)
+        tb(s, x + Inches(0.90), y + Inches(0.16), cw - Inches(1.2), Inches(0.36),
+           title, size=16, bold=True, color=INK)
+        tb(s, x + Inches(0.24), y + Inches(0.62), cw - Inches(0.48), chh - Inches(0.78),
+           body, size=12.5, color=MUTED, spacing=1.3)
+    tb(s, MARGIN, Inches(5.72), W - 2 * MARGIN, Inches(0.4),
+       "Evaluated on:   Response Time   •   Context Precision   •   Context "
+       "Recall   •   Faithfulness   •   Answer Relevancy   •   Macro F1",
+       size=13, bold=True, color=ACCENT_DEEP, align=PP_ALIGN.CENTER)
+
+
+def s_diagram(prs, title, name):
+    s = blank(prs); heading(s, title)
+    picture(s, name, MARGIN, Inches(1.36), W - 2 * MARGIN, Inches(5.24))
+
+
+def s_shot(prs, objective, name, caption):
+    s = blank(prs); heading(s, "System Screenshots")
+    obj_label(s, objective)
+    tb(s, MARGIN, Inches(1.74), Inches(2.52), Inches(3.6), caption,
+       size=13, color=MUTED, spacing=1.35)
+    picture(s, name, Inches(3.40), Inches(1.36), W - Inches(3.40) - MARGIN, Inches(5.24))
+
+
+def s_results(prs, f):
+    s = blank(prs); heading(s, "Results — Response Time")
+    obj_label(s, 2)
+    std, enh = f["stages"].get("standard"), f["stages"].get("enhanced")
+    rows = [("Pipeline stage", "Standard", "Enhanced", "Δ")]
     if std and enh:
-        for key, label in (("guard", "Presence guard"), ("rf", "Random Forest"),
-                           ("total", "End-to-end")):
-            a, b = float(std[key]), float(enh[key])
+        for k, label in (("guard", "Presence guard"), ("rf", "Random Forest"),
+                         ("retrieve", "Vector retrieval"), ("llm", "Answer generation"),
+                         ("total", "End-to-end mean")):
+            a, b = float(std[k]), float(enh[k])
             rows.append((label, f"{a:,.1f} ms", f"{b:,.1f} ms", f"{b - a:+,.1f}"))
-    y = Inches(2.0)
+    y = Inches(1.80)
+    xs = [MARGIN + Inches(0.20), MARGIN + Inches(2.95), MARGIN + Inches(4.40),
+          MARGIN + Inches(5.80)]
     for i, row in enumerate(rows):
         head = i == 0
-        if head:
-            rect(s, MARGIN, y, Inches(6.1), Inches(0.44), fill=WHITE, line=LINE)
+        last = row[0] == "End-to-end mean"
+        if head or last:
+            rect(s, MARGIN, y, Inches(7.05), Inches(0.46),
+                 fill=WHITE if head else WASH, line=LINE if head else None)
         for j, cell in enumerate(row):
-            xs = [MARGIN + Inches(0.16), MARGIN + Inches(2.5),
-                  MARGIN + Inches(3.9), MARGIN + Inches(5.3)]
-            textbox(s, xs[j], y + Inches(0.08), Inches(2.2), Inches(0.34), cell,
-                    size=13, bold=head or row[0] == "End-to-end",
-                    color=MUTED if head else INK)
-        y += Inches(0.5)
+            tb(s, xs[j], y + Inches(0.09), Inches(2.5), Inches(0.32), cell,
+               size=12.5, bold=head or last, color=MUTED if head else INK,
+               font=MONO if (j and not head) else SANS)
+        y += Inches(0.52)
 
-    av = f.get("availability", {})
-    a_std = av.get("standard", {}).get("answered")
-    a_enh = av.get("enhanced", {}).get("answered")
-    n_q = av.get("standard", {}).get("n")
-    rect(s, Inches(7.1), Inches(1.95), Inches(5.5), Inches(2.5), fill=WHITE, line=ACCENT)
-    textbox(s, Inches(7.36), Inches(2.12), Inches(5), Inches(0.3),
-            "THE FINDING THAT MATTERS", size=10, bold=True, color=ACCENT)
-    if a_std is not None:
-        textbox(s, Inches(7.36), Inches(2.5), Inches(5), Inches(1.0),
-                f"{a_std} of {n_q}", size=34, bold=True, color=INK, font=HEAD_FONT)
-        textbox(s, Inches(7.36), Inches(3.15), Inches(5), Inches(1.2),
-                f"availability questions answered by the standard architecture.\n"
-                f"The Enhanced architecture answered {a_enh}.",
-                size=15, color=MUTED, spacing=1.25)
-    textbox(s, MARGIN, Inches(5.3), W - 2 * MARGIN, Inches(1.6),
-            "The Enhanced arm is slower, and that is the honest result. Baseline RAG "
-            "cannot reach a timetable, so it correctly refuses every availability "
-            "question. What the extra time buys is an entire class of question the "
-            "baseline cannot answer at all — answered under an enforced "
-            "disclosure limit.",
-            size=16, color=INK, spacing=1.3)
+    av_s = f["avail"].get("standard", {})
+    av_e = f["avail"].get("enhanced", {})
+    rect(s, Inches(8.10), Inches(1.80), Inches(4.61), Inches(2.55), fill=WHITE, line=ACCENT)
+    tb(s, Inches(8.38), Inches(1.98), Inches(4.1), Inches(0.28),
+       "THE FINDING THAT MATTERS", size=10, bold=True, color=ACCENT)
+    if av_s:
+        tb(s, Inches(8.38), Inches(2.34), Inches(4.1), Inches(0.85),
+           f"{av_s.get('answered', 0)} of {av_s.get('n', 6)}", size=34, bold=True,
+           color=INK, font=DISPLAY)
+        tb(s, Inches(8.38), Inches(3.02), Inches(4.1), Inches(1.2),
+           "availability questions answered by the standard architecture.\n"
+           f"The Enhanced architecture answered {av_e.get('answered', 0)}.",
+           size=13.5, color=MUTED, spacing=1.3)
+    statement(s, MARGIN, Inches(5.06), W - 2 * MARGIN, Inches(1.16),
+              "The Enhanced arm is slower, and that is the honest result. What the extra "
+              "time buys is a class of question the baseline cannot answer at all.")
 
 
-def slide_privacy(prs, f):
-    s = blank(prs)
-    header(s, "Privacy", "The refusal is the feature")
-    textbox(s, MARGIN, Inches(2.0), Inches(6.0), Inches(0.4),
-            'Asked: "Where is SIM-22?"', size=18, bold=True, color=INK)
-    rect(s, MARGIN, Inches(2.55), Inches(6.0), Inches(0.95), fill=WHITE, line=LINE)
-    textbox(s, MARGIN + Inches(0.24), Inches(2.75), Inches(5.5), Inches(0.6),
-            "“I’m sorry, but I don’t have that information.”",
-            size=16, color=MUTED)
-    bullets(s, MARGIN, Inches(3.8), Inches(6.0), [
-        "Routed as navigation — the classifier never ran",
-        "Recorded classifier time: 0.0 ms. Not computed, then hidden",
-        "Worded exactly like an unknown building, so using the rule reveals nothing",
-    ], size=15, gap=Inches(0.62))
-    shot_frame(s, Inches(7.1), Inches(1.95), Inches(5.5), Inches(3.5),
-               "the assistant answering this question",
-               "Where is SIM-22?",
-               "the refusal, and that it names no room or building")
-    rect(s, MARGIN, Inches(5.9), W - 2 * MARGIN, Inches(1.05), fill=WHITE, line=ACCENT)
-    textbox(s, MARGIN + Inches(0.28), Inches(6.08), W - 2 * MARGIN - Inches(0.56),
-            Inches(0.8),
-            "Across all 12 availability responses, no answer named a room, building, "
-            "floor or office, and the egress filter recorded zero interceptions — "
-            "the boundary held by construction, not by being caught.",
-            size=15, color=INK, spacing=1.2)
+def s_ragas(prs, f):
+    s = blank(prs); heading(s, "Results — Retrieval Quality")
+    obj_label(s, 2)
+    metrics = [("context_precision", "Context Precision"),
+               ("context_recall", "Context Recall"),
+               ("faithfulness", "Faithfulness"),
+               ("answer_relevancy", "Answer Relevancy")]
+    std, enh = f["ragas"].get("standard"), f["ragas"].get("enhanced")
+    scored = [k for k, _ in metrics if std and std.get(k) is not None]
+
+    if scored:
+        y = Inches(1.82)
+        xs = [MARGIN + Inches(0.20), MARGIN + Inches(3.60), MARGIN + Inches(5.10),
+              MARGIN + Inches(6.60)]
+        rect(s, MARGIN, y, Inches(8.1), Inches(0.46), fill=WHITE, line=LINE)
+        for j, c in enumerate(("RAGAS metric", "Standard", "Enhanced", "Δ")):
+            tb(s, xs[j], y + Inches(0.09), Inches(3.2), Inches(0.32), c,
+               size=12.5, bold=True, color=MUTED)
+        y += Inches(0.52)
+        for key, label in metrics:
+            if not std or std.get(key) is None:
+                continue
+            a = float(std[key])
+            b = float(enh[key]) if enh and enh.get(key) is not None else None
+            cells = [label, f"{a:.3f}",
+                     f"{b:.3f}" if b is not None else "—",
+                     f"{b - a:+.3f}" if b is not None else "—"]
+            for j, c in enumerate(cells):
+                tb(s, xs[j], y + Inches(0.09), Inches(3.2), Inches(0.32), c,
+                   size=12.5, color=INK, font=MONO if j else SANS)
+            y += Inches(0.48)
+        note = ("Context Precision is a retriever metric and both arms share a retriever, "
+                "so it is expected to stay flat. Four bars all rising would be the "
+                "suspicious result.")
+        if len(scored) < 4:
+            note = (f"{len(scored)} of 4 metrics scored so far; the remainder are still "
+                    "running against a rate-limited judge. ") + note
+    else:
+        rect(s, MARGIN, Inches(1.82), W - 2 * MARGIN, Inches(1.65), fill=WHITE, line=WARN)
+        tb(s, MARGIN + Inches(0.30), Inches(2.02), Inches(2.8), Inches(0.28),
+           "NOT REPORTED, AND WHY", size=10, bold=True, color=WARN)
+        tb(s, MARGIN + Inches(0.30), Inches(2.36), W - 2 * MARGIN - Inches(0.6),
+           Inches(1.05),
+           "The judge is capped at 8,000 tokens per minute and one grading prompt costs "
+           "roughly 2,000, so a full four-metric sweep over both arms did not complete "
+           "within the study period. This is a quota limit, not a design one.",
+           size=14, color=INK, spacing=1.3)
+        note = ("The harness is implemented and every answer is recorded; only the "
+                "scoring pass is outstanding.")
+    tb(s, MARGIN, Inches(5.30), W - 2 * MARGIN, Inches(1.0), note,
+       size=13.5, color=MUTED, spacing=1.35)
 
 
-def slide_limits(prs, f):
-    s = blank(prs)
-    header(s, "Limitations", "Stated plainly, because they are the method working")
-    bullets(s, MARGIN, Inches(2.0), Inches(11.8), [
-        "The Random Forest is trained on a generated 37-lecturer cohort. Real "
-        "attendance records were ruled out on privacy grounds — a §1.3 "
-        "delimitation, not an oversight.",
-        "Every figure from that cohort is stamped data_origin='synthetic' and its "
-        "artifacts are named -SIMULATION. The claim is that the pipeline recovers "
-        "the behaviour injected into the data, and nothing more.",
-        "Field observation yielded 24 blind-capture records, below the sample the "
-        "analysis needs. The capture form had pre-filled the observed status with "
-        "the system’s own estimate; the defect was found, the form rebuilt, and "
-        "the contaminated records excluded rather than counted.",
-        "RAGAS scoring is limited by judge throughput, not by design.",
-    ], size=15, gap=Inches(1.05))
-    rect(s, MARGIN, Inches(6.15), W - 2 * MARGIN, Inches(0.85), fill=WHITE, line=ACCENT)
-    textbox(s, MARGIN + Inches(0.28), Inches(6.32), W - 2 * MARGIN - Inches(0.56),
-            Inches(0.6),
-            "Next: a consented cohort with real attendance would let every number here "
-            "be recomputed against reality using the instruments already built.",
-            size=15, color=INK)
+def s_privacy(prs, f):
+    s = blank(prs); heading(s, "The Refusal Is the Feature")
+    obj_label(s, 3)
+    tb(s, MARGIN, Inches(1.78), Inches(6.1), Inches(0.36),
+       "Asked:   “Where is SIM-22?”", size=17, bold=True, color=INK)
+    rect(s, MARGIN, Inches(2.26), Inches(6.1), Inches(0.78), fill=WHITE, line=LINE)
+    tb(s, MARGIN + Inches(0.26), Inches(2.44), Inches(5.6), Inches(0.5),
+       "“I’m sorry, but I don’t have that information.”",
+       size=15, italic=True, color=MUTED)
+    for i, p in enumerate([
+            "Routed as navigation — the classifier never ran",
+            "Recorded classification time: 0.0 ms. Not computed, then hidden",
+            "Worded exactly like the refusal for an unknown building, so using "
+            "the rule reveals nothing"]):
+        yy = Inches(3.28) + i * Inches(0.62)
+        tb(s, MARGIN, yy, Inches(0.24), Inches(0.3), "—", size=14, color=ACCENT)
+        tb(s, MARGIN + Inches(0.30), yy, Inches(5.85), Inches(0.6), p,
+           size=14, color=INK, spacing=1.25)
+    picture(s, "06-chat-refusal", Inches(7.0), Inches(1.70), Inches(5.71), Inches(3.5))
+    statement(s, MARGIN, Inches(5.42), W - 2 * MARGIN, Inches(1.06),
+              "Across all twelve availability responses, no answer named a room, building, "
+              "floor or office — and the egress filter recorded zero interceptions.")
 
 
+def s_conclusion(prs, f):
+    s = blank(prs); heading(s, "Expected Contribution / Conclusion")
+    tb(s, MARGIN, Inches(1.42), W - 2 * MARGIN, Inches(0.85),
+       "The contribution is not a faster assistant. It is an assistant that cannot "
+       "disclose a person’s location, by construction.",
+       size=19, bold=True, color=INK, font=SERIF, spacing=1.25)
+    rows = [
+        ("01", "Schedule-grounded availability",
+         "Availability is answered from a classifier over timetable and behavioural "
+         "features, not inferred from retrieved prose."),
+        ("02", "Enforced disclosure limit",
+         "Three coarse states, never a room. The gates run before prediction, so a "
+         "paused lecturer’s estimate is never computed at all."),
+        ("03", "Honest measurement",
+         "Generated data is stamped synthetic end to end, and the instruments refuse to "
+         "score what the data cannot support."),
+        ("04", "Reproducible artifacts",
+         "Every figure in Chapter 4 is emitted by a script from the database rather than "
+         "transcribed by hand."),
+    ]
+    for i, (num, title, body) in enumerate(rows):
+        y = Inches(2.44) + i * Inches(0.84)
+        tb(s, MARGIN, y, Inches(0.6), Inches(0.32), num, size=14, bold=True, color=ACCENT)
+        tb(s, MARGIN + Inches(0.70), y, Inches(3.6), Inches(0.34), title,
+           size=15, bold=True, color=INK)
+        tb(s, MARGIN + Inches(4.50), y, Inches(7.5), Inches(0.72), body,
+           size=13.5, color=MUTED, spacing=1.25)
+    statement(s, MARGIN, Inches(5.92), W - 2 * MARGIN, Inches(0.92),
+              "A system that answered faster by guessing where someone is would not be "
+              "an improvement.", dark=True)
+
+
+def s_thanks(prs):
+    s = blank(prs, ground=ACCENT_DEEP, numbered=False)
+    rect(s, 0, 0, Inches(0.22), H, fill=ACCENT)
+    tb(s, Inches(1.2), Inches(2.85), Inches(10.9), Inches(1.4),
+       "Thank you", size=52, bold=True, color=WHITE, font=SERIF, align=PP_ALIGN.CENTER)
+    tb(s, Inches(1.2), Inches(4.25), Inches(10.9), Inches(0.5),
+       "Questions are welcome.", size=17, color=WASH, align=PP_ALIGN.CENTER)
+
+
+# --------------------------------------------------------------------- build
 def build():
     try:
         sys.stdout.reconfigure(encoding="utf-8")
     except Exception:
         pass
-
     f = gather()
+    _page["n"] = 0
     prs = Presentation()
     prs.slide_width, prs.slide_height = W, H
 
-    slide_title(prs, f)
-    slide_study(prs, f)
-    slide_architecture(prs, f)
-    slide_pipeline(prs, f)
-
-    av = f.get("availability", {})
-    a_enh = av.get("enhanced", {}).get("answered")
-    a_std = av.get("standard", {}).get("answered")
-
-    objective_slide(
-        prs, 1, "Integrate a Random Forest into the RAG pipeline",
-        "ACHIEVED", ACCENT,
-        ["The classifier is reached only by an availability question",
-         "Eight schedule features plus three attendance features",
-         "Its output is masked to one of three states before it leaves the server",
-         f"Answered {a_enh} of 6 availability questions; the baseline answered {a_std}"
-         if a_enh is not None else "Exercised end to end in run-03-simulation"],
-        "the assistant answering an availability question",
-        "Is SIM-33 available for consultation right now?",
-        "a coarse state and a next consultation window, with no location")
-
-    ragas_rows = f.get("ragas", [])
-    objective_slide(
-        prs, 2, "Compare the standard and Enhanced architectures",
-        "ACHIEVED" if ragas_rows else "PARTIAL", ACCENT if ragas_rows else WARN,
-        ["39 paired queries, one run, one prompt version",
-         "Per-stage latency measured in the pipeline itself",
-         "Standard answered 0 of 6 availability questions; Enhanced answered 5",
-         f"RAGAS: {len(ragas_rows)} metric/arm scores recorded"
-         if ragas_rows else "RAGAS scoring limited by judge throughput"],
-        "the response-time table, or the comparison view",
-        None, "the per-stage difference between the two arms",
-        caveat=None if ragas_rows else
-        "RAGAS scores are not reported. The judge is capped at 8,000 tokens per "
-        "minute and a grading prompt costs about 2,000, so a full sweep did not "
-        "finish inside the study period. That is a quota limit, not a design one.")
-
-    objective_slide(
-        prs, 3, "Deploy the Enhanced architecture in the web system",
-        "ACHIEVED", ACCENT,
-        [f"{f['poi_published']} published locations on a live interactive map",
-         "Admin Dashboard: locations, validation and schedule import",
-         "136 automated tests, 31 of them against the masking boundary",
-         "Row-level security forced on all 27 tables"],
-        "the campus map with a place card open",
-        None, "the deployed system a visitor actually uses")
-
-    objective_slide(
-        prs, 4, "Evaluate the functional accuracy of the estimates",
-        "PARTIAL", WARN,
-        ["Accuracy against the simulation cohort IS measured and reported",
-         "96.77% accuracy, 0.9458 macro F1 (Table 4.3)",
-         "Field observation: 24 blind-capture records",
-         "The instrument works; the sample is short"],
-        "the faculty validation tab in the Admin Dashboard",
-        None, "the capture form that records each observation",
-        caveat="No accuracy figure is claimed from the field sample. At 24 blind "
-               "observations the smallest class holds one record, so the analysis "
-               "script refuses to emit a score — and 84 earlier records were "
-               "excluded because the form had pre-filled the system’s own answer.")
-
-    slide_results(prs, f)
-    slide_privacy(prs, f)
-    slide_limits(prs, f)
+    s_title(prs, f)
+    s_background(prs, f)
+    s_objectives(prs, f)
+    s_diagram(prs, "System Architecture", "diagram-architecture")
+    s_diagram(prs, "AI Pipeline", "diagram-pipeline")
+    s_shot(prs, 1, "05-chat-availability",
+           "The classifier answering an availability question. One of three coarse "
+           "states plus the next consultation window — and no location.")
+    s_results(prs, f)
+    s_ragas(prs, f)
+    s_shot(prs, 3, "02-map-overview",
+           f"The deployed map. {f['poi']} published locations, drawn from the same "
+           "records the assistant retrieves against.")
+    s_shot(prs, 3, "03-place-card",
+           "A place card. The photograph is interface only — it never enters the "
+           "retrieval corpus.")
+    s_privacy(prs, f)
+    s_shot(prs, 3, "05-admin-locations",
+           "The Admin Dashboard. Adding a location writes the map pin and its embedded "
+           "place card in one operation, so the two cannot drift apart.")
+    s_shot(prs, 3, "07-admin-schedule",
+           "Schedule import. Two steps: the preview returns a checksum, and the apply "
+           "is refused unless that checksum comes back.")
+    s_shot(prs, 3, "08-admin-ocr",
+           "Announcement intake. OCR text is extracted in the browser and never stored; "
+           "only the resolved event is written.")
+    s_shot(prs, 4, "06-admin-validation",
+           "Field observation capture. The observed status starts empty and the system "
+           "estimate stays hidden until the observer commits — the rebuilt form.")
+    s_conclusion(prs, f)
+    s_thanks(prs)
 
     prs.save(OUT)
-    print(f"wrote {OUT}  ({OUT.stat().st_size // 1024} KB, {len(prs.slides.__iter__.__self__._sldIdLst)} slides)")
+    print(f"wrote {OUT}  ({OUT.stat().st_size // 1024} KB, {len(prs.slides)} slides)")
     print("\nfigures read from the database:")
-    for k in ("poi_published", "documents", "chunks", "faculty_real", "faculty_sim",
-              "blocks_real", "run_label"):
-        print(f"   {k:16} {f.get(k)}")
-    if f.get("availability"):
-        for mode, r in f["availability"].items():
-            print(f"   availability {mode:9} answered {r['answered']} of {r['n']}")
-    print(f"   ragas rows       {len(f.get('ragas', []))}")
+    for k in ("poi", "docs", "chunks", "fac_real", "fac_sim", "blocks", "run"):
+        print(f"   {k:12} {f.get(k)}")
+    for mode, r in f["avail"].items():
+        print(f"   availability {mode:9} answered {r['answered']} of {r['n']}")
+    print(f"   ragas arms   {list(f['ragas'].keys()) or 'none scored yet'}")
+    missing = [n for n in ("05-chat-availability", "06-chat-refusal")
+               if not (SHOTS / f"{n}.png").exists()]
+    if missing:
+        print(f"\n   PLACEHOLDERS STILL OPEN: {', '.join(missing)}")
 
 
 if __name__ == "__main__":

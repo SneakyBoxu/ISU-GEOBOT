@@ -1,8 +1,224 @@
 {
-  "cachedAt": "2026-09-10T04:29:01.684Z",
+  "cachedAt": "2026-09-13T08:07:05.966Z",
   "campus": "echague",
   "timezone": "Asia/Manila",
   "faculty": [
+    {
+      "id": "895c7a8c-5e2a-4347-922a-4c926296e346",
+      "full_name": "SIM-01",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "edbe326e-6c84-4b91-80b6-7277f056e80d",
+      "full_name": "SIM-02",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "57d5778f-ac92-4712-93ee-bb33115fa824",
+      "full_name": "SIM-03",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "f5d2b617-5b18-48dd-b35f-be531563b7a3",
+      "full_name": "SIM-04",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "b549f9ec-15b2-48a0-a5b6-ebcaa31e25be",
+      "full_name": "SIM-05",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "77219a3f-31f3-4052-8384-47ac76fae32c",
+      "full_name": "SIM-06",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "e1b94713-d763-45a6-a37a-11d6ad8ddee7",
+      "full_name": "SIM-07",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "a65ffb9e-af97-4c79-a869-6f24ab796446",
+      "full_name": "SIM-08",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "11a7ba09-828c-40e3-9d33-c40ba6f8544f",
+      "full_name": "SIM-09",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "069201e3-41fb-4d3a-b502-4e24d1624102",
+      "full_name": "SIM-10",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "a0a144d7-6050-4b53-a56c-9a6ae225fde3",
+      "full_name": "SIM-11",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "1db06ef0-37e7-43fd-88c9-a844f50544fc",
+      "full_name": "SIM-12",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "4bb5d0f4-950b-44d5-9412-a3372542725f",
+      "full_name": "SIM-13",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "c4ed6a66-2147-406e-8669-f6fd65d998e6",
+      "full_name": "SIM-14",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "3b7a143d-ae08-478e-887c-05259093682b",
+      "full_name": "SIM-15",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "981448d9-1b96-4462-8ffe-550d5e2df9b9",
+      "full_name": "SIM-16",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "3f6bbd6e-d770-4dbe-ae69-005ff83148a9",
+      "full_name": "SIM-17",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "f27b27d0-44ca-44aa-a16e-23d5ce1546ab",
+      "full_name": "SIM-18",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "bca5d413-3f06-49a4-8f53-2bc31dcbbe70",
+      "full_name": "SIM-19",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "d829c627-54c2-4756-9bb4-acf613767fa0",
+      "full_name": "SIM-20",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "a46bf42c-2aa6-4efd-a0c0-a7b9ca1a43eb",
+      "full_name": "SIM-21",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "d3e2ee39-42a6-42aa-b414-d3e69c2f0f94",
+      "full_name": "SIM-22",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "ddf32db0-ad0a-41b6-acd0-e7a9ba5b65e8",
+      "full_name": "SIM-23",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "58911fdb-a4c8-492e-a3fd-5ea3a2113b18",
+      "full_name": "SIM-24",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "4ad79154-e377-4636-ba93-2a6ad7b916e3",
+      "full_name": "SIM-25",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "6b506233-a281-44d8-91b9-ae5da28a6bf3",
+      "full_name": "SIM-26",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "55171cf0-4500-4829-8bfb-ef4128fccb47",
+      "full_name": "SIM-27",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "781f02e3-2a2a-4ce4-859b-de5b6a639e95",
+      "full_name": "SIM-28",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "7f5ceb62-7e09-4e46-bccd-6695531aad63",
+      "full_name": "SIM-29",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "c83da927-0e8d-4ec3-b9f0-bbcea592951b",
+      "full_name": "SIM-30",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "16370733-abc0-4f01-9be8-7ddbfa761258",
+      "full_name": "SIM-31",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "63e6e5ad-7aed-46cc-beb6-ac3912ad0973",
+      "full_name": "SIM-32",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "9f9ea752-47cc-4253-bce3-be2162516867",
+      "full_name": "SIM-33",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "39eaacc6-7030-4587-aff4-e2ae6e21c7b6",
+      "full_name": "SIM-34",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "7b987e2c-2784-437f-b7bf-38023eac5050",
+      "full_name": "SIM-35",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "44884a57-7f8b-4413-92e4-5ea4e8d8a9cb",
+      "full_name": "SIM-36",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
     {
       "id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "full_name": "AQUINO, RUSSEL N.",
@@ -198,6 +414,12 @@
     {
       "id": "6afff250-39ed-41dc-87d3-2e660925310e",
       "full_name": "BERMOZA, MARLYN M.",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "e52de54c-4666-4849-8e50-1ad7de7dca8a",
+      "full_name": "SIM-37",
       "department": "College of Computing, Information and Communication Technology",
       "is_consented": true
     },
