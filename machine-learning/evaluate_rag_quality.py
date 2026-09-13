@@ -50,6 +50,13 @@ def parse_args():
     p.add_argument("--run", required=True, help="eval_run id")
     p.add_argument("--dry-run", action="store_true",
                    help="Compute and print without writing ragas_score")
+    p.add_argument("--judge", default=None,
+                   help="Score with this judge instead of the one recorded on the "
+                        "run. Groq's daily token cap is PER MODEL, so a judge whose "
+                        "allowance is spent can be swapped for one whose is not. The "
+                        "run row is updated to match, because eval_run.judge_model is "
+                        "the provenance record and must name the model that actually "
+                        "scored -- never the one originally intended.")
     p.add_argument("--simulation", action="store_true",
                    help="Score a run whose cohort is generated. Waives the "
                         "people half of the research-ready gate -- the corpus "
@@ -315,8 +322,29 @@ def main():
 
     # After validation: build_judge loads a sentence-transformers model,
     # which is slow enough to be worth not doing for a typo.
+    judge_model = args.judge or run["judge_model"]
+    if args.judge and args.judge != run["judge_model"]:
+        # The judge must stay distinct from the generator (audit F-05): a model
+        # grading its own output is not an evaluation. Refuse rather than warn.
+        if args.judge == run["groq_model_id"]:
+            raise SystemExit(
+                f"REFUSING: {args.judge} generated these answers. A judge must "
+                "differ from the generator, or the pipeline grades itself.")
+        # fetch_all runs read-only, so the provenance update needs a writable
+        # cursor. Writing it is not optional: eval_run.judge_model is what
+        # Chapter 4 cites, and it must name the model that actually scored.
+        with db.cursor(readonly=False) as cur:
+            cur.execute(
+                "update geobot.eval_run set judge_model = %s where id = %s",
+                (args.judge, run["id"]))
+        print(f"""
+
+  JUDGE CHANGED: {run['judge_model']} -> {args.judge}
+  eval_run.judge_model has been updated, so the record names the model that
+  actually scored. Chapter 4 must quote this judge, not the original one.
+""")
     judge, embeddings, run_config = build_judge(
-        run["judge_model"], run["judge_embedding_model"])
+        judge_model, run["judge_embedding_model"])
 
     print(f"\nscoring {len(rows)} results, metrics: {', '.join(wanted)}")
     for m in wanted:
