@@ -254,7 +254,7 @@ commit;
 --
 --  Regenerate the place-cards so the assistant can answer about the new
 --  locations. Either:
---      cd ml && python ingest.py --place-cards --origin real
+--      cd ml && python document_knowledge_importer.py --place-cards --origin real
 --  or, per location, POST /api/admin/pois/:id/reindex from the Campus
 --  Location portal.
 --

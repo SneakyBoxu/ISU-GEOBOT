@@ -121,7 +121,7 @@ export default function LandingHeroCinematic({ onAskAssistant, count, categories
       <div className="container-x mt-14">
         <div className="flex flex-wrap items-center justify-between gap-6 border-t border-line pt-5">
           {/* Counted from the data, not typed in. Adding a building through
-              the Campus Location portal changes these without anyone editing
+              the Admin Dashboard changes these without anyone editing
               this file. 355 hectares is an institutional fact, not a count. */}
           <p className="flex flex-wrap items-center gap-x-6 gap-y-2 text-label text-fg-subtle">
             <span>

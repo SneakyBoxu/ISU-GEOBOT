@@ -1,7 +1,7 @@
 /**
  * The [LOCATION: id] map-control protocol — test suite.
  *
- *   npm test --prefix server
+ *   npm test --prefix backend
  *
  * This is the one behaviour imported from the reference project, and it is the
  * one place where output from a language model is allowed to drive the

@@ -20,7 +20,7 @@ const LandingMiniMapPreview = lazy(() => import('./LandingMiniMapPreview.jsx'));
  *
  * The grouping maps the poi_type vocabulary onto three student-facing headings.
  * The DATA IS LIVE: it comes from the same /api/map/pois the workspace draws, so
- * a location added through the Campus Location portal appears here without
+ * a location added through the Admin Dashboard appears here without
  * anyone editing this file, and nothing here is hardcoded or invented.
  *
  * Every card is a deep link into the workspace with that location focused.

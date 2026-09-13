@@ -1,15 +1,23 @@
 /**
- * Authentication and role gating for /guard, /validate and /eval.
+ * Authentication and role gating for every write surface in the system.
+ *
+ * Four roles are recognised, and each one is checked at the route:
+ *
+ *   admin, researcher   the Admin Dashboard -- campus locations, schedule and
+ *                       document import, POI photographs (/admin/*)
+ *   validator           faculty availability validation entries (/validate/*)
+ *   faculty             a lecturer acting on their OWN record only
+ *                       (/admin/me/faculty), which is how the RA 10173 right
+ *                       to object is exercised
  *
  * Roles are provisioned manually by the researchers (audit §7.2). There is NO
- * self-registration on any of these portals: the guard population is small,
- * known and fixed for the evaluation period, and self-registration on the
- * dashboard that writes to the presence log would be an open door to the most
- * sensitive table in the system.
+ * self-registration: the population is small, known and fixed for the
+ * evaluation period, and letting anyone enrol themselves into a role that
+ * writes to faculty data would be an open door to the most sensitive tables in
+ * the system.
  *
- * A shared PIN was explicitly rejected: it destroys `logged_by`
- * accountability, which is the only thing making the presence log defensible
- * as research evidence.
+ * A shared PIN was explicitly rejected: it destroys per-actor accountability,
+ * which is the only thing making an audit row defensible as research evidence.
  */
 
 import { authClient, db } from '../utilities/service-clients.js';

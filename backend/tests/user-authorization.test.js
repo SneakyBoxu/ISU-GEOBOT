@@ -1,7 +1,7 @@
 /**
  * Map-editing authorization — adversarial test suite.
  *
- *   npm test --prefix server
+ *   npm test --prefix backend
  *
  * THIS FILE IS THE EVIDENCE FOR RULE 3: the Campus Location portal is the only
  * authorized place to create, edit or delete map data.

@@ -1,7 +1,7 @@
 """
 Deterministic schedule-lookup baseline (audit F-20 / open decision C12).
 
-    python baseline_rule.py --semester 2025-2026-1 \
+    python schedule_rule_baseline.py --semester 2025-2026-1 \
         --start 2025-08-11 --end 2025-12-19 --label-source attendance_derived
 
 WHY THIS SCRIPT EXISTS.
@@ -14,7 +14,7 @@ to the study — §2.1.3 and §3.5.2 both lean on "better than rule-based" — a
 any panelist with an ML background will spot the gap.
 
 The only way to support the claim is to run the baseline and compare. This
-script does that on EXACTLY the sample set and split that train_rf.py uses, so
+script does that on EXACTLY the sample set and split that train_availability_model.py uses, so
 the numbers are directly comparable.
 
 Either outcome is publishable. If the forest wins, you have quantitative proof
@@ -98,7 +98,7 @@ def main():
     if not samples:
         raise SystemExit("no samples produced")
 
-    # Identical split logic to train_rf.py so the test sets match row for row.
+    # Identical split logic to train_availability_model.py so the test sets match row for row.
     order = np.argsort([s.when for s in samples])
     if args.split == "time_based":
         cut = int(len(samples) * (1 - args.test_size))
@@ -139,7 +139,7 @@ def main():
         print(f"  {name[:12]:>12}  " + "  ".join(f"{v:>12,}" for v in row))
 
     print(
-        "\nCompare against train_rf.py run with the SAME --semester, --start,\n"
+        "\nCompare against train_availability_model.py run with the SAME --semester, --start,\n"
         "--end, --label-source and --split. Report both figures in Chapter 4.\n"
         "This comparison — not feature importance — is what supports the\n"
         "thesis's claim that ML is necessary over a rule-based alternative.\n"

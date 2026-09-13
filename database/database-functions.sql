@@ -84,7 +84,7 @@ end;
 $$;
 
 comment on function geobot.resolve_presence is
-  'Audit F-07. Tri-state. Callers (presenceService.js) must treat BOTH '
+  'Audit F-07. Tri-state. Callers (faculty-presence-service.js) must treat BOTH '
   '''confirmed_on_campus'' AND ''unknown'' as "proceed to Random Forest". '
   'Only ''confirmed_off_campus'' triggers the deterministic override. '
   'Never collapse this to a boolean.';
@@ -189,7 +189,7 @@ comment on function geobot.match_document_chunks is
 -- =====================================================================
 --  DETERMINISTIC SCHEDULE LOOKUP                          (F-20 / audit C12)
 -- =====================================================================
---  The SQL twin of baseline_rule.py.
+--  The SQL twin of schedule_rule_baseline.py.
 --
 --  The thesis (§3.5.2) claims feature-importance analysis validates "the
 --  necessity of the machine learning approach over a simple rule-based
@@ -281,7 +281,7 @@ comment on function geobot.schedule_lookup_status is
 -- =====================================================================
 --  FACULTY RESOLUTION — EXACT OR CLARIFY                  (F-31 / audit B5)
 -- =====================================================================
---  Returns ALL candidates. The caller (router.js) must ask a clarifying
+--  Returns ALL candidates. The caller (intent-query-router.js) must ask a clarifying
 --  question when more than one row comes back and must return "no such
 --  faculty" when zero come back. It must NEVER auto-select the top match:
 --  resolving "Prof. Santoso" to "Prof. Santos" discloses one person's status
@@ -330,7 +330,7 @@ $$;
 
 comment on function geobot.resolve_faculty_candidates is
   'Audit F-31. EXACT-OR-CLARIFY. The ''fuzzy'' rows exist to DETECT ambiguity '
-  'so the assistant can ask, not to auto-pick a winner. router.js must treat '
+  'so the assistant can ask, not to auto-pick a winner. intent-query-router.js must treat '
   '0 candidates as "unknown faculty" and >1 as "ask which one". Consent-gated '
   'via is_consented (audit F-32 / C11).';
 

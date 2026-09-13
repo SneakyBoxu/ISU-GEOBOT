@@ -5,7 +5,7 @@ import DemoModeNotificationBanner from '../shared-components/DemoModeNotificatio
 import PageFooter from '../shared-components/PageFooter.jsx';
 
 import { useCampusLocations } from '../../custom-react-hooks/useCampusLocations.js';
-import LandingSystemArchitecture from './LandingSystemArchitecture.jsx';
+import LandingBackgroundTexture from './LandingBackgroundTexture.jsx';
 
 // The dock reaches supabase-js through the chat panel — around 58KB gzipped —
 // and nobody has asked it a question yet on first paint. Lazy, so the homepage
@@ -80,7 +80,7 @@ export default function Landing() {
 
   return (
     <div className="relative min-h-screen bg-bg text-fg">
-      <LandingSystemArchitecture />
+      <LandingBackgroundTexture />
       <a href="#main" className="skip-link">Skip to content</a>
       <TopNavigationBar />
       <DemoModeNotificationBanner />

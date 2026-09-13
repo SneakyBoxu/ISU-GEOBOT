@@ -4,7 +4,7 @@
  *
  * WHY AN ADAPTER RATHER THAN A SEPARATE DEMO SERVER.
  *
- * Everything that matters — router.js, presenceService.js, ragService.js, the
+ * Everything that matters — intent-query-router.js, faculty-presence-service.js, knowledge-search-service.js, the
  * masking boundary, the prompt template — runs UNCHANGED against this. The
  * demo therefore exercises the real pipeline, including the real privacy
  * boundary, rather than a parallel implementation that could drift from it.
@@ -61,7 +61,7 @@ function placeCardText(p) {
   return parts.join(' ');
 }
 
-/** Sentence-packing to roughly the same budget ingest.py enforces. */
+/** Sentence-packing to roughly the same budget document_knowledge_importer.py enforces. */
 function chunkText(text, targetWords = 90) {
   const sentences = text.split(/(?<=[.!?])\s+/);
   const out = [];

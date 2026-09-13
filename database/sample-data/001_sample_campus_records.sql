@@ -10,7 +10,7 @@
 --  Three enforcement layers make that stick:
 --    1. data_origin = 'synthetic' on every row.
 --    2. corpus_is_research_ready() returns false while any of these exist, and
---       evalRunner.js / db.assert_research_ready() hard-fail on it.
+--       evaluation-runner.js / db.assert_research_ready() hard-fail on it.
 --    3. Names and coordinates are VISIBLY fake. GET /api/map/pois prefixes
 --       synthetic POIs with [DEMO], and faculty here are named "Demo Faculty
 --       A..E" — so a screenshot of placeholder data is self-evidently
@@ -71,7 +71,7 @@ insert into faculty_pseudonym_map (faculty_id) select id from faculty;
 -- ---------------------------------------------------------------------
 -- Schedules — one plausible teaching week per demo faculty member
 --
--- room_label is populated because train_rf.py and baseline_rule.py read it.
+-- room_label is populated because train_availability_model.py and schedule_rule_baseline.py read it.
 -- It must NEVER be interpolated into an LLM prompt (audit F-27/F-28); the
 -- masking egress boundary and the output filter both exist to guarantee that.
 -- ---------------------------------------------------------------------
@@ -168,5 +168,5 @@ commit;
 --  Step 4 REQUIRES --plumbing-run. Without real attendance data the features
 --  and labels are both schedule-derived, so the forest reproduces the rule
 --  baseline by construction and its accuracy is not a finding (audit F-18/F-20,
---  open decision C4). train_rf.py refuses to persist metrics for such a run.
+--  open decision C4). train_availability_model.py refuses to persist metrics for such a run.
 -- =====================================================================

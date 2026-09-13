@@ -1,7 +1,7 @@
 """
 RAGAS scoring for a completed evaluation run (thesis §3.8.1).
 
-    python score_ragas.py --run <eval_run_id>
+    python evaluate_rag_quality.py --run <eval_run_id>
 
 Reads eval_result rows produced by backend/src/services/evaluation-runner.js and writes
 ragas_score. Kept separate from generation so that changing the judge does not

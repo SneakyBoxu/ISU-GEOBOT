@@ -1,7 +1,7 @@
 /**
  * Conversation memory — test suite.
  *
- *   npm test --prefix server
+ *   npm test --prefix backend
  *
  * Multi-turn chat was added so follow-ups work: "where is the library", then
  * "how do I get there from the Oval". That is a plain usability gain and needs

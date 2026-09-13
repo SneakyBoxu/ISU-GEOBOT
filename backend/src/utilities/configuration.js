@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 /**
  * DEMO_MODE runs the whole application with no external services: no Supabase,
- * no Groq, no Python. See src/demo/index.js for exactly what is real and what
+ * no Groq, no Python. See src/mock-services/index.js for exactly what is real and what
  * is stubbed. It exists so the app can be built and shown before credentials
  * and institutional data are available.
  */

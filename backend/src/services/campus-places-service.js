@@ -65,7 +65,7 @@ export function buildPlaceCard(poi, departmentName) {
   return parts.join(' ');
 }
 
-/** Sentence-packing to the same budget ingest.py enforces (audit F-34). */
+/** Sentence-packing to the same budget document_knowledge_importer.py enforces (audit F-34). */
 function chunk(text, targetWords = 90) {
   const sentences = text.split(/(?<=[.!?])\s+/);
   const out = [];

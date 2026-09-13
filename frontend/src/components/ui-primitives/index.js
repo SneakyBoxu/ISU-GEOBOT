@@ -4,5 +4,5 @@ export { Input, PasswordInput, Textarea, Select } from './TextInputField.jsx';
 export { default as Alert } from './AlertBanner.jsx';
 export { Skeleton, SkeletonRows } from './SkeletonLoadingPlaceholder.jsx';
 export { default as EmptyState } from './EmptyStatePlaceholder.jsx';
-export { default as StatusIndicator, STATUS_META } from './OnlineStatusIndicator.jsx';
+export { default as StatusIndicator, STATUS_META } from './FacultyAvailabilityBadge.jsx';
 export { default as ThemeToggle } from './DarkModeToggleSwitch.jsx';

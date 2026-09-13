@@ -10,8 +10,8 @@ TWO HARD RULES:
    network. /predict must not be publicly callable.
 
 2. This process is the ONLY place embeddings are produced (audit F-14).
-   Document vectors (ingest.py), query vectors (/embed) and evaluation vectors
-   (score_ragas.py) all come from this one code path. If Node ever grows its
+   Document vectors (document_knowledge_importer.py), query vectors (/embed) and evaluation vectors
+   (evaluate_rag_quality.py) all come from this one code path. If Node ever grows its
    own embedder, query and document vectors silently diverge and retrieval
    degrades invisibly.
 
@@ -134,7 +134,7 @@ def model_info():
         return (
             jsonify(
                 rf_ready=False,
-                message="No trained model. Run train_rf.py against real data.",
+                message="No trained model. Run train_availability_model.py against real data.",
                 embed_model=EMBED_MODEL_NAME,
                 embed_dim=EMBED_DIM,
                 max_seq_length=_max_seq,
@@ -242,7 +242,7 @@ def predict():
             jsonify(
                 error="model_unavailable",
                 message=(
-                    "No trained Random Forest. Run train_rf.py against real "
+                    "No trained Random Forest. Run train_availability_model.py against real "
                     "ISU data. Audit R6: a placeholder model must never be "
                     "shipped, and its accuracy must never be fabricated."
                 ),

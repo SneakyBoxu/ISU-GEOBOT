@@ -8,10 +8,11 @@ import ThemeToggle from '../ui-primitives/DarkModeToggleSwitch.jsx';
 /**
  * Portals are reachable from every page, but they are not marketing links.
  *
- * Only `/validate` is something a person outside the research team goes
- * looking for. `/admin` and `/validate` are operational surfaces for one or two
- * people each: in the menu so nobody needs to be told a URL, out of the top
- * bar so the navigation does not imply a general-purpose audience.
+ * `/admin-dashboard` is the only one left. The separate campus-location and
+ * faculty-validation portals were folded into it, so what used to be three
+ * URLs is now three tabs behind one sign-in. It is an operational surface for
+ * one or two people: in the menu so nobody needs to be told a URL, out of the
+ * top bar so the navigation does not imply a general-purpose audience.
  *
  * Nothing here is access control. Every portal enforces auth and role
  * server-side and RLS enforces it again at the database. Hiding a link is

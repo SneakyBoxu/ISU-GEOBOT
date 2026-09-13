@@ -1,7 +1,7 @@
 """
 Training-row construction for the Random Forest.
 
-Shared by train_rf.py and baseline_rule.py so both are evaluated on EXACTLY the
+Shared by train_availability_model.py and schedule_rule_baseline.py so both are evaluated on EXACTLY the
 same rows. Comparing two classifiers on different samples is not a comparison.
 
 SAMPLING SCHEME (audit F-21).
@@ -27,7 +27,7 @@ LABELS (audit F-18, blocking question C4).
   attendance_derived — labels from real intraday attendance. What the thesis
                        actually describes. Requires check-in/check-out punches.
 
-train_rf.py refuses to write metrics for a schedule_derived run unless it is
+train_availability_model.py refuses to write metrics for a schedule_derived run unless it is
 explicitly marked as a plumbing run.
 """
 

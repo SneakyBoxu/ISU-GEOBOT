@@ -1,7 +1,7 @@
 /**
  * Technical AI Evaluation harness (thesis §3.8.1, §1.2 Objective 2).
  *
- *   node src/services/evalRunner.js --label "run-01" --judge llama-3.3-70b-versatile
+ *   node src/services/evaluation-runner.js --label "run-01" --judge llama-3.3-70b-versatile
  *
  * Runs every registered eval_query through BOTH arms and persists everything
  * RAGAS needs plus component-level latency.

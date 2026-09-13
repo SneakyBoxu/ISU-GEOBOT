@@ -1,7 +1,7 @@
 /**
  * Go-live preflight.
  *
- *   npm run preflight --prefix server
+ *   npm run preflight --prefix backend
  *
  * Answers one question: if DEMO_MODE were switched off right now, what would
  * break? It contacts nothing it does not have to and writes nothing at all.

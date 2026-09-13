@@ -5,8 +5,10 @@ import { CheckCircle2, GraduationCap, MinusCircle } from 'lucide-react';
  *
  * `label` is the display wording from the build brief. `thesisLabel` is the
  * §3.9 evaluated wording. Both are kept because they differ, and the deviation
- * is a live researcher decision (docs/OPEN_DECISIONS.md item 2) — not
- * something the UI should quietly pick a side on.
+ * is a deliberate, recorded deviation — not something the UI should quietly
+ * pick a side on. The evaluated wording is the one in thesis §3.9; `label` is
+ * what a student reads on screen. If they ever have to agree, change §3.9
+ * first and this second.
  *
  * Audit §4.3: there is deliberately NO confidence level, percentage or
  * High/Medium/Low badge here. Displaying confidence creates an evaluation

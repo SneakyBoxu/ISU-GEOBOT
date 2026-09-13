@@ -18,7 +18,7 @@ export const db = DEMO_MODE
       db: { schema: config.supabase.schema },
     });
 
-/** Verifies end-user JWTs for /guard and /validate. Never used for data reads. */
+/** Verifies end-user JWTs for /admin, /validate and /eval. Never used for data reads. */
 export const authClient = DEMO_MODE || !config.supabase.anonKey
   ? null
   : createClient(config.supabase.url, config.supabase.anonKey, {
@@ -66,8 +66,8 @@ async function mlFetch(path, body, timeoutMs = config.ml.timeoutMs) {
 /**
  * The ONLY embedding path (audit F-14).
  *
- * Document vectors (ingest.py), query vectors (here) and evaluation vectors
- * (score_ragas.py) all come from the same Flask process. If Node ever grows
+ * Document vectors (document_knowledge_importer.py), query vectors (here) and evaluation vectors
+ * (evaluate_rag_quality.py) all come from the same Flask process. If Node ever grows
  * its own embedder, query and document vectors diverge and retrieval degrades
  * invisibly — the single worst silent bug available in this architecture.
  */

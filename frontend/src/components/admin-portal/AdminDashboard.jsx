@@ -14,11 +14,11 @@ import DemoModeNotificationBanner from '../shared-components/DemoModeNotificatio
 import CampusLocationsPanel from './AdminCampusLocationsPanel.jsx';
 import FacultyValidationPanel from './AdminFacultyValidationPanel.jsx';
 import ScheduleUploadPanel from './AdminScheduleUploadPanel.jsx';
-// RA 10173 right-to-object control. It lived on the /validate portal, which was
-// consolidated into this dashboard; the control itself must not disappear with the
-// page that happened to host it. It self-hides when the signed-in account is not a
-// lecturer, so an administrator simply never sees it.
-import FacultyPrivacyToggleCard from '../faculty-validation-portal/FacultyPrivacyToggleCard.jsx';
+// RA 10173 right-to-object control. It lived on the separate validation portal that
+// was folded into this dashboard; the control itself must not disappear with the page
+// that happened to host it. It self-hides when the signed-in account is not a lecturer,
+// so an administrator simply never sees it.
+import FacultyPrivacyToggleCard from './FacultyPrivacyToggleCard.jsx';
 
 const TABS = [
   {

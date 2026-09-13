@@ -1,9 +1,9 @@
 """
 Document ingestion for the RAG corpus (thesis §3.5.4, §3.4.1c).
 
-    python ingest.py --path ./data/documents --origin real
-    python ingest.py --place-cards --origin synthetic
-    python ingest.py --reingest        # rebuild everything from scratch
+    python document_knowledge_importer.py --path ./data/documents --origin real
+    python document_knowledge_importer.py --place-cards --origin synthetic
+    python document_knowledge_importer.py --reingest   # rebuild from scratch
 
 Audit A10 / §8.1: this is a batch script, not an admin UI. An authenticated
 file-upload surface is unmentioned in the thesis, adds attack surface, and
@@ -276,7 +276,7 @@ def ingest_place_cards(origin: str) -> int:
                 insert into geobot.document
                   (title, doc_type, source_origin, provided_by,
                    source_checksum, data_origin)
-                values (%s,'poi_place_card','generated:poi','ingest.py',%s,%s)
+                values (%s,'poi_place_card','generated:poi','document_knowledge_importer.py',%s,%s)
                 returning id
                 """,
                 (f"Place card — {poi['name']}",
@@ -370,7 +370,7 @@ def ingest_path(root: Path, origin: str) -> tuple[int, int]:
                    source_checksum, data_origin)
                 values (%s,%s,%s,%s,%s,%s) returning id
                 """,
-                (path.stem, doc_type, str(path), "ingest.py", checksum, origin),
+                (path.stem, doc_type, str(path), "document_knowledge_importer.py", checksum, origin),
             )
             doc_id = cur.fetchone()["id"]
 

@@ -1,7 +1,7 @@
 import pino from 'pino';
 
 /**
- * Deliberately separate from clients.js.
+ * Deliberately separate from service-clients.js.
  *
  * The status masking boundary imports the logger, and nothing else. Keeping
  * the logger free of Supabase/Groq configuration means the masking test suite

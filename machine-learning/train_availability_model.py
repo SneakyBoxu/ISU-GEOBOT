@@ -1,7 +1,7 @@
 """
 Random Forest training (thesis §3.5.2, §3.7).
 
-    python train_rf.py --semester 2025-2026-1 \
+    python train_availability_model.py --semester 2025-2026-1 \
         --start 2025-08-11 --end 2025-12-19 \
         --label-source schedule_derived --plumbing-run
 
@@ -201,7 +201,7 @@ def main():
         print(f"  {n:<28} {v:.4f}")
     print(
         "\nNOTE (audit F-20): feature importance is an INTRA-model diagnostic.\n"
-        "It does not show that ML beats a rule-based lookup. Run baseline_rule.py\n"
+        "It does not show that ML beats a rule-based lookup. Run schedule_rule_baseline.py\n"
         "on this same split for that comparison.\n"
     )
 

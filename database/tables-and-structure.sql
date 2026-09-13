@@ -204,7 +204,7 @@ create index faculty_schedule_lookup_idx
   on faculty_schedule (faculty_id, semester, day_of_week, start_time, end_time);
 
 comment on column faculty_schedule.room_label is
-  'Audit F-27/F-28. Physical room. Used by train_rf.py and baseline_rule.py '
+  'Audit F-27/F-28. Physical room. Used by train_availability_model.py and schedule_rule_baseline.py '
   'only. The masking egress boundary and the output-side regex filter both '
   'exist to guarantee this value cannot reach a generated answer.';
 
@@ -231,7 +231,8 @@ create index institutional_event_date_idx on institutional_event (event_date);
 -- trained on schedule-derived features against schedule-derived labels — i.e.
 -- it would be learning the rule-based baseline and could not outperform it.
 -- This table exists so the attendance feature block can be switched on the
--- moment real logs arrive, without a migration. See docs/OPEN_DECISIONS.md.
+-- moment real logs arrive, without a migration. Which features a given
+-- model actually used is recorded per-run in rf_model_version.feature_list.
 create table attendance_record (
   id              uuid primary key default gen_random_uuid(),
   pseudonym_id    text not null,                -- -> faculty_pseudonym_map
@@ -250,7 +251,7 @@ comment on column attendance_record.granularity is
   'Audit F-18 (blocking question C4). ''daily'' means the source is a sign-in '
   'sheet with one bit per day, from which intra-day availability labels CANNOT '
   'be derived without imputing them from the schedule — which is circular. '
-  'train_rf.py must refuse to derive intra-day labels from daily-granularity data.';
+  'train_availability_model.py must refuse to derive intra-day labels from daily-granularity data.';
 
 
 -- =====================================================================
@@ -297,7 +298,7 @@ create table poi_document (
 );
 
 comment on table poi_document is
-  'Audit F-37. Bridges the relational map layer and the RAG corpus. ingest.py '
+  'Audit F-37. Bridges the relational map layer and the RAG corpus. document_knowledge_importer.py '
   'regenerates these from poi rows, then chunks + embeds them like any other '
   'document so navigation queries are retrieved uniformly.';
 
@@ -466,12 +467,12 @@ comment on column rf_model_version.label_source is
   'Audit F-18/F-20. If label_source = ''schedule_derived'' while the feature '
   'set is also purely schedule-derived, the model is reproducing the rule-based '
   'baseline by construction and its accuracy MUST NOT be reported as evidence '
-  'that ML outperforms rule-based lookup. baseline_rule.py exists to make that '
+  'that ML outperforms rule-based lookup. schedule_rule_baseline.py exists to make that '
   'comparison empirical rather than assumed.';
 
 comment on column rf_model_version.metrics is
   'Audit R6. Accuracy / precision / recall / F1 / confusion matrix. Populated '
-  'exclusively by train_rf.py from a real held-out split. Never hand-written, '
+  'exclusively by train_availability_model.py from a real held-out split. Never hand-written, '
   'never seeded, never placeholdered.';
 
 
@@ -609,7 +610,7 @@ create table ragas_score (
 );
 
 comment on table ragas_score is
-  'Audit R7. Written EXCLUSIVELY by score_ragas.py from real pipeline outputs. '
+  'Audit R7. Written EXCLUSIVELY by evaluate_rag_quality.py from real pipeline outputs. '
   'Never seeded, never estimated, never used to populate a UI placeholder.';
 
 -- Thesis §3.8.2 / audit C14: in-system capture so the system''s own prediction
@@ -699,7 +700,7 @@ comment on table demo_query is
 -- =====================================================================
 
 -- Audit F-38 / I1. A single question answers "could synthetic data have
--- contaminated your results?". evalRunner.js calls this and ABORTS on false.
+-- contaminated your results?". evaluation-runner.js calls this and ABORTS on false.
 create or replace function geobot.corpus_is_research_ready()
 returns table (
   entity        text,
@@ -729,7 +730,7 @@ returns table (
 $$;
 
 comment on function geobot.corpus_is_research_ready is
-  'Audit F-38. evalRunner.js and score_ragas.py MUST call this and hard-fail '
+  'Audit F-38. evaluation-runner.js and evaluate_rag_quality.py MUST call this and hard-fail '
   'if any row is synthetic. A directory convention cannot prevent synthetic '
   'data reaching a reported result; a query that refuses to run can.';
 

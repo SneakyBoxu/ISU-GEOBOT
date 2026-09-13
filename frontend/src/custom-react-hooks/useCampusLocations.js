@@ -7,7 +7,7 @@ import { api } from '../frontend-utilities/backendApiClient.js';
  * WHY A HOOK AND NOT A HARDCODED NUMBER. The page used to say "Twenty-eight
  * places" in four different sentences. Twenty-eight was true the day it was
  * written and stops being true the first time somebody adds a building through
- * the Campus Location portal — and nothing would have told them, because prose
+ * the Admin Dashboard — and nothing would have told them, because prose
  * does not fail loudly. The cards and tab counts were already live; only the
  * writing was stale, which is the worst combination: a page correcting itself in
  * one place and contradicting itself in another.

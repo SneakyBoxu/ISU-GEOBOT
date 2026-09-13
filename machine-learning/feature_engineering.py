@@ -1,7 +1,7 @@
 """
 Feature engineering for the Random Forest availability classifier.
 
-SINGLE SOURCE OF TRUTH. train_rf.py and app.py both import from here, so the
+SINGLE SOURCE OF TRUTH. train_availability_model.py and ai_api_service.py both import from here, so the
 training and serving feature vectors cannot drift. Train/serve skew is the
 quietest and most damaging bug in a deployed classifier — it produces a model
 that scores well offline and behaves randomly in the live demo.
@@ -18,15 +18,27 @@ Feature set (thesis §3.5.2 categories a, c, d + build brief):
 
 Thesis §3.5.2 category (b) — historical attendance patterns capturing
 "individual tendencies toward punctuality, early departure, or extended office
-hours" — is IMPLEMENTED BUT OFF BY DEFAULT. See ATTENDANCE_FEATURES and
-docs/OPEN_DECISIONS.md item 1.
+hours" — lives in ATTENDANCE_FEATURES, behind the --attendance-features flag.
 
-Why it is off: the build brief's feature list omits attendance entirely. With
-schedule-derived features AND schedule-derived labels, the forest reproduces
-schedule_lookup_status() by construction and cannot outperform baseline_rule.py
-— it *is* baseline_rule.py with a faculty column. Switching these on is what
-makes the model something other than the rule baseline, and it requires
-attendance data with intraday granularity (audit C4 / F-18).
+THE FLAG DEFAULTS TO OFF, BUT THE DEPLOYED MODEL WAS TRAINED WITH IT ON.
+Do not read the default as a description of the shipped model. The record that
+settles it is rf_model_version.feature_list, which for the current model reads:
+
+    day_of_week, time_slot, is_consultation_hour, is_scheduled_class,
+    exam_period_flag, campus_event_flag, semester_phase, faculty_ordinal,
+    hist_presence_rate, hist_punctuality_rate, hist_early_departure_rate
+
+The last three are this block. Every training run writes its own feature list
+there, so the database — not this default — is the answer to "which features
+did the model actually use?"
+
+WHY THE FLAG EXISTS AT ALL. With schedule-derived features AND schedule-derived
+labels, the forest reproduces schedule_lookup_status() by construction and
+cannot outperform schedule_rule_baseline.py — it *is* that baseline with a
+faculty column. Turning attendance on is what makes the model something other
+than the rule baseline, and it requires attendance with intraday granularity
+(audit C4 / F-18). The synthetic cohort supplies exactly that, which is why the
+comparison in thesis §4.4 is a real comparison and not a tautology.
 """
 
 from __future__ import annotations

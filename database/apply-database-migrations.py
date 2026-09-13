@@ -64,6 +64,8 @@ FILES = [
      "POI photograph columns; widen the poi_audit action check", False),
     ("database/migrations/015_prune_orphaned_place_card.sql",
      "drop place cards left behind by a POI rename", False),
+    ("database/migrations/016_repair_document_provenance.sql",
+     "point document.provided_by at a script that exists", False),
 ]
 
 
@@ -163,7 +165,7 @@ def main() -> None:
             print(f"\npublished locations: {cur.fetchone()[0]}")
             cur.execute("select count(*) from geobot.document_chunk")
             print(f"embedded chunks:     {cur.fetchone()[0]}  "
-                  "(0 is expected until document-knowledge-importer.py runs)")
+                  "(0 is expected until document_knowledge_importer.py runs)")
     finally:
         conn.close()
 

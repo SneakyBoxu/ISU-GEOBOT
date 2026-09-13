@@ -11,13 +11,13 @@ import { categoryColor, iconFor } from './mapMarkerGlyphs.js';
  *
  * On the pin rather than in a corner, for the obvious reason: a panel in the
  * bottom-left has to NAME the building it describes and trust the reader to
- * find it among twenty-seven others, while a card on the pin has already
+ * find it among thirty-odd others, while a card on the pin has already
  * pointed at it. It is also why the index stays a list — putting the detail
  * there as well would cost the reader their place in it every time they looked
  * something up.
  *
  * Read-only, like everything else the map surfaces. Editing a location happens
- * in the Campus Location portal behind an authenticated, role-checked endpoint,
+ * in the Admin Dashboard behind an authenticated, role-checked endpoint,
  * and nothing on this card reaches a write path.
  */
 /**
