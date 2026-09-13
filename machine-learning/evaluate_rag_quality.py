@@ -363,9 +363,27 @@ def main():
           f"  (saving every {chunk} rows)")
     for m in wanted:
         print(f"{NL}--- {m} ---", flush=True)
+        # RESUME: skip rows this metric already has a score for.
+        #
+        # Without this, every key rotation restarts at row 0 and re-scores work
+        # already in the database. The write upserts so nothing corrupts, but on
+        # a rate-limited daily budget the wasted tokens are the scarce resource,
+        # and a run that rotates twice would pay for the early rows three times.
+        already = {
+            r["eval_result_id"] for r in db.fetch_all(
+                f"select eval_result_id from geobot.ragas_score "
+                f"where {m} is not null")
+        }
+        todo = [r for r in rows if r["id"] not in already]
+        if len(todo) < len(rows):
+            print(f"  resuming: {len(rows) - len(todo)} rows already scored, "
+                  f"{len(todo)} to go", flush=True)
+        if not todo:
+            print(f"  {m} already complete")
+            continue
         done = skipped_total = 0
-        for start_i in range(0, len(rows), chunk):
-            batch = rows[start_i:start_i + chunk]
+        for start_i in range(0, len(todo), chunk):
+            batch = todo[start_i:start_i + chunk]
             try:
                 series = score_one_metric(batch, m, judge, embeddings, run_config)
             except Exception as exc:                   # noqa: BLE001
