@@ -30,3 +30,8 @@ thesis/
 *.docx
 *.pdf
 CCSICT-SCHEDULE-*.xlsx
+
+# Captured screenshots and rendered diagrams. Regenerate with
+# machine-learning/presentation/capture_screens.py and render_diagrams.py --
+# the sources are tracked, the 12MB of PNGs are not.
+screenshots/

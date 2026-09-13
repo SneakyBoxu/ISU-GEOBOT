@@ -1,0 +1,131 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  :root{
+    --ink:#18222D; --muted:#596978; --accent:#3F5B74; --accent-deep:#2A4154;
+    --line:#CDD6DD; --ground:#FFFFFC; --panel:#FFFFFF; --wash:#EDF1F4;
+    --mask:#8A5410;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    width:1500px;height:1010px;background:var(--ground);position:relative;
+    font-family:"Aptos","Segoe UI",system-ui,sans-serif;color:var(--ink);
+  }
+  svg.wires{position:absolute;inset:0;width:1500px;height:1010px}
+  .node{
+    position:absolute;background:var(--panel);border:1px solid var(--line);
+    border-left:4px solid var(--accent);border-radius:3px;padding:14px 16px;
+  }
+  .node .n{font-family:"Consolas",monospace;font-size:11px;color:var(--accent);letter-spacing:.08em}
+  .node h3{font-size:17px;font-weight:600;margin:3px 0 6px;letter-spacing:-.01em}
+  .node p{font-size:12.5px;color:var(--muted);line-height:1.42}
+  .node .tag{
+    display:inline-block;margin-top:9px;font-family:"Consolas",monospace;font-size:10.5px;
+    color:var(--accent-deep);background:var(--wash);padding:2px 7px;border-radius:2px;
+  }
+  .lede{position:absolute;left:46px;top:152px;width:1180px;font-size:15px;color:var(--muted);line-height:1.5}
+
+  /* The masking boundary. Deliberately drawn ACROSS the availability branch
+     only -- the document branch never crosses it, and a diagram that routed
+     both through would misstate the control. */
+  .maskband{
+    position:absolute;left:836px;top:477px;width:0;height:262px;
+    border-left:2px dashed var(--mask);
+  }
+  .masklbl{
+    position:absolute;left:754px;top:742px;width:172px;text-align:center;
+    font-size:11.5px;color:var(--mask);font-weight:600;line-height:1.35;
+  }
+  .branchnote{
+    position:absolute;font-family:"Consolas",monospace;font-size:11px;
+    color:var(--muted);letter-spacing:.04em;
+  }
+  .foot{
+    position:absolute;left:46px;bottom:34px;width:1408px;
+    border-left:3px solid var(--accent);padding:11px 0 11px 16px;
+    font-size:13.5px;line-height:1.5;
+  }
+  .foot b{color:var(--accent-deep)}
+
+  .dtitle{position:absolute;left:0;right:0;top:30px;text-align:center}
+  .dtitle h1{font-family:"Aptos Display","Aptos","Segoe UI",sans-serif;font-size:42px;
+             font-weight:700;letter-spacing:-.015em;color:var(--ink);line-height:1.05}
+  .dtitle p{font-size:17px;color:var(--muted);margin-top:4px}
+  .legend{position:absolute;left:46px;right:46px;bottom:118px;border:1px solid var(--line);border-radius:3px;background:var(--panel);
+          padding:11px 20px;display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;
+          font-size:12.5px;color:var(--muted)}
+  .legend b{color:var(--ink);font-weight:600}
+  .legend .sep{color:var(--line)}
+</style>
+
+<div class="dtitle"><h1>AI PIPELINE</h1><p>Enhanced Retrieval-Augmented Generation with Random Forest availability</p></div>
+<p class="lede">The only structural difference between the two architectures is the lower branch. Retrieval runs in both and is never conditional on the route,
+so the standard pipeline reaches the document corpus and nothing else.</p>
+
+<svg class="wires">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#CDD6DD"/>
+    </marker>
+  </defs>
+  <!-- query -> router -->
+  <line x1="254" y1="493" x2="292" y2="493" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
+  <!-- router -> fork -->
+  <line x1="508" y1="493" x2="548" y2="493" stroke="#CDD6DD" stroke-width="2"/>
+  <path d="M548,493 L548,341 L592,341" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M548,493 L548,601 L592,601" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
+  <!-- branches -> fusion -->
+  <path d="M806,341 L952,341 L952,451" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
+  <path d="M806,601 L952,601 L952,541" fill="none" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
+  <!-- fusion -> generate -> egress -->
+  <line x1="1120" y1="493" x2="1160" y2="493" stroke="#CDD6DD" stroke-width="2" marker-end="url(#ah)"/>
+</svg>
+
+<div class="node" style="left:46px;top:445px;width:208px">
+  <span class="n">01</span><h3>User query</h3>
+  <p>Free text. The visitor is not asked to say whether they mean a place, a document or a person.</p>
+</div>
+
+<div class="node" style="left:292px;top:433px;width:216px">
+  <span class="n">02</span><h3>Intent router</h3>
+  <p>A gazetteer of the faculty roster plus an intent lexicon answers one binary question.</p>
+  <span class="tag">~2 ms &middot; deterministic &middot; no LLM</span>
+</div>
+
+<div class="node" style="left:592px;top:269px;width:214px">
+  <span class="n">03</span><h3>Vector retrieval</h3>
+  <p>Query embedded to 384 dimensions, compared to every chunk by exact cosine similarity.</p>
+  <span class="tag">top 5 &middot; floor 0.25 &middot; both arms</span>
+</div>
+
+<div class="node" style="left:592px;top:529px;width:214px;border-left-color:#8A5410">
+  <span class="n" style="color:#8A5410">04</span><h3>Availability</h3>
+  <p>Two gates run <em>before</em> the forest: signed in, and the lecturer has not paused disclosure.</p>
+  <span class="tag" style="color:#8A5410">Enhanced arm only</span>
+</div>
+
+<div class="maskband"></div>
+<p class="masklbl">STATUS MASKING<br>BOUNDARY</p>
+<span class="branchnote" style="left:596px;top:243px">DOCUMENT BRANCH &mdash; never crosses the mask</span>
+<span class="branchnote" style="left:596px;top:696px;color:#8A5410">PERSON BRANCH &mdash; masked here</span>
+
+<div class="node" style="left:952px;top:433px;width:168px">
+  <span class="n">05</span><h3>Context fusion</h3>
+  <p>Passages and the masked status become one prompt.</p>
+</div>
+
+<div class="node" style="left:1160px;top:433px;width:294px">
+  <span class="n">06</span><h3>Generation &rarr; egress check</h3>
+  <p>Groq writes the sentence at temperature&nbsp;0. The response is then serialised and refused if it contains any of eight forbidden keys.</p>
+  <span class="tag">probabilities &middot; room_label &middot; embedding &hellip;</span>
+</div>
+
+<div class="legend">
+  <span><b>Top&nbsp;5 / floor&nbsp;0.25</b> retrieval cut-offs</span><span class="sep">|</span>
+  <span><b>Three states</b> available for consultation &middot; in scheduled class &middot; unavailable</span><span class="sep">|</span>
+  <span><b>Egress keys</b> eight fields refused at the boundary</span>
+</div>
+
+<p class="foot">The classifier is reached <b>only</b> by an availability question, and its estimate is never computed for a lecturer who has paused disclosure &mdash;
+the gate runs before prediction, not after. Asked <i>&ldquo;Where is SIM&#8209;22?&rdquo;</i> the router sends the query down the document branch, the recorded
+classification time is <b>0.0&nbsp;ms</b>, and the refusal is worded exactly like the refusal for an unknown building.</p>

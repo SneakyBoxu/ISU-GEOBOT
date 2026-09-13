@@ -1,0 +1,136 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  /* Palette lifted from the reference deck so the diagram and the slides read
+     as one document rather than two. */
+  :root{
+    --ink:#18222D; --muted:#596978; --accent:#3F5B74; --accent-deep:#2A4154;
+    --line:#CDD6DD; --ground:#FFFFFC; --panel:#FFFFFF; --wash:#EDF1F4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    width:1500px;height:790px;background:var(--ground);
+    font-family:"Aptos","Segoe UI",system-ui,sans-serif;color:var(--ink);
+    padding:44px 52px;display:flex;flex-direction:column;
+  }
+  .lede{font-size:15px;color:var(--muted);margin-bottom:26px;max-width:1100px;line-height:1.5}
+  .grid{display:grid;grid-template-columns:1fr 92px 1fr 92px 1fr;align-items:start;gap:0}
+
+  .col{display:flex;flex-direction:column;gap:14px;align-self:stretch}
+  .tier{
+    background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--accent);
+    border-radius:3px;padding:20px 22px;display:flex;flex-direction:column;
+  }
+  .tier.ext{border-top-color:var(--muted)}
+  .port{font-family:"Consolas",monospace;font-size:12.5px;color:var(--accent);letter-spacing:.04em}
+  .tier.ext .port{color:var(--muted)}
+  .tname{font-size:23px;font-weight:600;margin:6px 0 4px;letter-spacing:-.01em}
+  .role{font-size:13.5px;color:var(--muted);line-height:1.45;margin-bottom:14px}
+  ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  li{font-size:13px;color:var(--ink);padding-left:15px;position:relative;line-height:1.35}
+  li::before{content:"";position:absolute;left:0;top:7px;width:6px;height:6px;
+             background:var(--accent);border-radius:50%}
+  .tier.ext li::before{background:var(--muted)}
+
+  /* Arrow columns: a rule with a head, plus the protocol that crosses it. */
+  .arrow{display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:150px}
+  .arrow .lbl{font-family:"Consolas",monospace;font-size:11px;color:var(--muted);
+              letter-spacing:.06em;white-space:nowrap}
+  .shaft{position:relative;width:100%;height:2px;background:var(--line)}
+  .shaft::after{content:"";position:absolute;right:-1px;top:-5px;
+                border-left:9px solid var(--line);border-top:6px solid transparent;
+                border-bottom:6px solid transparent}
+
+  .foot{margin-top:22px;display:flex;gap:16px;align-items:flex-start}
+  .keybox{border-left:3px solid var(--accent);padding:10px 0 10px 16px;font-size:13.5px;
+          color:var(--ink);line-height:1.5;max-width:1180px}
+  .keybox b{color:var(--accent-deep)}
+
+  .dtitle{text-align:center;margin-bottom:4px}
+  .dtitle h1{font-family:"Aptos Display","Aptos","Segoe UI",sans-serif;font-size:42px;
+             font-weight:700;letter-spacing:-.015em;color:var(--ink);line-height:1.05}
+  .dtitle p{font-size:17px;color:var(--muted);margin-top:4px}
+  .legend{margin-top:18px;border:1px solid var(--line);border-radius:3px;background:var(--panel);
+          padding:11px 20px;display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;
+          font-size:12.5px;color:var(--muted)}
+  .legend b{color:var(--ink);font-weight:600}
+  .legend .sep{color:var(--line)}
+</style>
+
+<div class="dtitle"><h1>SYSTEM ARCHITECTURE</h1><p>ISU-GeoBot &mdash; Campus Navigation and Faculty Availability Assistant</p></div>
+<p class="lede" style="text-align:center;max-width:none;margin-top:16px">Three processes, started independently, talking over HTTP. Only the API server holds database or model credentials &mdash; the browser
+never reaches Supabase or Groq directly, because a key shipped in a bundle is a published key.</p>
+
+<div class="grid">
+  <div class="col">
+    <div class="tier">
+      <span class="port">PORT 5173</span>
+      <h2 class="tname">React SPA</h2>
+      <p class="role">What the visitor sees. Holds no secrets.</p>
+      <ul>
+        <li>Leaflet campus map, 34 published locations</li>
+        <li>Conversational assistant dock</li>
+        <li>Admin Dashboard &mdash; locations, validation, schedule import</li>
+        <li>Anon key only; row-level security is deny-by-default</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arrow">
+    <span class="lbl">fetch / JSON</span>
+    <div class="shaft"></div>
+  </div>
+
+  <div class="col">
+    <div class="tier">
+      <span class="port">PORT 4000</span>
+      <h2 class="tname">Express API</h2>
+      <p class="role">The only process with credentials. Every rule lives here.</p>
+      <ul>
+        <li>Deterministic query router</li>
+        <li>Vector retrieval and context fusion</li>
+        <li>Presence resolution and consent gating</li>
+        <li><b>Status masking boundary</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="arrow">
+    <span class="lbl">HTTP / JSON</span>
+    <div class="shaft"></div>
+  </div>
+
+  <div class="col">
+    <div class="tier">
+      <span class="port">PORT 5001</span>
+      <h2 class="tname">Flask ML</h2>
+      <p class="role">Python, because both models are Python libraries.</p>
+      <ul>
+        <li>all-MiniLM-L6-v2 &mdash; 384-dim embeddings</li>
+        <li>Random Forest &mdash; 300 trees, Gini</li>
+        <li>Models load once and stay resident</li>
+        <li>Reloads the forest when retraining writes a new artifact</li>
+      </ul>
+    </div>
+    <div class="tier ext" style="flex:0 0 auto">
+      <span class="port">EXTERNAL</span>
+      <h2 class="tname" style="font-size:18px;margin-bottom:8px">Supabase &nbsp;&middot;&nbsp; Groq</h2>
+      <p class="role" style="margin:0">PostgreSQL + pgvector, 27 tables in the <code>geobot</code> schema.
+      <code>openai/gpt-oss-120b</code> at temperature&nbsp;0 writes the sentence &mdash; and only the sentence.</p>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <span><b>RAG</b> Retrieval-Augmented Generation</span><span class="sep">|</span>
+  <span><b>RLS</b> Row-Level Security</span><span class="sep">|</span>
+  <span><b>pgvector</b> PostgreSQL vector index</span><span class="sep">|</span>
+  <span><b>SPA</b> Single-Page Application</span><span class="sep">|</span>
+  <span><b>384-dim</b> embedding width of all-MiniLM-L6-v2</span>
+</div>
+
+<div class="foot">
+  <p class="keybox">Split into three because the embedder and the classifier are Python libraries with no usable Node equivalent, and a
+  <b>135&nbsp;MB model should load once</b> &mdash; not on every API restart. The cost is one network hop on the request path, which is
+  measured and reported rather than hidden.</p>
+</div>
