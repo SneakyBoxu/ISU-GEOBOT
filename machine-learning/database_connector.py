@@ -76,7 +76,7 @@ PEOPLE_ENTITIES = ("faculty", "faculty_schedule", "attendance_record",
                    "guard_presence_event")
 
 
-def assert_research_ready(scope: str = "all") -> None:
+def assert_research_ready(scope: str = "all", simulation: bool = False) -> None:
     """
     Audit F-38. Hard gate for anything that produces a reportable number.
 
@@ -104,9 +104,28 @@ def assert_research_ready(scope: str = "all") -> None:
                                 question whose answer depends on them.
 
     Keying "rag" on the registered set rather than a flag means adding one
-    faculty_availability query re-arms the gate automatically. Nothing here
-    lets a synthetic number out: an availability query scored against
-    invented attendance still refuses.
+    faculty_availability query re-arms the gate automatically.
+
+    THE SIMULATION ESCAPE, AND WHY IT IS NOT A HOLE.
+
+    An absolute refusal turned out to be too strong: it made the architectural
+    comparison in Chapter 4 impossible to carry out at all, because the only
+    cohort with attendance is the generated one. A gate that blocks the study
+    from measuring itself is a gate someone eventually comments out.
+
+    So `simulation=True` drops the PEOPLE entities from the requirement -- and
+    nothing else. The corpus must still be real. The caller that passes it is
+    required to stamp the run data_origin='synthetic', name its artifacts
+    -SIMULATION, and say so on stdout. The refusal became a DISCLOSURE
+    REQUIREMENT rather than a prohibition: nothing is scored silently against
+    generated data, and everything so scored is labelled, in the database and
+    on the artifact.
+
+    THIS PARAMETER EXISTS BECAUSE THE TWO GATES DISAGREED A SECOND TIME.
+    `simulation` was added to the JavaScript copy and not to this one, so the
+    Node harness produced all 78 eval_result rows for run-03-simulation and
+    then this function refused to score them -- exactly the failure the
+    paragraph above describes, repeated. If you change one gate, change both.
     """
     if scope not in ("all", "rag"):
         raise ValueError(f"unknown scope {scope!r}")
@@ -120,7 +139,10 @@ def assert_research_ready(scope: str = "all") -> None:
             r["category"] for r in fetch_all("select category from geobot.eval_query")
         }
         needs_people = bool(categories & {"faculty_availability", "combined"})
-        required = set(CORPUS_ENTITIES) | (set(PEOPLE_ENTITIES) if needs_people else set())
+        # simulation=True waives ONLY the people entities. The corpus is still
+        # required to be real, because every query retrieves against it.
+        require_people = needs_people and not simulation
+        required = set(CORPUS_ENTITIES) | (set(PEOPLE_ENTITIES) if require_people else set())
 
     offenders = [r for r in rows if not r["ready"] and r["entity"] in required]
     if offenders:

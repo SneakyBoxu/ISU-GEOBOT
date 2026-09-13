@@ -75,12 +75,18 @@ _rf_bundle: dict | None = None
 _rf_mtime: float = 0.0
 
 
+# Reload the forest when the file on disk is newer than the copy in memory.
+# Retraining writes rf_current.joblib while this service is running, and
+# without the mtime check the service would keep serving the OLD model until
+# someone restarted it -- silently, because predictions still come back.
 def _get_rf_bundle() -> dict | None:
     global _rf_bundle, _rf_mtime
     if RF_ARTIFACT.exists():
         try:
             mtime = RF_ARTIFACT.stat().st_mtime
             if _rf_bundle is None or mtime > _rf_mtime:
+                # joblib.load, not pickle.load: the artifact carries numpy arrays and the
+                # FacultyEncoder, and joblib is what train_availability_model.py wrote.
                 _rf_bundle = joblib.load(RF_ARTIFACT)
                 _rf_mtime = mtime
                 log.info("random forest loaded: version=%s", _rf_bundle.get("version"))
@@ -165,6 +171,9 @@ def model_info():
 
 @app.post("/embed")
 def embed_one():
+    # silent=True so malformed JSON becomes a 400 below rather than a 500 here.
+    # The caller is the Node backend, but a bad body should still be the
+    # caller's error, not this service's crash.
     payload = request.get_json(silent=True) or {}
     text = payload.get("text")
     if not isinstance(text, str) or not text.strip():
@@ -258,10 +267,17 @@ def predict():
     from datetime import datetime
 
     try:
+        # Python 3.10 cannot parse a trailing "Z", which is what JavaScript
+        # toISOString() emits. Drop this replace and every prediction request from
+        # the Node service fails with a 400 that blames the caller.
         when = datetime.fromisoformat(ctx["when"].replace("Z", "+00:00"))
     except (KeyError, ValueError):
         return jsonify(error="`context.when` must be an ISO-8601 timestamp"), 400
 
+    # Defaults of 0 matter: a caller that omits hist_* is asking for a
+    # schedule-only prediction, and the forest sees three zeroed columns rather
+    # than a short vector. The column COUNT must stay fixed -- see build_vector
+    # in feature_engineering.py, where the order is the model input contract.
     row = ContextRow(
         pseudonym_id=ctx.get("pseudonym_id"),
         when=when,

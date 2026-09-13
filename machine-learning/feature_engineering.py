@@ -50,6 +50,12 @@ from datetime import datetime, time
 # Feature contract
 # ---------------------------------------------------------------------------
 
+# THE ORDER OF THIS LIST IS THE MODEL'S INPUT CONTRACT. build_vector() below
+# appends values in exactly this sequence, and the trained forest learned column
+# 0 to mean day_of_week, column 1 to mean time_slot, and so on. Reorder either
+# list without the other and every prediction is computed from the wrong
+# columns -- no exception, no warning, just quietly wrong answers. The model
+# artifact stores this list so serving can be checked against training.
 SCHEDULE_FEATURES = [
     "day_of_week",
     "time_slot",
@@ -81,11 +87,18 @@ SLOTS_PER_DAY = 24 * 60 // SLOT_MINUTES  # 48
 
 
 def feature_names(include_attendance: bool = False) -> list[str]:
+    """The column names, in model order. Pairs with build_vector()."""
+    # Attendance features are APPENDED, never interleaved. That is what lets a
+    # schedule-only model and an attendance model share the first eight columns.
     return SCHEDULE_FEATURES + (ATTENDANCE_FEATURES if include_attendance else [])
 
 
 def time_slot(t: time) -> int:
     """30-minute bucket index, 0..47."""
+    # Thirty minutes is the resolution of the timetable itself -- classes start
+    # on the hour or the half hour -- so a finer bucket would invent precision
+    # the schedule does not have, and a coarser one would merge a class with the
+    # consultation window beside it.
     return (t.hour * 60 + t.minute) // SLOT_MINUTES
 
 
@@ -100,6 +113,8 @@ def semester_phase_of(when: datetime, semester_start, semester_end) -> int:
     d = when.date() if isinstance(when, datetime) else when
     total = (semester_end - semester_start).days or 1
     elapsed = (d - semester_start).days
+    # Four weeks in, three weeks out. The boundaries are deliberately coarse:
+    # the feature is meant to capture "is this exam season" and nothing finer.
     if elapsed <= 28:
         return SEMESTER_PHASES["early"]
     if (total - elapsed) <= 21:
@@ -127,6 +142,11 @@ class FacultyEncoder:
         return self
 
     def transform(self, pseudonym: str | None) -> int:
+        # -1 for both "no pseudonym" and "never seen in training". Returning 0
+        # instead would map an unknown lecturer onto whichever real one happens
+        # to sort first, and the forest would answer confidently about the
+        # wrong person. -1 is outside every trained branch, so the tree falls
+        # back on the other features instead.
         if not pseudonym:
             return -1
         try:
@@ -157,9 +177,17 @@ def build_vector(
     include_attendance: bool = False,
 ) -> list[float]:
     """Ordered feature vector. Order MUST match feature_names()."""
+    # Every line below is positional. Deleting one shifts all the columns after
+    # it left by one, and the forest then reads, say, exam_period_flag as though
+    # it were semester_phase. sklearn will not complain -- the vector is still a
+    # list of floats of plausible length -- so this is the one edit in this file
+    # that breaks the model without breaking the program.
     vec = [
         # Python weekday() is Mon=0..Sun=6; the DB's day_of_week is Sun=0..Sat=6.
         # Convert so training rows and live inference agree with faculty_schedule.
+        # Drop the "+ 1) % 7" and every day shifts by one: Monday's classes are
+        # scored against Sunday's schedule, for training AND serving alike, so
+        # the accuracy stays plausible and the answers are wrong all week.
         float((row.when.weekday() + 1) % 7),
         float(time_slot(row.when.time())),
         float(row.is_consultation_hour),

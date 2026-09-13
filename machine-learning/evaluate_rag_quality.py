@@ -50,6 +50,12 @@ def parse_args():
     p.add_argument("--run", required=True, help="eval_run id")
     p.add_argument("--dry-run", action="store_true",
                    help="Compute and print without writing ragas_score")
+    p.add_argument("--simulation", action="store_true",
+                   help="Score a run whose cohort is generated. Waives the "
+                        "people half of the research-ready gate -- the corpus "
+                        "must still be real -- and prints what that means for "
+                        "each metric. The run must already be stamped "
+                        "data_origin='synthetic'.")
     p.add_argument("--metrics", default=None,
                    help="Comma-separated subset to score, e.g. "
                         "'faithfulness,answer_relevancy'. Default: all four. "
@@ -263,7 +269,24 @@ def main():
     # the registered test set for the rest. Calling this with the default
     # scope refused every run the harness had just spent 66 completions
     # producing.
-    db.assert_research_ready(scope="rag")
+    db.assert_research_ready(scope="rag", simulation=args.simulation)
+    if args.simulation:
+        # Same wording as evaluation-runner.js, on purpose: one rule, two
+        # implementations, and they have already drifted twice.
+        print("""
+
+  SIMULATION SCORING. The cohort behind any availability question is
+  generated, and this run is stamped data_origin='synthetic'.
+
+  Faithfulness and Answer Relevancy remain meaningful: they score the
+  answer against the context it was given, and the reference answers for
+  availability assert the SHAPE the answer must take -- one of three
+  coarse states, no room, no building -- which is true at every hour of
+  every day.
+
+  Context Recall on an availability query does NOT carry the same weight:
+  its reference is derived from invented attendance. Chapter 4 must say so.
+""")
 
     run = load_run(args.run)
     rows = load_results(args.run)

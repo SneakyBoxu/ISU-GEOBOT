@@ -119,6 +119,26 @@ class Traits:
     __slots__ = ("punctuality", "spread", "absence", "early_departure",
                  "consultation", "stay_late")
 
+    # THESE SIX NUMBERS ARE THE STUDY'S ASSUMPTIONS, AND THE HONEST WAY TO
+    # DESCRIBE THEM IS "ASSUMED", NOT "MEASURED".
+    #
+    # Nothing here was fitted to real lecturers -- no real attendance was ever
+    # collected, which is the whole point of the privacy delimitation. Each
+    # distribution encodes a plausible human tendency, and the ONLY claim
+    # Chapter 4 makes is that the pipeline RECOVERS the tendencies injected
+    # here. It is a test that the machinery works, not evidence about how ISU
+    # lecturers behave.
+    #
+    # The shapes were chosen for their tails, not their means:
+    #   normal(-12, 10)  most arrive a little early, a few arrive late
+    #   beta(1.6, 26)    absence is rare and right-skewed -- most days present
+    #   beta(2.2, 4.5)   leaving at the last bell is common but not universal
+    #   beta(3.2, 2.6)   most lecturers are around outside teaching hours
+    #   uniform(10, 75)  no reason to prefer any "stay late" duration
+    #
+    # A uniform distribution everywhere would make every lecturer the same
+    # lecturer with noise, and the faculty_ordinal feature would carry no
+    # signal -- so the forest could not learn per-person tendencies at all.
     def __init__(self, rng: np.random.Generator):
         # Minutes relative to the first class. Negative is early.
         self.punctuality = float(rng.normal(-12, 10))
@@ -691,6 +711,11 @@ def main():
     names, blocks = si.parse_faculty_sheet(wb["Faculty"])
     print(f"roster: {len(names)} lecturers, {len(blocks)} schedule blocks")
 
+    # One seed drives every draw, so the whole cohort is reproducible: the same
+    # seed regenerates byte-identical attendance. That is what lets Chapter 4 be
+    # re-derived by someone else. Change or remove the seed and the numbers in
+    # Table 4.3 can never be reproduced, and a simulation result that cannot be
+    # reproduced is worth nothing.
     rng = np.random.default_rng(args.seed)
     # Office hours are drawn from their own stream so that changing the
     # consultation policy does not shuffle every punch in the dataset.

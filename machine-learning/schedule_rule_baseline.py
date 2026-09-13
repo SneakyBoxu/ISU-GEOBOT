@@ -73,6 +73,23 @@ def rule_predict(sample) -> str:
     added to the SQL function has to be added there, not here.
     """
     ctx = sample.context
+
+    # THE ORDER OF THESE FOUR TESTS IS THE RULE. Each one wins over the ones
+    # below it, and swapping any pair changes the prediction:
+    #
+    #   1. A campus-wide event cancels everything, including a class that the
+    #      timetable still shows. Move this below the class test and every
+    #      lecturer reads as "in class" on a day the university stood down.
+    #   2. A scheduled class beats a consultation window. Some lecturers have
+    #      both on the same hour; the class is the commitment they must keep.
+    #      Swap these two and a lecturer who is teaching reads as free.
+    #   3. A consultation window is the only thing that produces "available".
+    #      Delete this test and the baseline can never predict availability at
+    #      all -- which is exactly the 0.0000 F1 this project saw before the
+    #      synthetic generator declared any consultation windows.
+    #   4. Anything else is off-schedule. This is the deliberate refusal at the
+    #      heart of the study: an empty hour is NOT free time, because the
+    #      timetable does not know where the lecturer is.
     if ctx.campus_event_flag:
         return "unavailable_off_schedule"
     if ctx.is_scheduled_class:
@@ -85,6 +102,10 @@ def rule_predict(sample) -> str:
 def main():
     args = parse_args()
 
+    # Refuse quietly to be useful: schedule-derived labels make this baseline
+    # score near 100% because the labels ARE this rule applied to the same
+    # schedule. The comparison would be a tautology, so say so loudly rather
+    # than print an impressive number nobody can use.
     if args.label_source == "schedule_derived":
         print(
             "\n!! label_source=schedule_derived. The baseline will score ~100%\n"
@@ -98,7 +119,15 @@ def main():
     if not samples:
         raise SystemExit("no samples produced")
 
-    # Identical split logic to train_availability_model.py so the test sets match row for row.
+    # THIS SPLIT MUST STAY IDENTICAL TO train_availability_model.py. Both arms
+    # have to be scored on the same rows or the comparison in Chapter 4 measures
+    # the split instead of the models. Change the sort key, the cut point or the
+    # seed here without changing it there and the two numbers stop being
+    # comparable -- silently, because both scripts still run and still print.
+    #
+    # time_based is the default and the honest one: the test set is the LATEST
+    # 20% of samples, never a random sample. A random split lets the model see
+    # Thursday while being tested on Wednesday, which flatters it.
     order = np.argsort([s.when for s in samples])
     if args.split == "time_based":
         cut = int(len(samples) * (1 - args.test_size))
@@ -114,10 +143,16 @@ def main():
         perm = rng.permutation(len(samples))
         te_idx = perm[int(len(samples) * (1 - args.test_size)):]
 
+    # Score ONLY on the held-out rows. y_true comes from the attendance-derived
+    # labels; y_pred is the rule applied to the same rows' schedule context. The
+    # gap between them is what the forest has to beat to justify itself.
     test = [samples[i] for i in te_idx]
     y_true = np.array([s.label for s in test])
     y_pred = np.array([rule_predict(s) for s in test])
 
+    # Union, not just the observed truth: if the rule predicts a class that
+    # never actually occurs in the test set, that error has to appear in the
+    # report rather than being dropped from the label list.
     labels = sorted(set(y_true) | set(y_pred))
     accuracy = float((y_pred == y_true).mean())
     prec, rec, f1, support = precision_recall_fscore_support(

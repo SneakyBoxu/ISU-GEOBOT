@@ -156,6 +156,22 @@ def main():
     X_tr, X_te, y_tr, y_te = X[tr_idx], X[te_idx], y[tr_idx], y[te_idx]
     print(f"\nsplit={args.split}  train={len(tr_idx):,}  test={len(te_idx):,}")
 
+    # THE FOUR SETTINGS THAT ARE ARGUED FOR IN THE PAPER, not defaults:
+    #
+    #   criterion="gini"          named in thesis 3.5.2. Entropy would score
+    #                             about the same here; the point is that the
+    #                             paper committed to one and the code matches.
+    #   class_weight="balanced"   consultation windows are far rarer than class
+    #                             hours. Remove this and the forest can score
+    #                             well by never predicting availability at all
+    #                             -- the majority-class trap, and the exact
+    #                             failure the rule baseline shows with its
+    #                             0.1818 F1 on available_consultation.
+    #   min_samples_leaf          stops a leaf being carved for one lecturer on
+    #                             one half-hour, which is memorisation.
+    #   random_state=42           the run is reproducible. Drop it and two runs
+    #                             on identical data report different numbers,
+    #                             and Chapter 4 stops being checkable.
     clf = RandomForestClassifier(
         n_estimators=args.n_estimators,
         max_depth=args.max_depth,
@@ -166,6 +182,12 @@ def main():
         n_jobs=-1,
     )
 
+    # TimeSeriesSplit, not KFold -- the same argument as the time-based split.
+    # Plain KFold would put a Thursday in the training fold and the Wednesday
+    # before it in the validation fold, so the model is scored having already
+    # seen the future. The score goes up and means less. GroupKFold is the
+    # equivalent guard for the by-lecturer split: one lecturer must not appear
+    # in both folds.
     print("\ncross-validating ...")
     if args.split == "grouped_faculty":
         cv = GroupKFold(n_splits=args.cv_folds)
@@ -177,9 +199,17 @@ def main():
         cv_scores = cross_val_score(clf, X_tr, y_tr, cv=cv, scoring="f1_macro")
     print(f"  f1_macro {cv_scores.mean():.4f} (+/- {cv_scores.std():.4f})")
 
+    # Cross-validation above only estimated how well this configuration
+    # generalises; it left no fitted model behind. This is the fit that produces
+    # the artifact, and it sees training rows only -- X_te is untouched until
+    # the line below.
     clf.fit(X_tr, y_tr)
     y_pred = clf.predict(X_te)
 
+    # Take the label order from the fitted model rather than sorting names.
+    # precision_recall_fscore_support and confusion_matrix are positional, so if
+    # this order ever disagrees with clf.classes_ the per-class metrics attach to
+    # the wrong classes -- and the totals still look right.
     order = list(clf.classes_)
     prec, rec, f1, support = precision_recall_fscore_support(
         y_te, y_pred, labels=order, zero_division=0
@@ -193,6 +223,10 @@ def main():
     for name, row in zip(order, cm):
         print(f"  {name[:12]:>12}  " + "  ".join(f"{v:>12,}" for v in row))
 
+    # Feature importance is reported, but the paper is careful about what it
+    # proves: it ranks features WITHIN this forest and says nothing about how an
+    # IF/ELSE would have done. That claim needs schedule_rule_baseline.py on the
+    # same split -- which is what Table 4.3 actually compares.
     importance = sorted(
         zip(names, clf.feature_importances_), key=lambda kv: -kv[1]
     )
