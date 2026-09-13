@@ -51,8 +51,11 @@ from datetime import time
 
 import openpyxl
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-WORKBOOK = ROOT / "CCSICT-SCHEDULE-of-1st-SEm-2026-2027.xlsx"
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parent
+# The source workbook sits beside the other training inputs rather than at the
+# project root, so the data this model is built from lives in one place.
+WORKBOOK = HERE / "training-data" / "CCSICT-SCHEDULE-of-1st-SEm-2026-2027.xlsx"
 
 SEMESTER = "2026-2027-1"
 DEPARTMENT = ("College of Computing, Information and Communication Technology",

@@ -15,7 +15,9 @@ College of Computing Studies, Information and Communication Technology (CCSICT)
    - Built with Leaflet & React.
    - Dual-representation indexing: POI coordinates drive the map UI while automatically generated natural-language "place-cards" are vectorized for RAG retrieval.
    - Live hovering tooltips for instant place name previews.
-   - Administrative portal for adding, editing, and moving campus landmarks in real time.
+   - Admin Dashboard for adding, editing, photographing and moving campus landmarks
+     in real time. Campus locations, faculty validation and schedule import are three
+     tabs behind one sign-in, not three separate portals.
 
 2. **Faculty Availability Estimation (Random Forest)**
    - Predicts real-time faculty availability (`Available for Consultation`, `In Scheduled Class`, `Unavailable / Off-Schedule`).
@@ -44,7 +46,7 @@ College of Computing Studies, Information and Communication Technology (CCSICT)
 React 18 SPA (Port 5173)  ──►  Node.js / Express (Port 4000)  ──►  Python Flask ML (Port 5001)
   Interactive Leaflet Map        Query Router & Presence            Random Forest Classifier
   Conversational Assistant       Status Masking Boundary            all-MiniLM-L6-v2 Embedder
-  Admin & Validation Portals     Context Fusion
+  Admin Dashboard                Context Fusion
                                        │
                                        ├──►  Supabase (PostgreSQL + pgvector)
                                        └──►  Groq Cloud API (openai/gpt-oss-120b)
@@ -104,13 +106,24 @@ npm run dev
 
 ```
 ├── backend/            # Express REST API, Query Router, RAG Pipeline & Masking Middleware
-├── frontend/           # React SPA, Leaflet Campus Map, Chat Interface & Admin Portals
+│   ├── src/services/   #   the pipeline: routing, retrieval, presence, fusion
+│   ├── src/middleware/ #   the privacy masking boundary
+│   └── tests/          #   136 automated tests
+├── frontend/           # React SPA, Leaflet Campus Map, Chat Interface & Admin Dashboard
 ├── machine-learning/   # Python Flask ML Service, Random Forest Trainer & Embedder
-├── database/           # PostgreSQL Schema, SQL Migrations & Sample Schedules
+│   ├── training-data/  #   the CCSICT schedule workbook and synthetic attendance
+│   ├── saved-models/   #   the trained forest the service loads
+│   └── institutional-documents/  # handbook and academic calendar, as Markdown
 ├── start.bat           # 1-click startup script for all services
 ├── stop.bat            # 1-click shutdown script
 └── README.md           # Project Documentation
 ```
+
+**Where the database lives.** The schema, its functions, the row-level-security
+policies and every migration are held in the Supabase project itself and are
+edited through its SQL editor. There is no local `database/` directory in the
+working tree; earlier revisions of it remain in git history if a full rebuild is
+ever needed.
 
 ---
 
@@ -121,7 +134,7 @@ Run the automated backend test suites:
 cd backend
 npm test
 ```
-All **134** unit, security, and integration tests should pass with 0 failures.
+All **136** unit, security, and integration tests should pass with 0 failures.
 
 They run with `DEMO_MODE=true`, which substitutes the classifier, the LLM and the
 embedder with deterministic stand-ins. That is deliberate — the suite pins routing,
