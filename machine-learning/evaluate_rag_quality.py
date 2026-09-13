@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+NL = chr(10)          # newline for f-strings, escape-free
 import os
 
 import database_connector as db
@@ -346,21 +347,43 @@ def main():
     judge, embeddings, run_config = build_judge(
         judge_model, run["judge_embedding_model"])
 
-    print(f"\nscoring {len(rows)} results, metrics: {', '.join(wanted)}")
+    # SCORE AND SAVE IN CHUNKS, NOT IN ONE PASS.
+    #
+    # This loop used to hand all 78 rows to ragas and persist once at the end.
+    # A metric takes 30-60 minutes against a rate-limited judge, and twice that
+    # window was long enough for the process to be killed -- once at 46/78, once
+    # at 39/78 -- each time writing nothing at all. Half an hour of quota spent
+    # and unrecoverable, because durability was all-or-nothing.
+    #
+    # Chunking bounds the loss to one chunk. It costs nothing: ragas is called
+    # the same number of times overall, and rescoring a row overwrites it with
+    # the same value, so a rerun is always safe.
+    chunk = int(os.environ.get("RAGAS_CHUNK", "12"))
+    print(f"{NL}scoring {len(rows)} results, metrics: {', '.join(wanted)}"
+          f"  (saving every {chunk} rows)")
     for m in wanted:
-        print(f"\n--- {m} ---", flush=True)
-        try:
-            series = score_one_metric(rows, m, judge, embeddings, run_config)
-        except Exception as exc:                       # noqa: BLE001
-            print(f"  {m} FAILED: {type(exc).__name__}: {str(exc)[:220]}")
-            print("  earlier metrics are already saved; rerun with "
-                  f"--metrics {m} when quota allows.")
-            break
-        if args.dry_run:
-            print(f"  dry run — {m} not written")
-            continue
-        written, skipped = persist_metric(rows, series, m)
-        print(f"  saved: {written} scored, {skipped} unscored (NULL)")
+        print(f"{NL}--- {m} ---", flush=True)
+        done = skipped_total = 0
+        for start_i in range(0, len(rows), chunk):
+            batch = rows[start_i:start_i + chunk]
+            try:
+                series = score_one_metric(batch, m, judge, embeddings, run_config)
+            except Exception as exc:                   # noqa: BLE001
+                print(f"  {m} FAILED at row {start_i}: "
+                      f"{type(exc).__name__}: {str(exc)[:200]}")
+                print(f"  {done} rows of {m} are already saved. Rerun with "
+                      f"--metrics {m} to continue.")
+                break
+            if args.dry_run:
+                print(f"  dry run - rows {start_i}-{start_i + len(batch) - 1} not written")
+                continue
+            w, sk = persist_metric(batch, series, m)
+            done += w
+            skipped_total += sk
+            print(f"  saved rows {start_i}-{start_i + len(batch) - 1}: "
+                  f"{done} scored so far", flush=True)
+        else:
+            print(f"  {m} complete: {done} scored, {skipped_total} unscored (NULL)")
 
     report(args.run)
 
