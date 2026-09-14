@@ -339,23 +339,26 @@ def s_background(prs, f):
 
 def s_objectives(prs, f):
     s = blank(prs); heading(s, "Objectives")
+    # Wording tracks Section 1.2 exactly. The panel asked for shorter
+    # objectives; a deck that reads longer than the paper invites the note
+    # twice.
     objs = [
         ("01", "Integrate the classifier",
-         "Integrate a Random Forest classifier into the Retrieval-Augmented Generation "
-         "pipeline so that faculty availability is estimated from temporal schedule data "
-         "and behavioural attendance features."),
+         "Integrate a Random Forest classifier into the Retrieval-Augmented "
+         "Generation pipeline, estimating faculty availability from schedule "
+         "and attendance features."),
         ("02", "Establish what it makes answerable",
-         "Determine which class of query the Enhanced architecture can answer that a "
-         "retrieval-only architecture cannot, and measure the cost of that capability "
-         "in Response Time and in the RAGAS metrics."),
+         "Determine which queries the Enhanced architecture can answer that "
+         "retrieval alone cannot, and measure the cost of that capability in "
+         "response time and in the RAGAS metrics."),
         ("03", "Deploy with a disclosure limit",
-         "Deploy the Enhanced RAG architecture within the web-based ISU-GeoBot system, "
-         "enforcing a status masking protocol and an egress boundary so that no physical "
-         "location of a person is disclosed."),
+         "Deploy the Enhanced RAG architecture in the ISU-GeoBot web system "
+         "with a status masking protocol and an egress boundary that prevents "
+         "disclosure of any person's location."),
         ("04", "Evaluate accuracy, and its limits",
-         "Evaluate the classifier against the simulation cohort, conduct a field study "
-         "of the deployed system, and report the constraints that prevented an unbiased "
-         "real-world measurement of the model."),
+         "Evaluate the classifier against the simulation cohort and "
+         "field-observe the deployed system, reporting the constraints on "
+         "real-world measurement."),
     ]
     cw, chh, gap = Inches(5.98), Inches(1.94), Inches(0.20)
     for i, (num, title, body) in enumerate(objs):

@@ -25,7 +25,7 @@ const EXAMPLES = [
   'Where is the university library?',
 ];
 
-export default function LandingHeroCinematic({ onAskAssistant, count, categories }) {
+export default function LandingHeroCinematic({ onAskAssistant }) {
   const [question, setQuestion] = useState('');
   const navigate = useNavigate();
 
@@ -120,18 +120,17 @@ export default function LandingHeroCinematic({ onAskAssistant, count, categories
 
       <div className="container-x mt-14">
         <div className="flex flex-wrap items-center justify-between gap-6 border-t border-line pt-5">
-          {/* Counted from the data, not typed in. Adding a building through
-              the Admin Dashboard changes these without anyone editing
-              this file. 355 hectares is an institutional fact, not a count. */}
+          {/* NO LIVE COUNTS HERE, DELIBERATELY.
+              These numbers were read from the data and were therefore always
+              correct -- and still wrong to show. A count on a landing page
+              reads as a claim about size, invites the comparison the campus
+              always loses, and dates the page the moment someone adds a
+              building. What the system offers does not change when the corpus
+              grows, so that is what is stated. 355 hectares is an
+              institutional fact about the campus, not a count of our data. */}
           <p className="flex flex-wrap items-center gap-x-6 gap-y-2 text-label text-fg-subtle">
-            <span>
-              <strong className="font-medium text-fg-muted" data-numeric>{count || '—'}</strong>
-              {' '}campus {count === 1 ? 'location' : 'locations'} indexed
-            </span>
-            <span>
-              <strong className="font-medium text-fg-muted" data-numeric>{categories || '—'}</strong>
-              {' '}{categories === 1 ? 'category' : 'categories'}
-            </span>
+            <span>Every indexed building, office and facility</span>
+            <span>Searchable by meaning, not keyword</span>
             <span><strong className="font-medium text-fg-muted">355</strong> hectares</span>
           </p>
           <a

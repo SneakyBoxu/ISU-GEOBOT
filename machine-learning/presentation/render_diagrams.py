@@ -22,9 +22,14 @@ from playwright.sync_api import sync_playwright
 HERE = Path(__file__).resolve().parent
 OUT = HERE.parent.parent / "screenshots"
 
+# 1900x830 is 2.29:1, which is the aspect of the slot the deck gives a diagram
+# (12.09in by 5.24in). Matching it means the drawing fills the slide instead of
+# being letterboxed, and the extra pixels buy room for the layer captions.
+WIDTH = 1900
+
 DIAGRAMS = [
-    ("diagram_architecture.html", "diagram-architecture", 660),
-    ("diagram_pipeline.html", "diagram-pipeline", 730),
+    ("diagram_architecture.html", "diagram-architecture", 830),
+    ("diagram_pipeline.html", "diagram-pipeline", 830),
 ]
 
 
@@ -37,14 +42,14 @@ def main() -> None:
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         for src, name, height in DIAGRAMS:
-            ctx = browser.new_context(viewport={"width": 1500, "height": height},
+            ctx = browser.new_context(viewport={"width": WIDTH, "height": height},
                                       device_scale_factor=2)
             page = ctx.new_page()
             page.goto((HERE / src).as_uri(), wait_until="networkidle")
             page.wait_for_timeout(500)
             path = OUT / f"{name}.png"
             page.screenshot(path=str(path))
-            print(f"  {name:24} {path.stat().st_size // 1024:>5} KB  1500x{height}")
+            print(f"  {name:24} {path.stat().st_size // 1024:>5} KB  {WIDTH}x{height}")
             ctx.close()
         browser.close()
 

@@ -1,113 +1,60 @@
 <!doctype html>
 <meta charset="utf-8">
 <style>
-  /*
-    SIMPLE ON PURPOSE. See the note in diagram_architecture.html.
-
-    This one answers a single question -- what happens between typing and
-    reading -- in five steps, with the fork drawn once and labelled in plain
-    words. The one sentence a panel must leave with is at the bottom, and it is
-    the only thing set in large type.
-  */
-  :root{
-    --ink:#16202B; --mid:#55636F; --rule:#1F3242; --hair:#C9D4DC;
-    --paper:#FFF; --ground:#FAFAF7; --tint:#EFF3F6; --person:#8A5410;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    width:1500px;height:730px;background:var(--ground);
-    font-family:"Aptos","Segoe UI",Arial,sans-serif;color:var(--ink);
-    padding:36px 50px;display:flex;flex-direction:column;
-  }
-  h1{font-size:34px;font-weight:800;text-align:center;letter-spacing:.01em}
-  .sub{font-size:17px;color:var(--mid);text-align:center;margin:6px 0 26px}
-
-  .step{display:flex;align-items:flex-start;gap:18px;margin-bottom:12px}
-  .n{
-    flex:0 0 40px;height:40px;border-radius:50%;background:var(--rule);color:#fff;
-    display:grid;place-items:center;font-size:18px;font-weight:800;
-  }
-  .what{flex:0 0 252px}
-  .what h2{font-size:21px;font-weight:800;line-height:1.2}
-  .what span{font-size:13.5px;color:var(--mid);display:block;margin-top:2px}
-  .detail{
-    flex:1;background:var(--paper);border:1.5px solid var(--hair);border-radius:7px;
-    padding:13px 17px;font-size:15.5px;line-height:1.5;
-  }
-  .detail b{font-weight:800}
-
-  /* the fork -- drawn once, two outcomes side by side */
-  .fork{display:flex;gap:14px;flex:1}
-  .path{
-    flex:1;border:1.5px solid var(--hair);border-radius:7px;background:var(--paper);
-    padding:13px 17px;
-  }
-  .path.person{border-color:var(--person);border-width:2px}
-  .path .tag{font-size:12.5px;font-weight:800;letter-spacing:.05em;margin-bottom:5px}
-  .path.doc .tag{color:var(--mid)}
-  .path.person .tag{color:var(--person)}
-  .path p{font-size:15px;line-height:1.48}
-
-  .punch{
-    margin-top:22px;background:var(--tint);border-left:5px solid var(--rule);
-    padding:20px 26px;font-size:22px;line-height:1.45;font-weight:700;
-  }
-  .punch span{display:block;font-size:15.5px;font-weight:400;color:var(--mid);
-              margin-top:8px;line-height:1.5}
+  html,body{margin:0;padding:0;background:#F7F7F4}
+  svg{display:block;font-family:"Aptos","Segoe UI",Arial,sans-serif}
 </style>
-
-<h1>HOW A QUESTION IS ANSWERED</h1>
-<p class="sub">Five steps, every time. Only step 3 changes depending on what was asked.</p>
-
-<div class="step">
-  <div class="n">1</div>
-  <div class="what"><h2>You ask</h2><span>Plain English, typed into the chat</span></div>
-  <div class="detail">&ldquo;Where is the College of Computing?&rdquo; &nbsp;&middot;&nbsp;
-    &ldquo;When does the second semester start?&rdquo; &nbsp;&middot;&nbsp;
-    &ldquo;Is SIM-33 free right now?&rdquo;</div>
-</div>
-
-<div class="step">
-  <div class="n">2</div>
-  <div class="what"><h2>The system sorts it</h2><span>One question, answered in 2 ms</span></div>
-  <div class="detail"><b>Is this about a person?</b> It checks the question against the
-    list of lecturers and a short list of availability words. No AI is used here &mdash;
-    a lookup is faster and always gives the same answer.</div>
-</div>
-
-<div class="step">
-  <div class="n">3</div>
-  <div class="what"><h2>It gathers facts</h2><span>This is the only step that forks</span></div>
-  <div class="fork">
-    <div class="path doc">
-      <p class="tag">NOT ABOUT A PERSON</p>
-      <p>Search the documents &mdash; handbook, calendar, building descriptions &mdash;
-        and keep the five closest passages.</p>
-    </div>
-    <div class="path person">
-      <p class="tag">ABOUT A PERSON</p>
-      <p>Check the timetable and ask the trained model for an estimate. If the lecturer
-        has not agreed to this, <b>the system does not even calculate it.</b></p>
-    </div>
-  </div>
-</div>
-
-<div class="step">
-  <div class="n">4</div>
-  <div class="what"><h2>The AI writes it up</h2><span>Only the wording, never the facts</span></div>
-  <div class="detail">The facts gathered in step 3 are handed to the language model,
-    which turns them into a sentence. <b>It is never asked to work out whether someone
-    is available</b> &mdash; it is told, and asked to phrase it.</div>
-</div>
-
-<div class="step">
-  <div class="n">5</div>
-  <div class="what"><h2>A last check</h2><span>Before anything leaves the server</span></div>
-  <div class="detail">The answer is scanned for anything it must never contain &mdash; a
-    room, a building, a floor, or the model's raw numbers. In our evaluation run it had
-    to stop <b>0 of 78</b> answers, because nothing got that far.</div>
-</div>
-
-<p class="punch">Availability comes from the timetable. The AI only writes the sentence.
-  <span>That is the whole design. A language model asked to guess where a lecturer is
-  would answer fluently and be unfalsifiable &mdash; so it is never asked.</span></p>
+<!-- generated by build_diagrams.py -- edit that, not this file -->
+<svg width="1900" height="830" viewBox="0 0 1900 830" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah" markerWidth="11" markerHeight="11" refX="9" refY="5"
+            orient="auto"><path d="M0,0.5 L10,5 L0,9.5 z" fill="#2C4A63"/></marker>
+    <marker id="ahr" markerWidth="11" markerHeight="11" refX="1" refY="5"
+            orient="auto"><path d="M10,0.5 L0,5 L10,9.5 z" fill="#2C4A63"/></marker>
+  </defs>
+  <rect width="1900" height="830" fill="#F7F7F4"/>
+<rect x="24" y="268" width="916" height="300" rx="6" fill="#EEF2F6" stroke="#C6D2DC" stroke-width="1.5"/><text x="40" y="289" font-size="13.5" font-weight="700" fill="#52626F" letter-spacing="1.4">DOCUMENT PATH</text><text x="198.8" y="289" font-size="11.5" fill="#93A2AE" letter-spacing="0.6">any question not about a person</text>
+<rect x="960" y="268" width="916" height="300" rx="6" fill="#EEF2F6" stroke="#C6D2DC" stroke-width="1.5"/><text x="976" y="289" font-size="13.5" font-weight="700" fill="#52626F" letter-spacing="1.4">AVAILABILITY PATH</text><text x="1173.2" y="289" font-size="11.5" fill="#93A2AE" letter-spacing="0.6">a question that names a lecturer</text>
+<rect x="24" y="596" width="1852" height="132" rx="6" fill="#EEF2F6" stroke="#C6D2DC" stroke-width="1.5"/><text x="40" y="617" font-size="13.5" font-weight="700" fill="#52626F" letter-spacing="1.4">SHARED TAIL</text><text x="179.6" y="617" font-size="11.5" fill="#93A2AE" letter-spacing="0.6">one prompt, one answer, one boundary</text>
+<circle cx="120" cy="43" r="8" fill="none" stroke="#2C4A63" stroke-width="2.2"/><path d="M106,68 a14,14 0 0 1 28,0" fill="none" stroke="#2C4A63" stroke-width="2.2"/><text x="120" y="88" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Student</text><text x="120" y="104" text-anchor="middle" font-size="11" fill="#52626F">asks in plain language</text>
+<rect x="280" y="40" width="380" height="56" rx="6" fill="#D3E6D8" stroke="#3E6B4C" stroke-width="2"/><text x="470.0" y="64.0" text-anchor="middle" font-size="13.5" font-weight="800" fill="#16202B">"Where is the College of Computing?"</text><text x="470.0" y="82.0" text-anchor="middle" font-size="11.5" fill="#3B5266">a place question</text>
+<rect x="690" y="40" width="380" height="56" rx="6" fill="#D3E6D8" stroke="#3E6B4C" stroke-width="2"/><text x="880.0" y="64.0" text-anchor="middle" font-size="13.5" font-weight="800" fill="#16202B">"When does the second semester start?"</text><text x="880.0" y="82.0" text-anchor="middle" font-size="11.5" fill="#3B5266">an institutional question</text>
+<rect x="1100" y="40" width="340" height="56" rx="6" fill="#F2DCBE" stroke="#9A6B24" stroke-width="2"/><text x="1270.0" y="64.0" text-anchor="middle" font-size="13.5" font-weight="800" fill="#16202B">"Is SIM-33 free right now?"</text><text x="1270.0" y="82.0" text-anchor="middle" font-size="11.5" fill="#3B5266">a person question</text>
+<path d="M160,40 L280,40" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<rect x="700" y="150" width="480" height="66" rx="6" fill="#C3D7E7" stroke="#2C4A63" stroke-width="2"/><text x="940.0" y="179.0" text-anchor="middle" font-size="15" font-weight="800" fill="#16202B">Intent Router</text><text x="940.0" y="197.0" text-anchor="middle" font-size="11.5" fill="#3B5266">113 registered name forms + a fixed availability word list - a lookup, not a model</text>
+<path d="M1260,157 v52 a100.0,11 0 0 0 200,0 v-52" fill="#EFE3C8" stroke="#9A7B33" stroke-width="2"/><ellipse cx="1360.0" cy="157" rx="100.0" ry="11" fill="#F8F1DF" stroke="#9A7B33" stroke-width="2"/><text x="1360.0" y="187.0" text-anchor="middle" font-size="13" font-weight="800" fill="#3E3213">faculty_alias</text><text x="1360.0" y="203.0" text-anchor="middle" font-size="10.5" fill="#6B5A2C">113 name forms</text>
+<path d="M470,96 L470,126 L820,126 L820,150" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/><rect x="612.12" y="108" width="55.760000000000005" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="640" y="120" text-anchor="middle" font-size="11" font-weight="700" fill="#52626F">raw text</text>
+<path d="M1270,96 L1270,126 L1000,126 L1000,150" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/><rect x="1102.12" y="108" width="55.760000000000005" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="1130" y="120" text-anchor="middle" font-size="11" font-weight="700" fill="#52626F">raw text</text>
+<path d="M1180,183 L1260,183" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)" marker-start="url(#ahr)"/>
+<rect x="70" y="316" width="390" height="62" rx="6" fill="#D3E6D8" stroke="#3E6B4C" stroke-width="2"/><text x="265.0" y="343.0" text-anchor="middle" font-size="15" font-weight="800" fill="#16202B">Embed the query</text><text x="265.0" y="361.0" text-anchor="middle" font-size="11.5" fill="#3B5266">all-MiniLM-L6-v2 - 384 dimensions, L2-normalised</text>
+<rect x="500" y="316" width="400" height="62" rx="6" fill="#D3E6D8" stroke="#3E6B4C" stroke-width="2"/><text x="700.0" y="343.0" text-anchor="middle" font-size="15" font-weight="800" fill="#16202B">Exact cosine search</text><text x="700.0" y="361.0" text-anchor="middle" font-size="11.5" fill="#3B5266">no ANN index - top 5 - similarity floor 0.25</text>
+<path d="M330,451 v58 a150.0,11 0 0 0 300,0 v-58" fill="#EFE3C8" stroke="#9A7B33" stroke-width="2"/><ellipse cx="480.0" cy="451" rx="150.0" ry="11" fill="#F8F1DF" stroke="#9A7B33" stroke-width="2"/><text x="480.0" y="484.0" text-anchor="middle" font-size="13" font-weight="800" fill="#3E3213">document_chunk</text><text x="480.0" y="500.0" text-anchor="middle" font-size="10.5" fill="#6B5A2C">261 chunks, each 220 tokens or fewer</text>
+<path d="M820,216 L820,246 L265,246 L265,316" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/><rect x="444.17" y="228" width="111.66" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="500" y="240" text-anchor="middle" font-size="11.5" font-weight="700" fill="#52626F">no lecturer named</text>
+<path d="M460,347 L500,347" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<path d="M700,378 L700,410 L480,410 L480,440" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/><rect x="552.1" y="392" width="95.8" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="600" y="404" text-anchor="middle" font-size="11" font-weight="700" fill="#52626F">compare against</text>
+<rect x="1000" y="316" width="250" height="62" rx="6" fill="#F2DCBE" stroke="#9A6B24" stroke-width="2"/><text x="1125.0" y="343.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Consent gate</text><text x="1125.0" y="361.0" text-anchor="middle" font-size="11.5" fill="#3B5266">refuses here if not consented</text>
+<rect x="1290" y="316" width="250" height="62" rx="6" fill="#F2DCBE" stroke="#9A6B24" stroke-width="2"/><text x="1415.0" y="343.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Resolve timetable</text><text x="1415.0" y="361.0" text-anchor="middle" font-size="11.5" fill="#3B5266">is a class running now?</text>
+<rect x="1580" y="316" width="250" height="62" rx="6" fill="#F2DCBE" stroke="#9A6B24" stroke-width="2"/><text x="1705.0" y="343.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Random Forest</text><text x="1705.0" y="361.0" text-anchor="middle" font-size="11.5" fill="#3B5266">300 trees, 11 features</text>
+<path d="M1130,451 v58 a125.0,11 0 0 0 250,0 v-58" fill="#EFE3C8" stroke="#9A7B33" stroke-width="2"/><ellipse cx="1255.0" cy="451" rx="125.0" ry="11" fill="#F8F1DF" stroke="#9A7B33" stroke-width="2"/><text x="1255.0" y="484.0" text-anchor="middle" font-size="13" font-weight="800" fill="#3E3213">faculty_schedule</text><text x="1255.0" y="500.0" text-anchor="middle" font-size="10.5" fill="#6B5A2C">425 real teaching blocks</text>
+<path d="M1450,451 v58 a135.0,11 0 0 0 270,0 v-58" fill="#EFE3C8" stroke="#9A7B33" stroke-width="2"/><ellipse cx="1585.0" cy="451" rx="135.0" ry="11" fill="#F8F1DF" stroke="#9A7B33" stroke-width="2"/><text x="1585.0" y="484.0" text-anchor="middle" font-size="13" font-weight="800" fill="#3E3213">attendance_record</text><text x="1585.0" y="500.0" text-anchor="middle" font-size="10.5" fill="#6B5A2C">behaviour, by pseudonym</text>
+<path d="M1060,216 L1060,246 L1125,246 L1125,316" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/><rect x="1178.19" y="228" width="123.62" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="1240" y="240" text-anchor="middle" font-size="11.5" font-weight="700" fill="#52626F">a lecturer is named</text>
+<path d="M1250,347 L1290,347" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<path d="M1540,347 L1580,347" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<path d="M1350,378 L1350,410 L1255,410 L1255,440" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)" marker-start="url(#ahr)"/><rect x="1307.84" y="392" width="44.32" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="1330" y="404" text-anchor="middle" font-size="11" font-weight="700" fill="#52626F">blocks</text>
+<path d="M1660,378 L1660,410 L1585,410 L1585,440" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)" marker-start="url(#ahr)"/><rect x="1614.98" y="392" width="50.04" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="1640" y="404" text-anchor="middle" font-size="11" font-weight="700" fill="#52626F">history</text>
+<rect x="80" y="636" width="330" height="66" rx="6" fill="#F2DCBE" stroke="#9A6B24" stroke-width="2"/><text x="245.0" y="665.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Mask to three states</text><text x="245.0" y="683.0" text-anchor="middle" font-size="11" fill="#3B5266">available / in class / unavailable</text>
+<rect x="450" y="636" width="300" height="66" rx="6" fill="#C3D7E7" stroke="#2C4A63" stroke-width="2"/><text x="600.0" y="665.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Context Fusion</text><text x="600.0" y="683.0" text-anchor="middle" font-size="11" fill="#3B5266">five passages, or one coarse state, into a single prompt</text>
+<rect x="790" y="636" width="380" height="66" rx="6" fill="#E2D6EA" stroke="#6B5580" stroke-width="2"/><text x="980.0" y="665.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Language model writes the sentence</text><text x="980.0" y="683.0" text-anchor="middle" font-size="11" fill="#3B5266">openai/gpt-oss-120b - temperature 0 - it is told the state, never asked for it</text>
+<rect x="1210" y="636" width="300" height="66" rx="6" fill="#C3D7E7" stroke="#2C4A63" stroke-width="2"/><text x="1360.0" y="665.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Egress filter</text><text x="1360.0" y="683.0" text-anchor="middle" font-size="11" fill="#3B5266">scans the written text for room, building, floor, raw score</text>
+<rect x="1550" y="636" width="280" height="66" rx="6" fill="#C3D7E7" stroke="#2C4A63" stroke-width="2"/><text x="1690.0" y="665.0" text-anchor="middle" font-size="14" font-weight="800" fill="#16202B">Answer to the student</text><text x="1690.0" y="683.0" text-anchor="middle" font-size="11" fill="#3B5266">0 stopped in 269 conversations</text>
+<path d="M1830,347 L1862,347 L1862,578 L245,578 L245,636" fill="none" stroke="#9A6B24" stroke-width="2.2" marker-end="url(#ah)"/><rect x="959.12" y="558" width="81.76" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="1000" y="570" text-anchor="middle" font-size="11.5" font-weight="700" fill="#52626F">the estimate</text>
+<path d="M900,347 L930,347 L930,560 L600,560 L600,636" fill="none" stroke="#3E6B4C" stroke-width="2.2" marker-end="url(#ah)"/><rect x="735.1" y="542" width="69.80000000000001" height="17" rx="3" fill="#F7F7F4" opacity="0.94"/><text x="770" y="554" text-anchor="middle" font-size="11.5" font-weight="700" fill="#52626F">5 passages</text>
+<path d="M410,669 L450,669" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<path d="M750,669 L790,669" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<path d="M1170,669 L1210,669" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<path d="M1510,669 L1550,669" fill="none" stroke="#2C4A63" stroke-width="2.2" marker-end="url(#ah)"/>
+<rect x="24" y="752" width="1852" height="58" rx="5" fill="#E7EEF3" stroke="#2C4A63" stroke-width="0"/>
+<rect x="24" y="752" width="6" height="58" fill="#2C4A63"/>
+<text x="50" y="779" font-size="17.5" font-weight="800" fill="#16202B">Availability comes from the timetable and the classifier. The language model only writes the sentence.</text>
+<text x="50" y="800" font-size="12.5" fill="#52626F">A model asked to guess where a lecturer is would answer fluently and unfalsifiably, so it is never asked. It is handed the state and told to phrase it.</text>
+</svg>

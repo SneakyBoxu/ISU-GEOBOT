@@ -47,8 +47,10 @@ import LandingResearchInstruments from './LandingResearchInstruments.jsx';
 export default function Landing() {
   const navigate = useNavigate();
   const stageRef = useRef(null);
-  // One fetch for the page. Every count on it is derived from this.
-  const { pois, count, categories } = useCampusLocations();
+  // One fetch for the page. The landing page states no counts -- see the
+  // note in LandingHeroCinematic -- so only the locations themselves are
+  // taken from it, for the map preview and the discovery strip.
+  const { pois } = useCampusLocations();
   const [chatOpen, setChatOpen] = useState(false);
   // The bubble has to be VISIBLE from the start — that is the whole point of a
   // floating assistant — but it must not cost anything on first paint. So it
@@ -93,7 +95,7 @@ export default function Landing() {
           </div>
 
           <div className="relative z-10">
-            <LandingHeroCinematic onAskAssistant={openAssistant} count={count} categories={categories} />
+            <LandingHeroCinematic onAskAssistant={openAssistant} />
             <LandingStudentValue />
             <LandingAskAssistant onAskAssistant={openAssistant} />
           </div>
@@ -101,7 +103,7 @@ export default function Landing() {
 
         <LandingCampusDiscovery pois={pois} />
         <LandingPrivacyPromise />
-        <LandingResearchInstruments count={count} />
+        <LandingResearchInstruments />
       </main>
 
       <PageFooter />

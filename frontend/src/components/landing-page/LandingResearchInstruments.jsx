@@ -76,7 +76,7 @@ const METRICS = [
   ['Answer Relevancy', 'Whether the answer addresses the question asked'],
 ];
 
-export default function LandingResearchInstruments({ count = 0 }) {
+export default function LandingResearchInstruments() {
   const [ref, shown] = useReveal({ threshold: 0.1 });
 
   // ---- the pipeline advances on SCROLL, not on click --------------------
@@ -213,9 +213,13 @@ export default function LandingResearchInstruments({ count = 0 }) {
       <div className="container-x">
         {/* ---- parameters: true today ---- */}
         <dl ref={ref} className="mt-16 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+          {/* The corpus size is not a parameter. PARAMETERS below are settings
+              that hold whatever the corpus contains -- the embedding width,
+              the retrieval cut-offs -- and a location count sitting beside
+              them implies it is one of them, then goes stale the first time
+              an administrator adds a building. */}
           {[
             ...PARAMETERS,
-            [String(count || '—'), 'campus locations indexed', 'each with a place-card in the corpus'],
           ].map(([value, label, note], i) => (
             <div
               key={label}

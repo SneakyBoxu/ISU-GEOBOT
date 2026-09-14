@@ -135,7 +135,29 @@ export async function reindexPoi(poiId) {
     .eq('source_origin', 'generated:poi')
     .eq('title', `Place card — ${poi.name}`);
 
+  // A RENAME DEFEATS THE TITLE MATCH, so find legacy cards by what they
+  // actually describe instead. A legacy row carries no POI id of its own, but
+  // its CHUNK does, and that survives a rename. Renaming "University
+  // Dormitory" to "Boys University Dormitory" left the old card in the corpus
+  // under the old name, competing with the new one for a retrieval slot --
+  // the same duplication the block above was written to prevent, reached by a
+  // different route.
+  const { data: byChunk } = await db
+    .from('document_chunk')
+    .select('document_id')
+    .eq('poi_id', poi.id);
+  const chunkDocIds = [...new Set((byChunk ?? []).map((c) => c.document_id))];
+
+  const seen = new Set();
+  const stale = [];
   for (const d of [...(current ?? []), ...(legacy ?? [])]) {
+    if (d?.id && !seen.has(d.id)) { seen.add(d.id); stale.push({ id: d.id }); }
+  }
+  for (const id of chunkDocIds) {
+    if (id && !seen.has(id)) { seen.add(id); stale.push({ id }); }
+  }
+
+  for (const d of stale) {
     await db.from('document_chunk').delete?.().eq?.('document_id', d.id);
     await db.from('document').delete?.().eq?.('id', d.id);
   }
