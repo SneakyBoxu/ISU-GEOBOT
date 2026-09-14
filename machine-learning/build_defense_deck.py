@@ -351,14 +351,13 @@ def s_objectives(prs, f):
          "Determine which queries the Enhanced architecture can answer that "
          "retrieval alone cannot, and measure the cost of that capability in "
          "response time and in the RAGAS metrics."),
-        ("03", "Deploy with a disclosure limit",
+        ("03", "Deploy it",
          "Deploy the Enhanced RAG architecture in the ISU-GeoBot web system "
-         "with a status masking protocol and an egress boundary that prevents "
-         "disclosure of any person's location."),
-        ("04", "Evaluate accuracy, and its limits",
-         "Evaluate the classifier against the simulation cohort and "
-         "field-observe the deployed system, reporting the constraints on "
-         "real-world measurement."),
+         "with a status masking protocol and an egress boundary."),
+        ("04", "Prove the boundary holds",
+         "Verify that the deployed system cannot disclose the physical "
+         "location of any individual, under ordinary and under adversarial "
+         "querying."),
     ]
     cw, chh, gap = Inches(5.98), Inches(1.94), Inches(0.20)
     for i, (num, title, body) in enumerate(objs):
@@ -384,7 +383,15 @@ def s_diagram(prs, title, name):
 
 def s_shot(prs, objective, name, caption, todo=None):
     s = blank(prs); heading(s, "System Screenshots")
-    obj_label(s, objective)
+    # objective=None for a screenshot that supports a finding rather than an
+    # objective. The field-capture form is the case: it evidences the method
+    # contribution in s_field, and labelling it "04 OBJECTIVE" would claim a
+    # discharge the fourth objective no longer covers.
+    if objective is None:
+        tb(s, MARGIN, Inches(1.40), Inches(5), Inches(0.28),
+           "METHODOLOGICAL CONTRIBUTION", size=11, bold=True, color=ACCENT)
+    else:
+        obj_label(s, objective)
     tb(s, MARGIN, Inches(1.74), Inches(2.52), Inches(3.6), caption,
        size=13, color=MUTED, spacing=1.35)
     picture(s, name, Inches(3.40), Inches(1.36), W - Inches(3.40) - MARGIN,
@@ -615,7 +622,7 @@ def s_ragas(prs, f):
 
 def s_privacy(prs, f):
     s = blank(prs); heading(s, "The Refusal Is the Feature")
-    obj_label(s, 3)
+    obj_label(s, 4)
     tb(s, MARGIN, Inches(1.78), Inches(6.1), Inches(0.36),
        "Asked:   “Where is SIM-22?”", size=17, bold=True, color=INK)
     rect(s, MARGIN, Inches(2.26), Inches(6.1), Inches(0.78), fill=WHITE, line=LINE)
@@ -646,13 +653,17 @@ def s_field(prs, f):
     """
     The field study, stated as the method finding it is.
 
-    This slide exists because the honest version of SO4 is not an accuracy
-    number, and a panel is better served by seeing why than by being told the
-    sample was small. The engine column is the point: the clean sample observed
-    the deterministic path, not the model.
+    NO LONGER AN OBJECTIVE SLIDE. The fourth objective is now the privacy
+    boundary, so this slide stops carrying an "04 OBJECTIVE" label it can no
+    longer discharge and is presented as what it is: a methodological
+    contribution. The engine column is still the point -- the clean sample
+    observed the deterministic path, not the model -- but it is now offered as
+    a finding about how to validate such a system rather than as a shortfall
+    against a promise.
     """
-    s = blank(prs); heading(s, "Field Study — What It Can and Cannot Show")
-    obj_label(s, 4)
+    s = blank(prs); heading(s, "Field Study — A Method Finding")
+    tb(s, MARGIN, Inches(1.40), Inches(5), Inches(0.28),
+       "METHODOLOGICAL CONTRIBUTION", size=11, bold=True, color=ACCENT)
 
     rows = [("Protocol", "Period", "n", "Agreed", "Engine observed"),
             ("Estimate-first", "28 Aug – 3 Sep", "84", "74",
@@ -771,7 +782,6 @@ def build():
     s_shot(prs, 3, "03-place-card",
            "A place card. The photograph is interface only — it never enters the "
            "retrieval corpus.")
-    s_privacy(prs, f)
     s_shot(prs, 3, "05-admin-locations",
            "The Admin Dashboard. Adding a location writes the map pin and its embedded "
            "place card in one operation, so the two cannot drift apart.")
@@ -781,7 +791,8 @@ def build():
     s_shot(prs, 3, "08-admin-ocr",
            "Announcement intake. OCR text is extracted in the browser and never stored; "
            "only the resolved event is written.")
-    s_shot(prs, 4, "06-admin-validation",
+    s_privacy(prs, f)
+    s_shot(prs, None, "06-admin-validation",
            "Field observation capture, rebuilt. The observed status starts empty and the "
            "system estimate stays hidden until the observer commits — the fix for "
            "the anchoring defect found mid-study.")

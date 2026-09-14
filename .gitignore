@@ -29,6 +29,7 @@ machine-learning/saved-models/*
 thesis/
 *.docx
 *.pdf
+*.pptx
 CCSICT-SCHEDULE-*.xlsx
 
 # Captured screenshots and rendered diagrams. Regenerate with
