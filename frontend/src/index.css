@@ -635,3 +635,45 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-scroll-hint { animation: none; opacity: 1; transform: none; }
 }
+
+/* A section rule that fades into the page instead of cutting across it.
+ *
+ * The full-bleed `border-t` between sections drew a hard line edge to edge. On
+ * a dark page that reads as a seam -- the eye stops at it, and it looks like
+ * the layout broke rather than like two parts of one document. This keeps the
+ * separation and loses the cut: opaque in the middle where the content is,
+ * gone by the margins.
+ *
+ * Applied as a pseudo-element so it can sit on a `relative` section without a
+ * wrapper, and so it never affects layout height. */
+.rule-fade { position: relative; }
+.rule-fade::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgb(var(--line)) 18%,
+    rgb(var(--line)) 82%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+.rule-fade-y::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgb(var(--line)) 18%,
+    rgb(var(--line)) 82%,
+    transparent 100%
+  );
+  pointer-events: none;
+}

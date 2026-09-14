@@ -42,7 +42,7 @@ export default function MaskingFlow() {
   }, [inView, reduced]);
 
   return (
-    <div ref={ref} className="border-y border-line">
+    <div ref={ref} className="rule-fade rule-fade-y relative">
       {/* private side */}
       <div className="grid gap-4 py-8 sm:grid-cols-[minmax(0,13rem)_1fr] sm:gap-10">
         <p className="eyebrow pt-0.5">Private — never leaves the server</p>

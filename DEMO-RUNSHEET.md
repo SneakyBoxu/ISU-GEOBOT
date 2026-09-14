@@ -109,13 +109,42 @@ chunking, not the model."*
 
 **You must be signed in for this.** Availability is not answered anonymously.
 
+**Ask a REAL lecturer first, then a simulated one. The contrast is the point.**
+
+```
+Is AGUSTIN available for consultation right now?
+```
+
+You get a short answer from the timetable — a coarse state and nothing more.
+Let it sit for a second, then ask:
+
 ```
 Is SIM-33 available for consultation right now?
 ```
 
-Say: *"SIM-33 is one of 37 simulated lecturers. The Random Forest ran here — about
-32 milliseconds — and returned one of three coarse states. Notice what the answer
-does not contain: no room, no building, no floor."*
+You get a richer answer: the class that is running, when it ends, and the next
+consultation window.
+
+Say: *"Same question, two lecturers. The real one gets a timetable answer. The
+simulated one gets a class, an end time and the next consultation slot — because
+only the simulation cohort has attendance history. No real lecturer does: we did
+not collect Daily Time Records, and that is the Section 1.3 delimitation. So the
+classifier only engages where behavioural data exists. That limitation is
+Specific Objective 4, and you are watching it happen."*
+
+Then point at what is missing from both: *"Notice what neither answer contains —
+no room, no building, no floor."*
+
+**Why this sequence and not SIM alone.** A panelist who sees only `SIM-33` asks
+why the demo avoids real names. A panelist who sees only a real name asks where
+the Random Forest was in that answer — and the honest reply is that it did not
+run. Showing both answers each question before it is asked, and turns the weakest
+objective into a demonstration rather than an admission.
+
+**Do not linger on the real lecturer's answer.** Their consent flag is a seeded
+default, not a consent any individual gave — every real lecturer carries the same
+`consent_date`. One question is the point; a tour of real staff availability is
+not, and it is the thing the masking protocol exists to prevent.
 
 ### 5 · The refusal — the privacy claim, and the best moment in the demo
 

@@ -2,6 +2,8 @@ import React from 'react';
 import { Compass, MapPinned, MessageCircleQuestion, ShieldCheck } from 'lucide-react';
 import { useReveal } from '../../custom-react-hooks/useReducedMotionPreference.js';
 import LandingRevealText from './LandingRevealText.jsx';
+import LandingSchematicField from './LandingSchematicField.jsx';
+import { revealStyle } from '../../custom-react-hooks/revealStyle.js';
 
 /**
  * What a student gets, stated as four things they can do.
@@ -49,7 +51,8 @@ export default function LandingStudentValue() {
   const [ref, shown] = useReveal({ threshold: 0.12 });
 
   return (
-    <section id="find-your-way" className="relative py-28 sm:py-36">
+    <section id="find-your-way" className="relative overflow-hidden py-28 sm:py-36">
+      <LandingSchematicField />
       <div className="container-x">
         <div className="max-w-[36rem]">
           <p className="eyebrow">What you can do</p>
@@ -65,14 +68,7 @@ export default function LandingStudentValue() {
             <li
               key={title}
               className="group bg-bg p-8 transition-colors duration-state hover:bg-bg-sunken sm:p-10"
-              style={{
-                transitionProperty: 'transform, opacity, background-color',
-                transitionDuration: '800ms, 600ms, 160ms',
-                transitionTimingFunction: 'cubic-bezier(.16,1,.3,1), ease-out, ease',
-                transitionDelay: `${i * 90}ms`,
-                transform: shown ? 'none' : 'translateY(24px)',
-                opacity: shown ? 1 : 0,
-              }}
+style={revealStyle(shown, i, 'background-color')}
             >
               <span
                 className="grid h-11 w-11 place-items-center rounded-lg bg-accent-subtle text-accent transition-transform duration-state group-hover:-translate-y-0.5"

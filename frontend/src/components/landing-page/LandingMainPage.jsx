@@ -13,7 +13,7 @@ import LandingBackgroundTexture from './LandingBackgroundTexture.jsx';
 // button is pressed, which is well inside the time it takes to read the panel.
 const ChatDock = lazy(() => import('../main-assistant/FloatingChatDock.jsx'));
 import LandingCinematicBackdrop from './LandingCinematicBackdrop.jsx';
-import LandingScrollRail from './LandingScrollRail.jsx';
+import LandingAmbientField from './LandingAmbientField.jsx';
 import LandingHeroCinematic from './LandingHeroCinematic.jsx';
 import LandingStudentValue from './LandingStudentValue.jsx';
 import LandingAskAssistant from './LandingAskAssistant.jsx';
@@ -83,10 +83,17 @@ export default function Landing() {
   return (
     <div className="relative min-h-screen bg-bg text-fg">
       <LandingBackgroundTexture />
+      {/* A floor of movement behind everything. The page is long and dark
+          and between sections there are screens of flat ground; stillness
+          at that scale reads as a page that stopped loading. Fixed and
+          behind the content, off entirely under reduced-motion. */}
+      <LandingAmbientField />
       <a href="#main" className="skip-link">Skip to content</a>
       <TopNavigationBar />
       <DemoModeNotificationBanner />
-      <LandingScrollRail />
+      {/* LandingScrollRail removed: the fixed index down the left edge and
+          the progress hairline across the top both came from it. The header
+          already carries the section links, so nothing navigable was lost. */}
 
       <main id="main">
         <div ref={stageRef} className="relative">

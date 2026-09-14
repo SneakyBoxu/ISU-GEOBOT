@@ -4,6 +4,7 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { TYPE_LETTER, categoryColor, iconFor } from '../main-assistant/mapMarkerGlyphs.js';
 import Button from '../ui-primitives/ActionButton.jsx';
 import LandingRevealText from './LandingRevealText.jsx';
+import LandingSchematicField from './LandingSchematicField.jsx';
 
 // Leaflet is ~90KB gzipped and lives in the workspace chunk. Lazy here so the
 // landing's critical path does not carry a map most visitors scroll past.
@@ -104,7 +105,8 @@ export default function LandingCampusDiscovery({ pois = [] }) {
   const shown = grouped[group] ?? [];
 
   return (
-    <section id="campus" className="relative border-y border-line bg-bg-sunken py-28 sm:py-36">
+    <section id="campus" className="rule-fade rule-fade-y relative overflow-hidden py-28 sm:py-36">
+      <LandingSchematicField />
       <div className="container-x">
         <div className="flex flex-wrap items-end justify-between gap-8">
           <div className="max-w-[34rem]">

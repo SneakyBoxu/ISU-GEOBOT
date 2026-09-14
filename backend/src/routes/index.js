@@ -637,22 +637,53 @@ api.get('/eval/status', async (_req, res, next) => {
       .from('ragas_score')
       .select('id', { count: 'exact', head: true });
 
-    const { data: models } = await db
-      .from('rf_model_version')
-      .select('version, trained_at, label_source, split_strategy')
-      .order('trained_at', { ascending: false })
-      .limit(1);
+    // THE SERVED MODEL, NOT THE NEWEST REGISTRY ROW.
+    //
+    // This used to report the most recently trained row, which is a different
+    // thing: the registry holds an entry trained on the other researcher's
+    // machine whose artifact does not exist on this deployment, so the
+    // endpoint named a version the ML service was not running. The service
+    // itself is the only authority on what is loaded, so ask it, and fall back
+    // to the registry only if it cannot be reached.
+    let activeModel = null;
+    try {
+      const info = await ml.modelInfo();
+      if (info?.version) {
+        const { data: row } = await db
+          .from('rf_model_version')
+          .select('version, trained_at, label_source, split_strategy')
+          .eq('version', info.version)
+          .maybeSingle();
+        activeModel = row ?? {
+          version: info.version,
+          trained_at: info.trained_at ?? null,
+          label_source: info.label_source ?? null,
+          split_strategy: info.split_strategy ?? null,
+        };
+      }
+    } catch {
+      const { data: models } = await db
+        .from('rf_model_version')
+        .select('version, trained_at, label_source, split_strategy')
+        .order('trained_at', { ascending: false })
+        .limit(1);
+      activeModel = models?.[0] ?? null;
+    }
 
     res.json({
       hasResults: Boolean(scored),
       runs: runs ?? [],
       scoredResults: scored ?? 0,
-      activeModel: models?.[0] ?? null,
+      activeModel,
       disclaimer:
-        'ISU-GeoBot is a research prototype. No evaluation results have been ' +
-        'published for this deployment. RAGAS scores, classification accuracy ' +
-        'and faculty validation figures will appear here only after real ' +
-        'evaluation runs have been completed and recorded.',
+        'ISU-GeoBot is an undergraduate research prototype and not an official ' +
+        'university service. The Enhanced and standard architectures have been ' +
+        'scored on all four RAGAS metrics by a judge model distinct from the ' +
+        'generator, and the classifier against the schedule lookup it is ' +
+        'proposed to replace. Availability figures were measured against a ' +
+        'simulated cohort: no faculty member was recruited and no personal ' +
+        'attendance record was collected, so no accuracy is reported for a ' +
+        'real lecturer.',
     });
   } catch (err) { next(err); }
 });

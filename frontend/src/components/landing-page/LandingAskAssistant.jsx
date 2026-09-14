@@ -4,6 +4,8 @@ import { ArrowUpRight, MessageSquare, Search, Sparkles } from 'lucide-react';
 import Button from '../ui-primitives/ActionButton.jsx';
 import { useReveal } from '../../custom-react-hooks/useReducedMotionPreference.js';
 import LandingRevealText from './LandingRevealText.jsx';
+import LandingSchematicField from './LandingSchematicField.jsx';
+import { revealStyle } from '../../custom-react-hooks/revealStyle.js';
 
 /**
  * The three-step explanation, and the invitation to try it.
@@ -26,6 +28,19 @@ const STEPS = [
   ['03', 'Get there', 'Open directions in Google Maps, or ask a follow-up question about the place.'],
 ];
 
+// One question carried all the way through, copied from the running system.
+// The list below shows what you may ask; this shows what you get back, which
+// is the thing a visitor is actually deciding about. A specific date lifted
+// out of the academic calendar makes the point that the answer came from a
+// document far better than any sentence claiming it did.
+const WORKED = {
+  q: 'When does the second semester start?',
+  a: 'The second semester of SY 2026–2027 begins on December 7, 2026 for '
+    + 'undergraduate, law and medicine students, while graduate students start '
+    + 'on December 12, 2026.',
+  sources: ['ISU Academic Calendar 2026–2027', 'Student Handbook'],
+};
+
 const QUESTIONS = [
   'Where is the College of Computing?',
   'Where can I find the Registrar?',
@@ -38,7 +53,8 @@ export default function LandingAskAssistant({ onAskAssistant }) {
   const navigate = useNavigate();
 
   return (
-    <section id="assistant" className="relative py-28 sm:py-36">
+    <section id="assistant" className="rule-fade rule-fade-y relative overflow-hidden bg-bg-sunken py-28 sm:py-36">
+      <LandingSchematicField />
       <div className="container-x">
         {/* ---- how it works, for a student ---- */}
         <ol ref={ref} className="grid gap-10 sm:grid-cols-3 sm:gap-8">
@@ -46,17 +62,13 @@ export default function LandingAskAssistant({ onAskAssistant }) {
             <li
               key={n}
               className="relative"
-              style={{
-                transitionProperty: 'transform, opacity',
-                transitionDuration: '800ms, 600ms',
-                transitionTimingFunction: 'cubic-bezier(.16,1,.3,1), ease-out',
-                transitionDelay: `${i * 110}ms`,
-                transform: shown ? 'none' : 'translateY(22px)',
-                opacity: shown ? 1 : 0,
-              }}
+              style={revealStyle(shown, i)}
             >
               <div className="flex items-center gap-3">
-                <span className="font-mono text-data text-accent">{n}</span>
+                {/* Muted, not accent. The one accent moment in this section is
+                    the button you are meant to press; three numbered
+                    markers in the same colour dilute it. */}
+                <span className="font-mono text-data text-fg-subtle">{n}</span>
                 <span aria-hidden className="h-px flex-1 bg-line" />
               </div>
               <h3 className="mt-4 text-h3 font-semibold text-fg">{title}</h3>
@@ -121,6 +133,43 @@ export default function LandingAskAssistant({ onAskAssistant }) {
                 </li>
               ))}
             </ul>
+          </div>
+
+          {/* The answer. Same shape as the transcript in the Privacy section,
+              deliberately: two sightings of one pattern read as a system, two
+              different treatments read as two unrelated pages. */}
+          <div className="border-t border-line bg-bg-sunken/50 p-8 sm:p-12 lg:p-16 lg:pt-12">
+            <p className="eyebrow">What an answer looks like</p>
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-12">
+              <p className="rounded-lg border border-line bg-bg px-4 py-3.5 text-meta leading-relaxed text-fg">
+                &ldquo;{WORKED.q}&rdquo;
+              </p>
+
+              <div>
+                <div className="flex items-start gap-3">
+                  <span
+                    aria-hidden
+                    className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-pill bg-accent-subtle text-[0.6875rem] font-semibold text-accent"
+                  >
+                    G
+                  </span>
+                  <p className="text-meta leading-relaxed text-fg-muted">{WORKED.a}</p>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3.5">
+                  <span className="text-label text-fg-subtle">Answered from</span>
+                  {WORKED.sources.map((src) => (
+                    <span
+                      key={src}
+                      className="rounded-pill border border-line px-2.5 py-1 font-mono text-[0.6875rem] text-fg-subtle"
+                    >
+                      {src}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

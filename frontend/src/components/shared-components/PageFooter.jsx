@@ -72,11 +72,13 @@ export default function Footer() {
             ISU-GeoBot is an undergraduate research prototype developed for a
             thesis in partial fulfillment of the BSCS (Data Mining Track) at
             Isabela State University, Echague Main Campus. It is not an official
-            university service. The Enhanced RAG architecture will be evaluated
-            against a standard RAG baseline using the RAGAS framework, and its
-            availability estimates will be validated by selected faculty
-            members. No evaluation results have been published for this
-            deployment.
+            university service. The Enhanced RAG architecture has been evaluated
+            against a standard RAG baseline on all four RAGAS metrics, and the
+            classifier against the schedule lookup it is proposed to replace.
+            Availability results were measured against a simulated cohort: no
+            faculty member was recruited and no personal attendance record was
+            collected, so the study reports no accuracy figure for a real
+            lecturer.
           </p>
           <p className="mt-5 text-label text-fg-subtle">
             &copy; {new Date().getFullYear()} Michael Allan Almario &amp;
