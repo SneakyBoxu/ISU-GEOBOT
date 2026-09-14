@@ -38,15 +38,27 @@ const BASEMAPS = {
   satellite: {
     label: 'Satellite',
     url: () => 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    reference: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    // A function like plan's, so the render site can call either without
+    // testing its type. Satellite labels do not vary with the theme.
+    reference: () => 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
     maxZoom: 19,
   },
+  // Esri Canvas, not CARTO. basemaps.cartocdn.com now stamps "API KEY
+  // REQUIRED" across every tile it serves without a key, so the Plan view
+  // showed that watermark to an administrator placing a pin. The main campus
+  // map moved to Esri for this reason; its note records that CARTO, OSM,
+  // Wikimedia and Stadia all fail from this network while arcgisonline
+  // answers in 0.3s. Base carries the ground, Reference carries the labels.
   plan: {
     label: 'Plan',
-    url: (theme) => `https://{s}.basemaps.cartocdn.com/${theme === 'dark' ? 'dark_all' : 'light_all'}/{z}/{x}/{y}{r}.png`,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    maxZoom: 20,
+    url: (theme) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${theme === 'dark' ? 'Dark' : 'Light'}_Gray_Base/MapServer/tile/{z}/{y}/{x}`,
+    reference: (theme) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${theme === 'dark' ? 'Dark' : 'Light'}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`,
+    attribution: 'Map data &copy; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',
+    maxZoom: 19,
+    // Canvas has no data over Echague past z16; Leaflet upscales rather than
+    // requesting a tile that does not exist.
+    maxNativeZoom: 16,
   },
 };
 
@@ -376,8 +388,16 @@ export default function EditorMap({
             attribution={base.attribution}
             url={base.url(theme)}
             maxZoom={base.maxZoom}
+            maxNativeZoom={base.maxNativeZoom}
           />
-          {base.reference && <TileLayer key={`${basemap}-ref`} url={base.reference} maxZoom={base.maxZoom} />}
+          {base.reference && (
+            <TileLayer
+              key={`${basemap}-ref-${theme}`}
+              url={base.reference(theme)}
+              maxZoom={base.maxZoom}
+              maxNativeZoom={base.maxNativeZoom}
+            />
+          )}
 
           <MapInteraction onPick={onPick} onContextMenu={openPointMenu} />
           <Controller target={draft} fitTo={draft ? null : bounds} resizeKey={`${full}-${recentre}`} />

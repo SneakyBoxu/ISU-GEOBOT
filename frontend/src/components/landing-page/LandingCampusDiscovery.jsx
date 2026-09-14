@@ -28,9 +28,12 @@ const LandingMiniMapPreview = lazy(() => import('./LandingMiniMapPreview.jsx'));
  *
  * THE MAP IS THE RIGHT-HAND COLUMN, and it is the point. This panel was a grid
  * of identical cards with a third of the section empty beside it — a phone book
- * on a page whose whole product is a map. Now hovering a card lights its pin and
- * flies the map there, hovering a pin raises its card, and the empty third is
- * the thing being described.
+ * on a page whose whole product is a map. Now hovering a card lights its pin,
+ * names it and flies the map there, and the empty third is the thing being
+ * described.
+ *
+ * The map is INERT — see the note in LandingMiniMapPreview. Only the cards take
+ * a pointer, and every one of them opens the campus assistant at that location.
  *
  * The map is given only the ACTIVE GROUP, not every location. The tab is asking
  * "where are the colleges"; showing all twenty-eight pins would answer a
@@ -41,6 +44,10 @@ const LandingMiniMapPreview = lazy(() => import('./LandingMiniMapPreview.jsx'));
  * 375px screen it would cost most of the first screen to show pins too small to
  * read, and there is no hover on touch.
  */
+
+// Eight fills four rows of two on a wide screen and stops well short of
+// the map beside it, so the two columns finish together.
+const PREVIEW_COUNT = 8;
 
 const GROUPS = [
   {
@@ -102,7 +109,16 @@ export default function LandingCampusDiscovery({ pois = [] }) {
 
   if (pois.length < 6) return null;
 
-  const shown = grouped[group] ?? [];
+  // A PREVIEW, NOT THE DIRECTORY.
+  //
+  // This rendered every location in the group -- thirty-one under Academic
+  // alone -- so the section ran to two and a half screens of cards that
+  // nobody reads top to bottom. A landing page shows enough to prove the
+  // index is real and populated, and sends you to the map for the rest;
+  // the map is where you would search anyway, and it is one click away.
+  const all = grouped[group] ?? [];
+  const shown = all.slice(0, PREVIEW_COUNT);
+  const remaining = all.length - shown.length;
 
   return (
     <section id="campus" className="rule-fade rule-fade-y relative overflow-hidden py-28 sm:py-36">
@@ -153,7 +169,15 @@ export default function LandingCampusDiscovery({ pois = [] }) {
           {GROUPS.find((g) => g.key === group)?.blurb}
         </p>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-12">
+        <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-12">
+          {/* ONE CHILD PER COLUMN. The list and its button used to be separate
+              children of this grid, and the button's `sm:col-span-2` -- correct
+              when it lived inside the two-up <ul> -- spanned THIS grid instead,
+              pushing the map onto a third row in the left column. That is how a
+              map ends up under the cards on a page whose product is the map.
+              Wrapping them makes the grid exactly two children, so the map
+              cannot be displaced by anything the list does. */}
+          <div className="min-w-0">
         {/* Keyed on the group so the cards re-enter when the tab changes,
             rather than the text swapping inside static boxes. */}
         <ul key={group} className="grid gap-3 sm:grid-cols-2">
@@ -203,24 +227,52 @@ export default function LandingCampusDiscovery({ pois = [] }) {
           })}
         </ul>
 
+          {/* Where the rest are. The cards are a preview; every location in the
+              group is already pinned beside this, so the button is about
+              opening the searchable map rather than revealing hidden pins. */}
+          {remaining > 0 && (
+            <p className="mt-6">
+              <button
+                type="button"
+                onClick={() => navigate('/app')}
+                className="group inline-flex items-center gap-2 rounded-lg border border-line bg-bg px-4 py-3 text-meta text-fg-muted transition-colors duration-state hover:border-accent hover:text-fg"
+              >
+                Open all {all.length} in the campus map
+                <ArrowRight
+                  className="h-4 w-4 text-fg-subtle transition-transform duration-state group-hover:translate-x-0.5 group-hover:text-accent"
+                  aria-hidden
+                />
+              </button>
+            </p>
+          )}
+          </div>
+
           {/* The map. Sticky, so it stays beside a long group while scrolling.
               Not rendered at all on narrow screens — see useHasRoomForMap. */}
           {hasRoomForMap && (
           <div>
             <div className="sticky top-24">
               <Suspense
-                fallback={<div className="h-[30rem] w-full rounded-xl border border-line bg-bg-sunken" />}
+                fallback={<div className="h-[34rem] w-full rounded-xl border border-line bg-bg-sunken" />}
               >
+                {/* THE WHOLE GROUP, not `shown`. The map was given the eight
+                    preview cards, so a button reading "the other 23" sat beside
+                    a map that did not have them either -- the section claimed
+                    twenty-three locations it never drew. */}
                 <LandingMiniMapPreview
-                  pois={shown}
+                  pois={all}
                   hoveredId={hoveredId}
-                  onHover={setHoveredId}
-                  onSelect={(id) => navigate(`/app?poi=${encodeURIComponent(id)}`)}
-                  className="h-[30rem]"
+                  className="h-[34rem]"
                 />
               </Suspense>
+              {/* Says what the LIST does, because the list is the only thing
+                  here that does anything. The old wording -- "click to open
+                  it" -- read as an instruction about the map, which is now a
+                  picture; a caption that invites a click the map will not
+                  accept is worse than no caption. */}
               <p className="mt-3 text-label text-fg-subtle">
-                Hover a location to find it on the map. Click to open it.
+                Hover a location on the left to find it here. Click it to open
+                the campus assistant.
               </p>
             </div>
           </div>
@@ -231,7 +283,7 @@ export default function LandingCampusDiscovery({ pois = [] }) {
             screen — before the map was here it explained glyphs that appeared
             nowhere in the section. */}
         <dl className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-5">
-          {[...new Set(shown.map((p) => p.type))].map((t) => (
+          {[...new Set(all.map((p) => p.type))].map((t) => (
             <div key={t} className="flex items-center gap-2">
               <dt
                 className="grid h-5 w-5 place-items-center rounded-pill text-[9px] font-semibold"

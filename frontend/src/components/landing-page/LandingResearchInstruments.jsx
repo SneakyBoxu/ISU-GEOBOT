@@ -92,62 +92,163 @@ const TRUST = [
 
 
 /**
- * One pipeline stage, revealing when it reaches the reading line.
+ * One stage at a time, swapped by scroll position.
  *
- * Each stage observes itself rather than the list observing all five: a shared
- * observer fires once and staggers the rest on a timer, so by the time you
- * scroll to stage four it has long since animated and you see nothing. Watching
- * per item means the reveal happens where you are looking, every time, at
- * whatever speed you happen to scroll.
+ * WHY THIS IS STICKY AGAIN, AND WHY IT NO LONGER LEAVES A HOLE.
  *
- * This is NOT the sticky stepper that used to live here. That one reserved 34vh
- * of scroll per stage -- 1700px of travel for a 405px list -- and left a screen
- * of empty page above and below the content. The list is its own height now;
- * only the entrance is tied to scroll.
+ * An earlier version of this was sticky and was removed: it reserved 34vh of
+ * scroll per stage inside a `min-h-screen` frame with the content centred, so
+ * the panel was a full viewport tall holding a 400px block — a screen of
+ * nothing above the text and a screen of nothing below it. That was the bug,
+ * not the technique. Here the sticky element is only as tall as its content
+ * and pins near the top, so every pixel of the travel has a stage in it.
+ *
+ * The rail carries all five markers throughout, so the reader can see where
+ * they are in the sequence and how much is left — a single stage with no
+ * context reads as a page that lost its list.
  */
-function PipelineStage({ stage, index, total }) {
-  const [ref, shown] = useReveal({ threshold: 0.55, rootMargin: '0px 0px -18% 0px' });
+function PipelineStepper({ stages }) {
+  const hostRef = useRef(null);
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    let ticking = false;
+
+    function measure() {
+      ticking = false;
+      const r = host.getBoundingClientRect();
+      const travel = r.height - window.innerHeight;
+      if (travel <= 0) { setActive(0); return; }
+      // How far through the scrollable run of this block are we?
+      const p = Math.min(Math.max(-r.top / travel, 0), 0.9999);
+      setActive(Math.floor(p * stages.length));
+    }
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(measure);
+    };
+
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [stages.length]);
+
+  function goTo(i) {
+    const host = hostRef.current;
+    if (!host) return;
+    const top = host.getBoundingClientRect().top + window.scrollY;
+    const travel = host.offsetHeight - window.innerHeight;
+    window.scrollTo({ top: top + ((i + 0.5) / stages.length) * travel, behavior: 'smooth' });
+  }
+
+  const stage = stages[Math.min(active, stages.length - 1)];
   const Icon = stage.icon;
 
   return (
-    <li ref={ref} className="relative pl-14">
-      {/* The spine, drawn between markers rather than behind them, so it reads
-          as a connection and not as a rule the icons happen to sit on. */}
-      {index < total - 1 && (
-        <span
-          aria-hidden
-          className="absolute left-[19px] top-12 -bottom-8 w-px bg-line sm:-bottom-10"
-        >
-          <span
-            className="block w-px bg-accent/50 transition-[height] duration-700 ease-out"
-            style={{ height: shown ? '100%' : '0%', transitionDelay: '220ms' }}
-          />
-        </span>
-      )}
+    <div ref={hostRef} className="relative" // A sticky child of full height only travels (parent - viewport), so the
+      // viewport has to be added on top or the last stages never get their
+      // turn: at 5 x 38vh the panel released after two and the rest scrolled
+      // past pinned to "Fuse and answer". 45vh each is the scroll one stage
+      // gets; +100vh is the frame itself.
+      style={{ height: `${stages.length * 45 + 100}vh` }}>
+      {/* FULL HEIGHT AND CENTRED, which is right *here* and was wrong before.
+          Pinning a short panel to the top left ~470px of empty viewport under
+          it and tucked the title behind the header. Centring in a full-height
+          sticky frame puts the stage in the middle of the screen and clear of
+          the nav.
+          
+          The old version did the same thing and still left holes, because it
+          showed all five stages at once: four fifths of its travel changed
+          nothing. Here each 38vh of scroll swaps the content, so the frame is
+          never showing something the reader has already finished. */}
+      {/* pt-24 clears the fixed header: centring in the full viewport put
+          the top of the block behind the nav bar. The frame centres in the
+          space that is actually visible, not in the window. */}
+      <div className="sticky top-0 flex min-h-screen items-center pb-10 pt-24">
+        <div className="flex gap-8 sm:gap-12">
+          {/* The rail: every stage, so position and remaining length stay
+              visible while only one body is on screen. */}
+          <ol className="flex shrink-0 flex-col gap-3" aria-label="Pipeline stages">
+            {stages.map((st, i) => {
+              const done = i <= active;
+              const now = i === active;
+              const StepIcon = st.icon;
+              return (
+                <li key={st.title}>
+                  <button
+                    type="button"
+                    onClick={() => goTo(i)}
+                    aria-current={now ? 'step' : undefined}
+                    className="group flex items-center gap-3"
+                  >
+                    <span
+                      aria-hidden
+                      className="grid h-10 w-10 place-items-center rounded-lg border transition-all duration-500"
+                      style={{
+                        borderColor: done ? 'rgb(var(--accent))' : 'rgb(var(--line))',
+                        background: now ? 'rgb(var(--accent))' : 'transparent',
+                        color: now ? 'rgb(var(--accent-contrast))'
+                          : done ? 'rgb(var(--accent))' : 'rgb(var(--fg-subtle))',
+                        transform: now ? 'scale(1)' : 'scale(0.9)',
+                      }}
+                    >
+                      <StepIcon className="h-4 w-4" />
+                    </span>
+                    <span
+                      className={`hidden text-label transition-colors duration-300 sm:block ${
+                        now ? 'text-fg' : 'text-fg-subtle group-hover:text-fg-muted'
+                      }`}
+                    >
+                      {st.title}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
 
-      <span
-        aria-hidden
-        className="absolute left-0 top-3 grid h-10 w-10 place-items-center rounded-lg border transition-all duration-500"
-        style={{
-          borderColor: shown ? 'rgb(var(--accent))' : 'rgb(var(--line))',
-          background: shown ? 'rgb(var(--accent))' : 'transparent',
-          color: shown ? 'rgb(var(--accent-contrast))' : 'rgb(var(--fg-subtle))',
-          transform: shown ? 'scale(1)' : 'scale(0.88)',
-        }}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
+          {/* The body. Keyed on the stage so it re-enters on every change
+              rather than the words swapping inside a static box.
 
-      <div className="py-2" style={revealStyle(shown)}>
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-          <h4 className="text-body font-semibold text-fg">{stage.title}</h4>
-          <span className="font-mono text-data text-fg-subtle">{stage.meta}</span>
+              SIZED TO THE SCREEN IT OCCUPIES. At body-copy size this was a
+              250px block adrift in a 950px frame, which reads as empty however
+              it is aligned. A stage that owns the viewport for the length of
+              its scroll should look like it means to be there: the ordinal is
+              display type, the title is a heading rather than a label, and the
+              sentence is set large enough to be the thing you are reading. */}
+          <div key={stage.title} className="animate-enter min-w-0 flex-1">
+            <p
+              aria-hidden
+              className="font-mono text-[3.5rem] font-semibold leading-none text-accent/20 sm:text-[4.5rem]"
+              data-numeric
+            >
+              {String(active + 1).padStart(2, '0')}
+            </p>
+
+            <div className="mt-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+              <h4 className="font-serif text-[2rem] leading-[1.05] tracking-[-0.02em] text-fg sm:text-[2.9rem]">
+                {stage.title}
+              </h4>
+              <span className="font-mono text-data text-fg-subtle">{stage.meta}</span>
+            </div>
+
+            <p className="lede mt-7 max-w-[38rem]">{stage.body}</p>
+
+            <p className="mt-10 flex items-center gap-3 text-label text-fg-subtle">
+              <span aria-hidden className="h-px w-8 bg-line-strong" />
+              Stage {active + 1} of {stages.length}
+            </p>
+          </div>
         </div>
-        <p className="mt-2 max-w-measure text-meta leading-relaxed text-fg-muted">
-          {stage.body}
-        </p>
       </div>
-    </li>
+    </div>
   );
 }
 
@@ -204,8 +305,14 @@ export default function LandingResearchInstruments() {
     window.scrollTo({ top: top + ((i + 0.5) / STAGES.length) * travel, behavior: 'smooth' });
   }
 
+  // NO overflow-hidden ON THE SECTION. It clips the backdrop, but it also makes
+  // the section the containing block for position:sticky, and since the section
+  // never scrolls the sticky stepper inside simply stopped sticking -- the panel
+  // scrolled away while the stage index kept advancing, so stages two to five
+  // were "shown" off the top of the screen. LandingSchematicField clips itself,
+  // so the section does not need to.
   return (
-    <section id="research" className="rule-fade relative overflow-hidden py-28 sm:py-36">
+    <section id="research" className="rule-fade relative py-28 sm:py-36">
       {/* The section was text on flat ground for several screens. A drafting
           sheet behind it carries the hero's language down the page without
           repeating the campus plan. It means nothing and is not a diagram. */}
@@ -249,11 +356,7 @@ export default function LandingResearchInstruments() {
                 {String(STAGES.length).padStart(2, '0')} stages
               </span>
             </div>
-            <ol className="mt-10 space-y-8 sm:space-y-10">
-              {STAGES.map((st, i) => (
-                <PipelineStage key={st.title} stage={st} index={i} total={STAGES.length} />
-              ))}
-            </ol>
+            <PipelineStepper stages={STAGES} />
           </div>
         </div>
       </div>
