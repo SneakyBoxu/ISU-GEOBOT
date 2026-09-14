@@ -139,7 +139,14 @@ def persist_metric(rows: list[dict], series, metric: str) -> tuple[int, int]:
                 insert into geobot.ragas_score (eval_result_id, {metric}, ragas_version)
                 values (%s, %s, %s)
                 on conflict (eval_result_id) do update set
-                  {metric} = excluded.{metric},
+                  -- coalesce, NOT excluded.{metric} outright: a NULL here means
+                  -- RAGAS returned NaN for this row, and a failure to extract a
+                  -- claim must never erase a value that was measured
+                  -- successfully earlier. Writing excluded.{metric} directly
+                  -- cost twelve scored rows of answer_relevancy when a scorer
+                  -- killed mid-run left a sibling holding a stale row list.
+                  {metric} = coalesce(excluded.{metric},
+                                      geobot.ragas_score.{metric}),
                   scored_at = now()
                 """,
                 (r["id"], v, _ragas_version()),
@@ -191,6 +198,41 @@ def build_judge(judge_model: str, embed_model: str):
     # The judge is built from the model name stored ON THE RUN, so what is
     # reported in Chapter 4 is what actually did the grading.
     from langchain_groq import ChatGroq
+
+    # WHY A LIBRARY IS BEING PATCHED HERE.
+    #
+    # langchain_groq sums the token-usage dictionary returned by each
+    # completion with `overall[k] += v` and no type check. Groq now nests
+    # detail objects inside that dictionary -- completion_tokens_details and
+    # prompt_tokens_details are themselves dicts -- so a dict meets a dict and
+    # the whole generation dies with:
+    #
+    #   TypeError: unsupported operand type(s) for +=: 'dict' and 'dict'
+    #
+    # It only fires where MORE THAN ONE completion is combined, which is why
+    # Faithfulness, Context Recall and Context Precision all scored normally
+    # and Answer Relevancy could not produce a single row in seven minutes:
+    # that metric asks the judge for three questions per answer, so it is the
+    # only one that ever reaches this code path. The failure looked exactly
+    # like a stalled quota from the outside -- no progress, no error in the
+    # filtered log -- and was diagnosed only by reading the unfiltered one.
+    #
+    # Token accounting has no bearing on a score, so non-numeric entries are
+    # dropped rather than merged. Upgrading langchain_groq would also fix it;
+    # changing a dependency two days before a defense would not be an
+    # improvement.
+    def _combine_llm_outputs(self, llm_outputs):
+        overall, model = {}, None
+        for out in llm_outputs:
+            if not out:
+                continue
+            model = model or out.get("model_name")
+            for k, v in (out.get("token_usage") or {}).items():
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    overall[k] = overall.get(k, 0) + v
+        return {"token_usage": overall, "model_name": model}
+
+    ChatGroq._combine_llm_outputs = _combine_llm_outputs
     from langchain_community.embeddings import HuggingFaceEmbeddings
 
     # Read from the environment only. The key is deliberately NOT added to

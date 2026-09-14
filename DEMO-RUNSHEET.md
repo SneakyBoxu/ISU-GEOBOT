@@ -31,6 +31,45 @@ looks exactly like a broken chatbot.
 
 ---
 
+## Two things that will bite you, found by testing the live system
+
+**1. Pace the questions. Leave about twenty seconds between them.**
+
+The assistant's model is capped at 8,000 tokens per MINUTE. Each enhanced answer
+carries the retrieved passages, so three or four questions in quick succession
+exhaust that bucket and the next one comes back empty. On a projector an empty
+bubble reads as a broken system; it is a rate limit that clears in under a
+minute. Ask a question, talk about the answer, then ask the next. If one does
+come back blank, say "that is the free-tier rate limit, it clears in a moment",
+wait, and ask it again — it will work.
+
+**2. Confirm you can sign in BEFORE Wednesday.**
+
+Faculty availability is refused to anonymous visitors by design (audit F-29):
+without a session the assistant replies *"Faculty availability is only shown to
+signed-in campus users."* That is correct behaviour and worth showing once — but
+the availability demo, which is the whole of Objective 1, needs a working login.
+
+Two accounts carry the admin and researcher roles; both are listed under
+Supabase → Authentication → Users. Neither had been signed into for a fortnight
+when this was tested, and the password on file did not work. **Sign in today.**
+If the password is lost, reset it from that same page (select the account →
+Reset password), or send yourself a reset link.
+
+<!-- Account addresses are deliberately not written here: this file is in a
+     public repository, and naming an account beside the words "the password
+     did not work" is an invitation to try. -->
+
+Test it by asking, while signed in:
+
+    Is SIM-33 available for consultation right now?
+
+A correct answer names a coarse state and a next consultation window, and no
+room, building or floor. If you instead get the "sign in" message, the session
+did not take.
+
+---
+
 ## The run, in order
 
 ### 1 · The map — SO3, the deployed system

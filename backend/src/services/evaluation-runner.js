@@ -275,6 +275,18 @@ async function runOne(runId, query, mode) {
     t_llm_ms: Math.round(result.timings.llm),
     t_total_ms: Math.round(result.timings.total),
     egress_filter_hit: result.egressFilterHit,
+    // KNOWN GAP, left as-is deliberately.
+    //
+    // This is the row's own provenance and it is always 'real', even when the
+    // run is a simulation: a result row records a real measurement of a real
+    // pipeline, and only the COHORT behind an availability question is
+    // generated. Provenance for that lives on eval_run.data_origin, one join
+    // away, which is how every figure in Chapter 4 was derived.
+    //
+    // It is not changed to inherit the run's stamp because the code that
+    // produced the reported results has to be the code a reader can inspect.
+    // Section 4.7 states where the stamp lives rather than claiming it is
+    // repeated here.
     data_origin: 'real',
   });
   if (error) throw error;
