@@ -119,9 +119,13 @@ async function copyText(text) {
   }
 }
 
-function MapInteraction({ onPick, onContextMenu }) {
+function MapInteraction({ onPick, onContextMenu, canClickToPlace }) {
   useMapEvents({
-    click: (e) => onPick(e.latlng.lat, e.latlng.lng),
+    click: (e) => {
+      if (canClickToPlace) {
+        onPick(e.latlng.lat, e.latlng.lng);
+      }
+    },
     contextmenu: (e) => {
       e.originalEvent.preventDefault();
       onContextMenu(e.latlng.lat, e.latlng.lng, e.originalEvent.clientX, e.originalEvent.clientY);
@@ -130,8 +134,10 @@ function MapInteraction({ onPick, onContextMenu }) {
   return null;
 }
 
-function Controller({ target, fitTo, resizeKey }) {
+function Controller({ target, fitTo, resizeKey, editingId, recentreKey }) {
   const map = useMap();
+  const prevTargetRef = useRef(null);
+  const prevEditingIdRef = useRef(editingId);
 
   /**
    * Leaflet measures its container once, at mount. This pane changes size
@@ -165,10 +171,34 @@ function Controller({ target, fitTo, resizeKey }) {
     return () => clearTimeout(id);
   }, [resizeKey, map]);
 
+  // Center smoothly when editing a different location
   useEffect(() => {
-    if (target) map.setView(target, Math.max(map.getZoom(), 18));
-    else if (fitTo) map.fitBounds(fitTo, { padding: [48, 48], animate: false });
-  }, [target?.[0], target?.[1], map]);   // eslint-disable-line react-hooks/exhaustive-deps
+    if (editingId && editingId !== prevEditingIdRef.current && target) {
+      map.setView(target, Math.max(map.getZoom(), 18), { animate: true });
+    }
+    prevEditingIdRef.current = editingId;
+  }, [editingId, target, map]);
+
+  // Center on locate/crosshair button click
+  useEffect(() => {
+    if (recentreKey > 0) {
+      if (target) {
+        map.setView(target, Math.max(map.getZoom(), 18), { animate: true });
+      } else if (fitTo) {
+        map.fitBounds(fitTo, { padding: [48, 48], animate: true });
+      }
+    }
+  }, [recentreKey, target, fitTo, map]);
+
+  // Initial center on target mount or campus fit
+  useEffect(() => {
+    if (!prevTargetRef.current && target) {
+      map.setView(target, Math.max(map.getZoom(), 18));
+    } else if (!target && fitTo && !editingId) {
+      map.fitBounds(fitTo, { padding: [48, 48], animate: false });
+    }
+    prevTargetRef.current = target;
+  }, [target ? `${target[0]},${target[1]}` : null, fitTo, map, editingId]);
 
   return null;
 }
@@ -210,6 +240,7 @@ export default function EditorMap({
   const [showUnpublished, setShowUnpublished] = useState(false);
   const [recentre, setRecentre] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [repositionMode, setRepositionMode] = useState(false);
   const [menu, setMenu] = useState(null);   // { x, y, poi, isDraft, lat, lng }
   const menuRef = useRef(null);
   const { theme } = useTheme();
@@ -219,6 +250,16 @@ export default function EditorMap({
   const b = toCoord(lng);
   const hasDraft = Number.isFinite(a) && Number.isFinite(b);
   const draft = hasDraft ? [a, b] : null;
+  const canClickToPlace = !hasDraft || repositionMode;
+
+  useEffect(() => {
+    setRepositionMode(false);
+  }, [editingId]);
+
+  const handlePick = (newLat, newLng) => {
+    onPick(newLat, newLng);
+    setRepositionMode(false);
+  };
 
   const unpublishedCount = useMemo(
     () => pois.filter((p) => p.is_published === false).length,
@@ -311,7 +352,7 @@ export default function EditorMap({
   return (
     <div className={full
       ? 'fixed inset-0 z-[1100] flex flex-col bg-bg p-3'
-      : 'flex h-full min-h-[22rem] flex-col'}
+      : 'flex h-full min-h-[30rem] lg:min-h-[36rem] flex-col'}
     >
       <div className="mb-2 flex flex-wrap shrink-0 items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -345,6 +386,23 @@ export default function EditorMap({
             >
               {showUnpublished ? <Eye className="h-3.5 w-3.5" aria-hidden /> : <EyeOff className="h-3.5 w-3.5" aria-hidden />}
               <span>{unpublishedCount} unpublished</span>
+            </button>
+          )}
+
+          {hasDraft && (
+            <button
+              type="button"
+              onClick={() => setRepositionMode((v) => !v)}
+              aria-pressed={repositionMode}
+              title={repositionMode ? 'Click on map to place pin, or click here to cancel' : 'Click on map to reposition pin'}
+              className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-label transition-colors duration-state ${
+                repositionMode
+                  ? 'border-accent bg-accent text-accent-contrast font-medium shadow-sm'
+                  : 'border-line text-fg-muted hover:border-line-strong hover:text-fg'
+              }`}
+            >
+              <Move className="h-3.5 w-3.5" aria-hidden />
+              <span>{repositionMode ? '🎯 Click map to move' : 'Reposition pin'}</span>
             </button>
           )}
         </div>
@@ -399,8 +457,8 @@ export default function EditorMap({
             />
           )}
 
-          <MapInteraction onPick={onPick} onContextMenu={openPointMenu} />
-          <Controller target={draft} fitTo={draft ? null : bounds} resizeKey={`${full}-${recentre}`} />
+          <MapInteraction onPick={handlePick} onContextMenu={openPointMenu} canClickToPlace={canClickToPlace} />
+          <Controller target={draft} fitTo={draft ? null : bounds} resizeKey={`${full}-${recentre}`} editingId={editingId} recentreKey={recentre} />
           <Controls bounds={bounds} hasDraft={hasDraft} onLocate={() => setRecentre((n) => n + 1)} />
 
           {context.map((p, i) => {
@@ -497,7 +555,7 @@ export default function EditorMap({
               position={draft}
               icon={draftIcon()}
               draggable
-              title={name || 'New location — drag to reposition (right click for options)'}
+              title={name || 'Location pin — drag to reposition (right click for options)'}
               eventHandlers={{
                 dragend: (e) => {
                   const { lat: y, lng: x } = e.target.getLatLng();
@@ -507,11 +565,11 @@ export default function EditorMap({
               }}
             >
               <Tooltip direction="top" offset={[0, -32]} opacity={1}>
-                {name || 'New Pin (drag to move)'}
+                {name || 'Selected Pin (drag to move)'}
               </Tooltip>
               <Popup className="editor-popup" closeButton={false}>
                 <div className="w-[14rem] rounded-xl border border-line bg-surface p-3 text-left text-fg shadow-lg">
-                  <p className="font-serif text-meta font-semibold text-fg">{name || 'New Pin'}</p>
+                  <p className="font-serif text-meta font-semibold text-fg">{name || 'Selected Pin'}</p>
                   <p className="mt-1 font-mono text-label text-fg-subtle" data-numeric>
                     {a.toFixed(5)}, {b.toFixed(5)}
                   </p>
@@ -522,7 +580,7 @@ export default function EditorMap({
                       onClick={onClearDraft}
                       className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-md bg-error/10 px-2 py-1.5 text-label font-medium text-error hover:bg-error hover:text-bg transition-colors"
                     >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove draft pin
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove pin from map
                     </button>
                   )}
                 </div>
@@ -531,7 +589,13 @@ export default function EditorMap({
           )}
         </MapContainer>
 
-        {!hasDraft && (
+        {repositionMode ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[500] border-t border-accent bg-accent/90 px-3 py-2 text-accent-contrast">
+            <p className="text-label font-medium">
+              🎯 Click anywhere on the map to set the new coordinate for {name ? <strong>{name}</strong> : 'this location'}.
+            </p>
+          </div>
+        ) : !hasDraft ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[500] border-t border-line bg-surface/95 px-3 py-2">
             <p className="text-label text-fg-muted">
               Click anywhere on the map to place
@@ -539,7 +603,7 @@ export default function EditorMap({
               The other {context.length} are shown for reference.
             </p>
           </div>
-        )}
+        ) : null}
       </div>
 
       {menu && (
@@ -552,7 +616,7 @@ export default function EditorMap({
         >
           <div className="mb-1 border-b border-line px-2.5 py-1.5">
             <p className="truncate text-label font-medium text-fg">
-              {menu.poi ? menu.poi.name : menu.isDraft ? (name || 'New Draft Pin') : 'Map point'}
+              {menu.poi ? menu.poi.name : menu.isDraft ? (name || 'Draft Pin') : 'Map point'}
             </p>
             <p className="truncate font-mono text-label text-fg-subtle" data-numeric>
               {Number(menu.lat).toFixed(5)}, {Number(menu.lng).toFixed(5)}
@@ -568,7 +632,7 @@ export default function EditorMap({
                   className={`${item} text-error hover:bg-error/10 focus-visible:bg-error/10`}
                   onClick={() => { onClearDraft(); setMenu(null); }}
                 >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove draft pin
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove pin from map
                 </button>
               )}
               <button
@@ -666,7 +730,7 @@ export default function EditorMap({
                   className={`${item} text-error hover:bg-error/10 focus-visible:bg-error/10`}
                   onClick={() => { onClearDraft(); setMenu(null); }}
                 >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove draft pin
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden /> Remove pin from map
                 </button>
               )}
             </>
@@ -675,9 +739,11 @@ export default function EditorMap({
       )}
 
       <p className="mt-1.5 shrink-0 text-label text-fg-subtle">
-        {hasDraft
-          ? 'Drag the pin, click "Clear pin" to remove it, or right-click any location for options. Check against satellite imagery before saving.'
-          : 'Click anywhere to place a pin, or right-click any marker to edit, unpublish or delete it.'}
+        {repositionMode
+          ? '🎯 Click anywhere on the map to place the pin at that spot, or drag the marker directly.'
+          : hasDraft
+            ? 'Drag the pin to adjust position, click "Reposition pin" to click-to-place, or right-click any location for options.'
+            : 'Click anywhere to place a pin, or right-click any marker to edit, unpublish or delete it.'}
       </p>
     </div>
   );

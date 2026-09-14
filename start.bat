@@ -5,7 +5,7 @@ echo   ISU GeoBot - Starting Full Stack (ML + Backend + Web)
 echo ========================================================
 
 echo [1/3] Starting Python ML Microservice (port 5001)...
-start "GeoBot - ML Service (5001)" cmd /k "cd /d %~dp0machine-learning && python ai_api_service.py"
+start "GeoBot - ML Service (5001)" cmd /k "cd /d %~dp0machine-learning && set PYTHONNOUSERSITE=1 && D:\anaconda\python.exe ai_api_service.py"
 
 echo [2/3] Starting Express Backend Server (port 4000)...
 start "GeoBot - Backend Server (4000)" cmd /k "cd /d %~dp0backend && npm run dev"

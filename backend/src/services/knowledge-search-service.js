@@ -44,7 +44,7 @@ async function loadGazetteer() {
   if (Date.now() - gazetteer.at < GAZETTEER_TTL_MS) return gazetteer.rows;
   const { data } = await db
     .from('poi')
-    .select('id, slug, name, is_published')
+    .select('id, slug, name, is_published, image_url, image_alt')
     .order('name');
   gazetteer = {
     at: Date.now(),
@@ -78,7 +78,10 @@ export function extractLocationTag(answer, locations) {
     log.warn({ proposed: m[1] }, 'assistant proposed an unknown location id; ignored');
     return { text, poi: null };
   }
-  return { text, poi: { poiId: hit.id, slug: hit.slug, name: hit.name } };
+  const poi = { poiId: hit.id, slug: hit.slug, name: hit.name };
+  if (hit.image_url) poi.imageUrl = hit.image_url;
+  if (hit.image_alt) poi.imageAlt = hit.image_alt;
+  return { text, poi };
 }
 
 /**
@@ -473,7 +476,13 @@ export async function runPipeline({
     // it is asked where something is, and it cannot tell "where is the library"
     // from "where is sir alado". The person check is applied to BOTH sources.
     poiFocus: aboutAPerson ? null : (tagged.poi ?? (chunkPoi
-      ? { poiId: chunkPoi.id, slug: chunkPoi.slug ?? null, name: chunkPoi.name ?? null }
+      ? {
+          poiId: chunkPoi.id,
+          slug: chunkPoi.slug ?? null,
+          name: chunkPoi.name ?? null,
+          ...(chunkPoi.image_url ? { imageUrl: chunkPoi.image_url } : {}),
+          ...(chunkPoi.image_alt ? { imageAlt: chunkPoi.image_alt } : {}),
+        }
       : null)),
     availabilityWithheld: false,
     timings,
