@@ -43,6 +43,7 @@ number in the thesis**. Build scripts and one-off utilities live in `tools/`.
 |---|---|
 | **`defense_results.ipynb`** | Every reported number, read live from the database, one section per objective. Run this rather than showing a table. |
 | **`show_results.py`** | The same thing as a single script, if a terminal is easier than a notebook. |
+| **`show_tree.py`** | Prints the decision rules of one tree out of the served forest. The answer to "can I see a tree?" |
 
 ## Folders
 
