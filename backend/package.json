@@ -12,7 +12,8 @@
     "start": "node src/index.js",
     "eval": "node src/services/evaluation-runner.js",
     "test": "node --test \"tests/**/*.test.js\"",
-    "preflight": "node scripts/preflight-check.js"
+    "preflight": "node scripts/preflight-check.js",
+    "test:quiet": "node scripts/run-tests-quiet.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
