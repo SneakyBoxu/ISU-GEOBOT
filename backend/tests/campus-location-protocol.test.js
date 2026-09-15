@@ -170,12 +170,51 @@ describe('POST /chat — map focus', () => {
       'where is Demo Faculty A',
       'where is Prof. Demo Faculty A',
       "where is Demo Faculty A's office",
+      // ALL THREE ABOVE CONTAIN 'where is', WHICH IS HOW THIS GOT THROUGH.
+      // The router matched the phrase 'where is' and nothing shorter, so
+      // dropping one word routed the same question down the bare-name path and
+      // it was answered with an availability state instead of refused. No
+      // location was disclosed -- the reply was a coarse status -- but a
+      // question shaped like a location question must be treated as one. These
+      // two pin the shorter forms.
+      'Where Demo Faculty A',
+      'where Demo Faculty A office',
     ]) {
       const res = await chat(query);
       assert.equal(res.status, 200);
       assert.equal(res.body.poiFocus ?? null, null,
         `"${query}" panned the map to ${res.body.poiFocus?.name}`);
     }
+  });
+
+  it('does not route a bare "where <person>" to the availability path', async () => {
+    // ASSERT THE ROUTING DECISION, NOT THE ABSENCE OF A FIELD.
+    //
+    // The first version of this test checked `body.availability`, which the DTO
+    // does not have -- the field is `status` -- so it passed with the defect
+    // still present and proved nothing. `route.needsAvailability` is the
+    // decision itself, and it is reported whether or not the caller is
+    // authorised to receive a status, so it is the honest signal here.
+    for (const query of ['Where Demo Faculty A', 'where Demo Faculty A office']) {
+      const res = await chat(query);
+      assert.equal(res.status, 200);
+      assert.equal(res.body.route.needsAvailability, false,
+        `"${query}" was routed to the classifier`);
+      assert.equal(res.body.route.category, 'campus_navigation',
+        `"${query}" was categorised ${res.body.route.category}`);
+      assert.equal(res.body.status ?? null, null,
+        `"${query}" returned an availability status`);
+    }
+  });
+
+  it('still routes a properly phrased availability question to the classifier', async () => {
+    // The control. Without it, a router that treated every query naming a
+    // person as navigation would pass the assertions above while breaking the
+    // feature the study is about.
+    const res = await chat('Is Demo Faculty A available right now?');
+    assert.equal(res.status, 200);
+    assert.equal(res.body.route.needsAvailability, true,
+      'a plain availability question stopped reaching the classifier');
   });
 
   it('still pins a place when the question names no person', async () => {

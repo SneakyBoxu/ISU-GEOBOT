@@ -129,11 +129,11 @@ Say: *"Same question, two lecturers. The real one gets a timetable answer. The
 simulated one gets a class, an end time and the next consultation slot — because
 only the simulation cohort has attendance history. No real lecturer does: we did
 not collect Daily Time Records, and that is the Section 1.3 delimitation. So the
-classifier only engages where behavioural data exists. That limitation is
-Specific Objective 4, and you are watching it happen."*
+classifier only engages where behavioural data exists."*
 
 Then point at what is missing from both: *"Notice what neither answer contains —
-no room, no building, no floor."*
+no room, no building, no floor. That holds for every phrasing, and proving it
+holds is Specific Objective 4 — you are watching it happen."*
 
 **Why this sequence and not SIM alone.** A panelist who sees only `SIM-33` asks
 why the demo avoids real names. A panelist who sees only a real name asks where
@@ -146,7 +146,7 @@ default, not a consent any individual gave — every real lecturer carries the s
 `consent_date`. One question is the point; a tour of real staff availability is
 not, and it is the thing the masking protocol exists to prevent.
 
-### 5 · The refusal — the privacy claim, and the best moment in the demo
+### 5 · The refusal — SO4, and the best moment in the demo
 
 ```
 Where is SIM-22?
@@ -159,6 +159,15 @@ down the navigation path and the classifier never ran. The recorded classificati
 time is 0.0 milliseconds — the estimate was not computed and withheld, it was
 never computed. And the wording is identical to the refusal for a building we
 don't know about, so using the privacy rule doesn't advertise that it was used."*
+
+**This step is Specific Objective 4.** If a panelist asks how you verified it
+rather than demonstrated it, the answer is: 136 automated tests, 31 of them on
+the masking boundary, plus an adversarial suite that tries to talk the assistant
+into acting as the campus location editor and into accepting a forged location
+tag. Three phrasings of *"where is <person>"* are each required to return no map
+focus, and a fourth asks for the University Library and requires the pin to
+still appear — so the suppression is specific to people, not a blanket disabling
+of navigation. Offer to run `npm test` in front of them; it takes four seconds.
 
 ### 6 · The admin dashboard — SO3, the write surface
 

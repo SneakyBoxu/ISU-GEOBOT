@@ -44,7 +44,14 @@ the caller is expected to read them. A macro-F1 from ~200 rows across 3 classes
 is an estimate with real width, not a headline percentage.
 """
 
+
+
 from __future__ import annotations
+
+import sys as _sys
+from pathlib import Path as _Path
+# moved into tools/ -- the modules it imports live one level up
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import argparse
 import csv
