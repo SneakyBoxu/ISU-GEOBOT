@@ -37,3 +37,7 @@ CCSICT-SCHEDULE-*.xlsx
 # machine-learning/presentation/capture_screens.py and render_diagrams.py --
 # the sources are tracked, the 12MB of PNGs are not.
 screenshots/
+
+# Editor settings: .vscode/settings.json pins an absolute interpreter path
+# for this machine, which would be wrong on anyone else's.
+.vscode/
