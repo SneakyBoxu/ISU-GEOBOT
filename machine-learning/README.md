@@ -53,7 +53,7 @@ number in the thesis**. Build scripts and one-off utilities live in `tools/`.
 | `training-data/` | The real CCSICT timetable workbook and the generated attendance workbook. |
 | `institutional-documents/` | Source documents for the corpus. |
 | `presentation/` | Diagram and screenshot generators. |
-| `tools/` | Build scripts and one-off utilities. Nothing here runs in the system. |
+| `tools/` | Build scripts and one-off utilities — deck figures, the thesis docx, the architecture diagram. **Nothing here runs in the system and nothing here produced a Chapter 4 number.** |
 
 ---
 

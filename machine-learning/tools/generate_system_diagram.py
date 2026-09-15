@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from pathlib import Path
 
+# Output is anchored to the repository, not to the shell's working
+# directory: this script lives in machine-learning/tools/, so a bare
+# relative path would land in tools/thesis/ when run from here.
+REPO = Path(__file__).resolve().parents[2]
+
 # Setup canvas
 fig = plt.figure(figsize=(16, 18), dpi=300)
 ax = fig.add_axes([0, 0, 1, 1])
@@ -200,8 +205,8 @@ draw_arrow(83, 11, 83, 16)
 draw_arrow(83, 25, 80, 44, label="Training Set")
 
 # Output save
-output_path_png = Path("thesis/figures/system_architecture_diagram.png")
-output_path_pdf = Path("thesis/figures/system_architecture_diagram.pdf")
+output_path_png = REPO / "thesis" / "figures" / "system_architecture_diagram.png"
+output_path_pdf = REPO / "thesis" / "figures" / "system_architecture_diagram.pdf"
 output_path_png.parent.mkdir(parents=True, exist_ok=True)
 
 plt.savefig(output_path_png, format="png", bbox_inches='tight', dpi=300, facecolor=BG_COLOR)

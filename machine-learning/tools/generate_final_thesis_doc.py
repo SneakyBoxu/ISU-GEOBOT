@@ -12,6 +12,11 @@ from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from pathlib import Path
 
+# Output is anchored to the repository, not to the shell's working
+# directory: this script lives in machine-learning/tools/, so a bare
+# relative path would land in tools/thesis/ when run from here.
+REPO = Path(__file__).resolve().parents[2]
+
 def set_cell_background(cell, fill_color):
     tcPr = cell._tc.get_or_add_tcPr()
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_color}"/>')
@@ -309,7 +314,8 @@ def create_thesis_docx():
         p.paragraph_format.space_after = Pt(6)
         p.add_run(ref)
 
-    out_docx = Path("thesis/ISU_GeoBot_Final_Complete_Thesis_Paper.docx")
+    out_docx = REPO / "thesis" / "ISU_GeoBot_Final_Complete_Thesis_Paper.docx"
+    out_docx.parent.mkdir(parents=True, exist_ok=True)
     out_docx.parent.mkdir(parents=True, exist_ok=True)
     doc.save(out_docx)
     print(f"[OK] Thesis DOCX created: {out_docx}")
