@@ -45,7 +45,23 @@ const AVAILABILITY_INTENT = [
 ];
 
 const NAVIGATION_INTENT = [
-  'where is', 'where can i find', 'how do i get', 'directions', 'located',
+  // BARE 'where', not only 'where is'.
+  //
+  // This listed 'where is' and nothing shorter, so "Where SIM-22" -- the same
+  // question with one word dropped -- matched no navigation phrase at all. It
+  // then fell through to the bare-name rule below, which reads a lone name as
+  // "are they available?", and the system answered with an availability state.
+  //
+  // No location was disclosed and the privacy guarantee held: the reply was a
+  // coarse status, not a place. But a question SHAPED like a location question
+  // should be refused as one, and the three regression tests all happened to
+  // use the phrase 'where is', so none of them caught it. The Tagalog entries
+  // 'nasaan' and 'saan' were already bare; this makes English match them.
+  //
+  // Only the bare-name path changes. "Where is the library" is still
+  // navigation, and "Where is SIM-33 available for consultation" still carries
+  // an availability intent as well, so it is still answered.
+  'where', 'where can i find', 'how do i get', 'directions', 'located',
   'location of', 'find the', 'take me to', 'nasaan', 'saan',
 ];
 
