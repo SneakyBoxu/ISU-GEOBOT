@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Check, Compass, Copy, CornerUpRight, FileText, Footprints, RotateCcw, Send, User, X, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  Check, Compass, Copy, CornerUpRight, FileText, Footprints, RotateCcw, Send,
+  User, X, Loader2, Sparkles, AlertCircle, Maximize2, Image as ImageIcon,
+} from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { currentSession } from '../../frontend-utilities/supabaseClient.js';
 import { Alert, Button, StatusIndicator } from '../ui-primitives/index.js';
@@ -35,15 +39,121 @@ const GREETING = {
  */
 
 /**
+ * Full-screen Messenger-style lightbox for location photographs.
+ * Uses a React portal to break out of the chat dock and cover the entire viewport.
+ */
+function ImageLightboxModal({ photo, onClose, onFocus, onDirections }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  if (!photo || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-black/92 p-4 sm:p-6 backdrop-blur-md animate-enter select-none"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={photo.title || 'Location photograph'}
+    >
+      {/* Top action bar */}
+      <div
+        className="flex w-full max-w-5xl items-center justify-between gap-4 py-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="min-w-0">
+          <p className="truncate font-serif text-lg font-semibold text-white">
+            {photo.title || 'Campus Location Photo'}
+          </p>
+          <p className="text-label text-white/60">
+            ISU Echague Main Campus
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {photo.poiId && onFocus && (
+            <button
+              type="button"
+              onClick={() => { onClose(); onFocus(photo.poiId); }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-label font-medium text-white transition-colors hover:bg-white/20"
+            >
+              <Compass className="h-3.5 w-3.5 text-accent" aria-hidden />
+              <span>View on map</span>
+            </button>
+          )}
+          {photo.poiId && onDirections && (
+            <button
+              type="button"
+              onClick={() => { onClose(); onDirections(photo.poiId); }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-accent/60 bg-accent px-3.5 py-1.5 text-label font-medium text-accent-contrast transition-colors hover:bg-accent-hover"
+            >
+              <CornerUpRight className="h-3.5 w-3.5" aria-hidden />
+              <span>Get directions</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close photo preview (Esc)"
+            title="Close (Esc)"
+            className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Image Stage */}
+      <div
+        className="relative flex flex-1 w-full max-w-5xl items-center justify-center p-2 min-h-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={photo.url}
+          alt={photo.alt || photo.title || 'Location photograph'}
+          className="max-h-[78vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
+        />
+      </div>
+
+      {/* Bottom caption / hint */}
+      <div className="w-full max-w-2xl text-center py-2" onClick={(e) => e.stopPropagation()}>
+        {photo.alt ? (
+          <p className="inline-block rounded-full bg-black/60 px-4 py-1.5 text-label text-white/80 backdrop-blur-sm border border-white/10">
+            {photo.alt}
+          </p>
+        ) : (
+          <p className="text-label text-white/40">
+            Press Esc or click anywhere outside to close
+          </p>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/**
  * The map moved, and this says so.
  *
  * Panning a map silently, a fifth of a second after an answer appears, asks the
  * user to notice a change they were not told about and infer why. Naming the
  * place makes the link explicit — and makes it reversible, since the row is a
  * button that takes them back to it.
+ *
+ * If the location has a photograph attached, a thumbnail card is presented
+ * directly within the assistant turn with click-to-enlarge support.
  */
-function MapFocusNote({ focus, onFocus, onDirections }) {
+function MapFocusNote({ focus, onFocus, onDirections, onOpenPhoto }) {
   const navigate = useNavigate();
+  const [imgError, setImgError] = useState(false);
   if (!focus?.name) return null;
 
   const handleFocus = () => {
@@ -62,30 +172,58 @@ function MapFocusNote({ focus, onFocus, onDirections }) {
     }
   };
 
-  return (
-    <div className="mt-3 flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={handleFocus}
-        className="group inline-flex items-center gap-1.5 rounded-lg border border-line bg-bg-sunken px-2.5 py-1.5 text-label text-fg-muted transition-colors duration-state hover:border-line-strong hover:text-fg"
-      >
-        <Compass className="h-3.5 w-3.5 text-accent" aria-hidden />
-        <span>
-          View on map:{' '}
-          <span className="font-medium text-fg">{focus.name}</span>
-        </span>
-      </button>
+  const hasPhoto = Boolean(focus.imageUrl) && !imgError;
 
-      {(onDirections || focus.poiId) && (
+  return (
+    <div className="mt-3 space-y-2.5">
+      {hasPhoto && (
+        <div className="group relative overflow-hidden rounded-lg border border-line bg-bg-sunken max-w-sm">
+          <button
+            type="button"
+            onClick={() => onOpenPhoto?.({ url: focus.imageUrl, alt: focus.imageAlt, title: focus.name, poiId: focus.poiId })}
+            className="block w-full text-left"
+            title="Click to view full photograph"
+          >
+            <img
+              src={focus.imageUrl}
+              alt={focus.imageAlt || `Photograph of ${focus.name}`}
+              loading="lazy"
+              onError={() => setImgError(true)}
+              className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30">
+              <span className="flex items-center gap-1.5 rounded-full bg-surface/90 px-2.5 py-1 text-label font-medium text-fg opacity-0 shadow-sm transition-opacity duration-200 group-hover:opacity-100">
+                <Maximize2 className="h-3.5 w-3.5 text-accent" aria-hidden /> View photo
+              </span>
+            </div>
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={handleDirections}
-          className="group inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-subtle px-2.5 py-1.5 text-label font-medium text-accent transition-colors duration-state hover:bg-accent hover:text-accent-contrast"
+          onClick={handleFocus}
+          className="group inline-flex items-center gap-1.5 rounded-lg border border-line bg-bg-sunken px-2.5 py-1.5 text-label text-fg-muted transition-colors duration-state hover:border-line-strong hover:text-fg"
         >
-          <CornerUpRight className="h-3.5 w-3.5" aria-hidden />
-          <span>Get directions</span>
+          <Compass className="h-3.5 w-3.5 text-accent" aria-hidden />
+          <span>
+            View on map:{' '}
+            <span className="font-medium text-fg">{focus.name}</span>
+          </span>
         </button>
-      )}
+
+        {(onDirections || focus.poiId) && (
+          <button
+            type="button"
+            onClick={handleDirections}
+            className="group inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-subtle px-2.5 py-1.5 text-label font-medium text-accent transition-colors duration-state hover:bg-accent hover:text-accent-contrast"
+          >
+            <CornerUpRight className="h-3.5 w-3.5" aria-hidden />
+            <span>Get directions</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -103,6 +241,7 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
   const [copied, setCopied] = useState(null);
   const [stage, setStage] = useState(0);
   const [serviceStatus, setServiceStatus] = useState('checking'); // 'checking' | 'ready' | 'ml_loading' | 'offline'
+  const [lightboxPhoto, setLightboxPhoto] = useState(null);
   const endRef = useRef(null);
   const inputRef = useRef(null);
   const [token, setToken] = useState(null);
@@ -316,7 +455,12 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
                     {m.answer}
                   </p>
 
-                  <MapFocusNote focus={m.poiFocus} onFocus={onPoiFocus} onDirections={onDirections} />
+                  <MapFocusNote
+                    focus={m.poiFocus}
+                    onFocus={onPoiFocus}
+                    onDirections={onDirections}
+                    onOpenPhoto={setLightboxPhoto}
+                  />
 
                   {m.clarification?.options?.length > 0 && (
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -462,6 +606,13 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
             : ' ISU-GeoBot does not track or disclose the physical location of faculty members.'}
         </p>
       </div>
+
+      <ImageLightboxModal
+        photo={lightboxPhoto}
+        onClose={() => setLightboxPhoto(null)}
+        onFocus={onPoiFocus}
+        onDirections={onDirections}
+      />
     </div>
   );
 }

@@ -188,7 +188,7 @@ export default function AdminCampusLocationsPanel({ session }) {
         </Alert>
       )}
 
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,26rem)_1fr]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,25rem)_1fr]">
         {/* Form */}
         <form onSubmit={submit}>
           <h2 className="flex items-center gap-2 border-b border-line pb-3 font-serif text-h3 text-fg">
@@ -364,7 +364,7 @@ export default function AdminCampusLocationsPanel({ session }) {
         </form>
 
         {/* Map / list panel */}
-        <section>
+        <section className="flex min-h-0 flex-col lg:sticky lg:top-6 lg:h-[calc(100dvh-10rem)]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
             <div className="flex items-center gap-3">
               <h2 className="font-serif text-h3 text-fg">
@@ -388,7 +388,7 @@ export default function AdminCampusLocationsPanel({ session }) {
           </div>
 
           {view === 'map' && (
-            <div className="mt-3 h-[480px]">
+            <div className="mt-3 min-h-[520px] flex-1">
               <EditorMap
                 pois={pois} editingId={editingId}
                 lat={form.lat} lng={form.lng} name={form.name}

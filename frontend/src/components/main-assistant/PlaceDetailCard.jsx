@@ -1,7 +1,109 @@
 import React, { useEffect, useState } from 'react';
-import { CornerUpRight, MapPin, MessageSquarePlus, X, ZoomIn } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { CornerUpRight, MapPin, Maximize2, MessageSquarePlus, X, ZoomIn } from 'lucide-react';
 import { Button } from '../ui-primitives/index.js';
 import { categoryColor, iconFor } from './mapMarkerGlyphs.js';
+
+/**
+ * Fullscreen Messenger-style lightbox for location photographs.
+ */
+function ImageLightboxModal({ photo, onClose, onAsk, onDirections }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  if (!photo || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[99999] flex flex-col items-center justify-between bg-black/92 p-4 sm:p-6 backdrop-blur-md animate-enter select-none"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={photo.title || 'Location photograph'}
+    >
+      {/* Top action bar */}
+      <div
+        className="flex w-full max-w-5xl items-center justify-between gap-4 py-2"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="min-w-0">
+          <p className="truncate font-serif text-lg font-semibold text-white">
+            {photo.title || 'Campus Location Photo'}
+          </p>
+          <p className="text-label text-white/60">
+            ISU Echague Main Campus
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {onAsk && (
+            <button
+              type="button"
+              onClick={() => { onClose(); onAsk(); }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-label font-medium text-white transition-colors hover:bg-white/20"
+            >
+              <MessageSquarePlus className="h-3.5 w-3.5 text-accent" aria-hidden />
+              <span>Ask assistant</span>
+            </button>
+          )}
+          {onDirections && (
+            <button
+              type="button"
+              onClick={() => { onClose(); onDirections(); }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-accent/60 bg-accent px-3.5 py-1.5 text-label font-medium text-accent-contrast transition-colors hover:bg-accent-hover"
+            >
+              <CornerUpRight className="h-3.5 w-3.5" aria-hidden />
+              <span>Get directions</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close photo preview (Esc)"
+            title="Close (Esc)"
+            className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Image Stage */}
+      <div
+        className="relative flex flex-1 w-full max-w-5xl items-center justify-center p-2 min-h-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={photo.url}
+          alt={photo.alt || photo.title || 'Location photograph'}
+          className="max-h-[78vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
+        />
+      </div>
+
+      {/* Bottom caption */}
+      <div className="w-full max-w-2xl text-center py-2" onClick={(e) => e.stopPropagation()}>
+        {photo.alt ? (
+          <p className="inline-block rounded-full bg-black/60 px-4 py-1.5 text-label text-white/80 backdrop-blur-sm border border-white/10">
+            {photo.alt}
+          </p>
+        ) : (
+          <p className="text-label text-white/40">
+            Press Esc or click anywhere outside to close
+          </p>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}
 
 /**
  * The selected location, floating on its own pin.
@@ -35,6 +137,7 @@ function coord(lat, lng) {
 
 export default function LocationCard({ poi, onClose, onAsk, onZoom, onDirections }) {
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const url = poi?.imageUrl ?? null;
 
   // A new pin gets a fresh chance at its own photograph: without this, one
@@ -56,19 +159,30 @@ export default function LocationCard({ poi, onClose, onAsk, onZoom, onDirections
         description's scroll height. Here the root's `overflow-hidden
         rounded-xl` clips the photograph to the card's corners for free.
 
-        Absent for most locations, and that is the normal state rather than a
-        missing asset — the card has to look deliberate without one. onError
-        hides it too, so an object deleted from the bucket degrades to exactly
-        the card that shipped before photographs existed.
+        Clicking the photo expands it into a fullscreen Messenger-style lightbox.
       */}
       {showPhoto && (
-        <img
-          src={url}
-          alt={poi.imageAlt || `Photograph of ${poi.name}`}
-          loading="lazy"
-          onError={() => setPhotoFailed(true)}
-          className="h-32 w-full border-b border-line object-cover"
-        />
+        <div className="group relative border-b border-line bg-bg-sunken">
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(true)}
+            className="block w-full text-left cursor-pointer"
+            title="Click to view full photograph"
+          >
+            <img
+              src={url}
+              alt={poi.imageAlt || `Photograph of ${poi.name}`}
+              loading="lazy"
+              onError={() => setPhotoFailed(true)}
+              className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-200 group-hover:bg-black/30">
+              <span className="flex items-center gap-1.5 rounded-full bg-surface/90 px-2.5 py-1 text-label font-medium text-fg opacity-0 shadow-sm transition-opacity duration-200 group-hover:opacity-100">
+                <Maximize2 className="h-3.5 w-3.5 text-accent" aria-hidden /> View full photo
+              </span>
+            </div>
+          </button>
+        </div>
       )}
 
       <div className="flex items-start gap-3 px-4 pb-2 pt-3.5">
@@ -174,6 +288,15 @@ export default function LocationCard({ poi, onClose, onAsk, onZoom, onDirections
           className="shrink-0"
         />
       </div>
+
+      {lightboxOpen && showPhoto && (
+        <ImageLightboxModal
+          photo={{ url, alt: poi.imageAlt, title: poi.name }}
+          onClose={() => setLightboxOpen(false)}
+          onAsk={() => onAsk(poi)}
+          onDirections={onDirections ? () => onDirections(poi) : null}
+        />
+      )}
     </div>
   );
 }
