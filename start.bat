@@ -5,7 +5,16 @@ echo   ISU GeoBot - Starting Full Stack (ML + Backend + Web)
 echo ========================================================
 
 echo [1/3] Starting Python ML Microservice (port 5001)...
-start "GeoBot - ML Service (5001)" cmd /k "cd /d %~dp0machine-learning && set PYTHONNOUSERSITE=1 && D:\anaconda\python.exe ai_api_service.py"
+REM The ML interpreter differs per machine. D:\anaconda is on one
+REM developer's box; anywhere else fall back to whatever `python` resolves
+REM to. PYTHONNOUSERSITE is right for that anaconda install and WRONG for a
+REM Microsoft Store Python, whose packages live in user site-packages --
+REM set it there and flask, sklearn and sentence_transformers all vanish.
+if exist "D:\anaconda\python.exe" (
+  start "GeoBot - ML Service (5001)" cmd /k "cd /d %~dp0machine-learning && set PYTHONNOUSERSITE=1 && D:\anaconda\python.exe ai_api_service.py"
+) else (
+  start "GeoBot - ML Service (5001)" cmd /k "cd /d %~dp0machine-learning && python ai_api_service.py"
+)
 
 echo [2/3] Starting Express Backend Server (port 4000)...
 start "GeoBot - Backend Server (4000)" cmd /k "cd /d %~dp0backend && npm run dev"

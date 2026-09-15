@@ -8,7 +8,12 @@ import { categoryColor, iconFor } from './mapMarkerGlyphs.js';
  * Fullscreen Messenger-style lightbox for location photographs.
  */
 function ImageLightboxModal({ photo, onClose, onAsk, onDirections }) {
+  // The call site only mounts this when a photo is open, so the guard is
+  // belt-and-braces here -- but it keeps the component safe to render
+  // unconditionally, which is exactly the mistake that locked body scroll in
+  // ChatbotMessagePanel.
   useEffect(() => {
+    if (!photo) return undefined;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
@@ -17,7 +22,7 @@ function ImageLightboxModal({ photo, onClose, onAsk, onDirections }) {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [onClose]);
+  }, [onClose, photo]);
 
   if (!photo || typeof document === 'undefined') return null;
 

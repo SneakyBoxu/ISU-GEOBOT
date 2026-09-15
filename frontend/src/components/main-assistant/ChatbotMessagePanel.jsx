@@ -43,7 +43,15 @@ const GREETING = {
  * Uses a React portal to break out of the chat dock and cover the entire viewport.
  */
 function ImageLightboxModal({ photo, onClose, onFocus, onDirections }) {
+  // Guarded on `photo`, and that guard is load-bearing. This component is
+  // rendered unconditionally at the bottom of the panel, and the panel itself
+  // is never unmounted -- FloatingChatDock hides the dock with `invisible`
+  // rather than removing it. So without this the effect ran on mount with no
+  // photo, set body overflow to hidden, and never cleaned up, which silently
+  // killed scrolling on every page that mounts the dock -- the landing page
+  // included, since it lazy-loads the same dock.
   useEffect(() => {
+    if (!photo) return undefined;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
@@ -52,7 +60,7 @@ function ImageLightboxModal({ photo, onClose, onFocus, onDirections }) {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [onClose]);
+  }, [onClose, photo]);
 
   if (!photo || typeof document === 'undefined') return null;
 
