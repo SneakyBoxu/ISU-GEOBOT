@@ -31,7 +31,13 @@ running are simply absent, and the slide says why rather than inventing a
 number to fill the table.
 """
 
+
 from __future__ import annotations
+
+import sys as _sys
+from pathlib import Path as _Path
+# moved into tools/ -- the modules it imports live one level up
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import sys
 from pathlib import Path

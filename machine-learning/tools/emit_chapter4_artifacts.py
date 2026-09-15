@@ -27,7 +27,13 @@ pipeline recover the behavioural traits that were injected?" and never "does
 the system predict real faculty availability?". Chapter 4 must say so.
 """
 
+
 from __future__ import annotations
+
+import sys as _sys
+from pathlib import Path as _Path
+# moved into tools/ -- the modules it imports live one level up
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import argparse
 import csv

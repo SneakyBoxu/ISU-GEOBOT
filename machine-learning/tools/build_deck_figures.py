@@ -12,7 +12,13 @@ Run it again after any re-scoring; it reads live and overwrites its output.
 
     python build_deck_figures.py
 """
+
 from __future__ import annotations
+
+import sys as _sys
+from pathlib import Path as _Path
+# moved into tools/ -- the modules it imports live one level up
+_sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
 
 import sys
 from pathlib import Path
