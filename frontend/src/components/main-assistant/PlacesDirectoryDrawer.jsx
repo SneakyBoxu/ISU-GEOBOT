@@ -1,47 +1,21 @@
 import React, { useEffect, useMemo } from 'react';
-import { ChevronRight, CornerUpRight, PanelLeftClose, Search, X } from 'lucide-react';
+import { CornerUpRight, PanelLeftClose, Search, X } from 'lucide-react';
 import { POI_CATEGORIES } from '../../frontend-utilities/appConstants.js';
 import { categoryColor } from './mapMarkerGlyphs.js';
 import { PoiGlyph } from './mapPinIconBuilder.js';
+import BuildingDirectoryPanel from './BuildingDirectoryPanel.jsx';
 
 /**
- * The campus index.
+ * The campus index & dynamic building directory.
  *
- * The map answers "where is this"; it is bad at "what is here". A pin gives up
- * nothing until you click it, so finding a building you cannot already name
- * means clicking pins until one is right. This panel is the other half: a
- * browsable, filterable list of every location, carrying the same letter and
- * the same category ink as the markers, so the two readings of the campus
- * agree at a glance.
+ * When no building is selected:
+ *   Displays the "Campus Index" — a browsable, filterable list of all locations,
+ *   with category chips and statistics.
  *
- * It stays a LIST. Selecting a location raises the detail card over the map
- * instead — see LocationCard. Putting the detail in here as well would print
- * the same building twice on one screen and cost the user their place in the
- * list every time they looked something up.
- *
- * LAYOUT. It collapses at every width, but by two different mechanisms.
- * Below `md` a 320px column would leave 55px of campus, so there it is a
- * drawer over the map with a scrim, sliding on `transform` — the one property
- * that moves without reflowing a Leaflet canvas underneath it. From `md` up it
- * is a column in the flow, so collapsing it has to hand the width back to the
- * map: it slides out on a negative margin and the map grows into the space.
- * That one IS a real reflow of the Leaflet canvas, which Leaflet does not
- * notice by itself — CampusMap watches its own container and calls
- * invalidateSize, or half the tiles come back grey.
- *
- * THE TOGGLE is at the right edge of this panel's header, and its twin lives
- * in the map toolbar (CampusMap) because a panel cannot carry its own reopen
- * control off-screen with it. The toolbar one is mounted in both states rather
- * than appearing on collapse: anything that materialises beside the map has to
- * take its width from somewhere, and taking it at frame 0 shoves the map
- * sideways before the panel has moved. Parked in a toolbar that is already
- * there, it costs no layout at all.
- *
- * That leaves the panel's own margin as the ONLY thing animating, which is what
- * makes the slide smooth. Everything else holds still: the panel keeps its full
- * width the whole way — margin moves it, width never changes — so the list, the
- * search field and the category chips cannot re-wrap mid-animation, and the map
- * is the single box being resized.
+ * When a building is selected:
+ *   Replaces the index with the "Building Directory" — showing tabs for
+ *   [Rooms & Facilities] and [Faculty & Staff], with internal room details and
+ *   teacher/staff listings.
  */
 
 function CategoryChips({ value, onChange, pois }) {
@@ -129,18 +103,6 @@ function LocationRow({ poi, active, isNavigating, onSelect, onDirections }) {
   );
 }
 
-/**
- * Three figures at the foot of the index.
- *
- * Two are counted from the data on screen, so they cannot go stale. The third
- * is the campus area, which is an institutional fact already carried in the
- * assistant's system prompt — the same source, stated once.
- *
- * The reference project's version of this bar also showed a founding year.
- * That is omitted here: it is not in any document this system holds, and a
- * date printed under a university's name in a thesis artefact is exactly the
- * kind of unsourced detail that has to be verified before it is displayed.
- */
 function Stats({ count, categories }) {
   const cells = [
     [count, count === 1 ? 'Location' : 'Locations'],
@@ -167,19 +129,33 @@ function Stats({ count, categories }) {
 }
 
 export default function LocationPanel({
-  pois = [], visible = [], focusId, navDestinationId, onSelect, onDirections, open, onToggle,
-  query = '', onQueryChange, category = 'all', onCategoryChange,
+  pois = [],
+  visible = [],
+  focusId,
+  navDestinationId,
+  onSelect,
+  onClear,
+  onAsk,
+  onDirections,
+  open,
+  onToggle,
+  query = '',
+  onQueryChange,
+  category = 'all',
+  onCategoryChange,
 }) {
   const categories = useMemo(
     () => new Set(visible.map((p) => p.type)).size,
     [visible],
   );
 
-  // Escape closes the drawer, but only below `md`, where it overlays the map
-  // and trapping the user behind it is a real risk. From `md` up the index sits
-  // beside the map and CampusMap binds Escape to clearing the selected marker;
-  // collapsing the whole index on the same keystroke would be a surprise, and
-  // the rail is right there.
+  // Find currently selected POI (if any)
+  const selectedPoi = useMemo(
+    () => (focusId ? pois.find((p) => p.id === focusId || p.slug === focusId) : null),
+    [focusId, pois],
+  );
+
+  // Escape closes the drawer on mobile
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
@@ -209,79 +185,94 @@ export default function LocationPanel({
             : 'invisible -translate-x-full md:-ml-[16rem] lg:-ml-[18rem] xl:-ml-[20rem]'
         }`}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2.5">
-          <p className="eyebrow">Campus index</p>
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={open}
-            aria-controls="campus-index"
-            aria-label="Hide campus index"
-            title="Hide campus index"
-            className="btn-icon -mr-1"
-          >
-            <PanelLeftClose className="h-4 w-4" aria-hidden />
-          </button>
-        </div>
-
-        <div className="space-y-2.5 border-b border-line px-4 py-3">
-          <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle"
-              aria-hidden
-            />
-            <input
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="Search buildings, offices"
-              aria-label="Search campus locations"
-              className="input min-h-[2.25rem] border-transparent bg-bg-sunken pl-8 pr-8 text-meta"
-            />
-            {query && (
+        {selectedPoi ? (
+          /* ── Building Directory View (when building is selected) ── */
+          <BuildingDirectoryPanel
+            poi={selectedPoi}
+            onBack={onClear}
+            onToggle={onToggle}
+            open={open}
+            onAsk={onAsk}
+            onDirections={onDirections}
+          />
+        ) : (
+          /* ── Default Campus Index View ── */
+          <>
+            <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2.5">
+              <p className="eyebrow">Campus index</p>
               <button
                 type="button"
-                onClick={() => onQueryChange('')}
-                aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded text-fg-subtle transition-colors duration-state hover:text-fg"
+                onClick={onToggle}
+                aria-expanded={open}
+                aria-controls="campus-index"
+                aria-label="Hide campus index"
+                title="Hide campus index"
+                className="btn-icon -mr-1"
               >
-                <X className="h-3.5 w-3.5" aria-hidden />
+                <PanelLeftClose className="h-4 w-4" aria-hidden />
               </button>
-            )}
-          </div>
-          <CategoryChips value={category} onChange={onCategoryChange} pois={pois} />
-        </div>
+            </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {visible.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <p className="text-meta text-fg-muted">No location matches that search.</p>
-              {(query || category !== 'all') && (
-                <button
-                  type="button"
-                  onClick={() => { onQueryChange(''); onCategoryChange('all'); }}
-                  className="mt-2 rounded text-label text-fg-subtle underline decoration-line-strong underline-offset-4 transition-colors duration-state hover:text-fg"
-                >
-                  Clear the filters
-                </button>
+            <div className="space-y-2.5 border-b border-line px-4 py-3">
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle"
+                  aria-hidden
+                />
+                <input
+                  value={query}
+                  onChange={(e) => onQueryChange(e.target.value)}
+                  placeholder="Search buildings, offices"
+                  aria-label="Search campus locations"
+                  className="input min-h-[2.25rem] border-transparent bg-bg-sunken pl-8 pr-8 text-meta"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => onQueryChange('')}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded text-fg-subtle transition-colors duration-state hover:text-fg"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                )}
+              </div>
+              <CategoryChips value={category} onChange={onCategoryChange} pois={pois} />
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {visible.length === 0 ? (
+                <div className="px-4 py-10 text-center">
+                  <p className="text-meta text-fg-muted">No location matches that search.</p>
+                  {(query || category !== 'all') && (
+                    <button
+                      type="button"
+                      onClick={() => { onQueryChange(''); onCategoryChange('all'); }}
+                      className="mt-2 rounded text-label text-fg-subtle underline decoration-line-strong underline-offset-4 transition-colors duration-state hover:text-fg"
+                    >
+                      Clear the filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <ul>
+                  {visible.map((p) => (
+                    <LocationRow
+                      key={p.id}
+                      poi={p}
+                      active={p.id === focusId || p.slug === focusId}
+                      isNavigating={p.id === navDestinationId || p.slug === navDestinationId}
+                      onSelect={onSelect}
+                      onDirections={onDirections}
+                    />
+                  ))}
+                </ul>
               )}
             </div>
-          ) : (
-            <ul>
-              {visible.map((p) => (
-                <LocationRow
-                  key={p.id}
-                  poi={p}
-                  active={p.id === focusId || p.slug === focusId}
-                  isNavigating={p.id === navDestinationId || p.slug === navDestinationId}
-                  onSelect={onSelect}
-                  onDirections={onDirections}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
 
-        <Stats count={visible.length} categories={categories} />
+            <Stats count={visible.length} categories={categories} />
+          </>
+        )}
       </div>
     </>
   );

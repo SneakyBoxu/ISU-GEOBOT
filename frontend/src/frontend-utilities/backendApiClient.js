@@ -33,13 +33,13 @@ async function request(path, { method = 'GET', body, token } = {}) {
 export const api = {
   health: () => request('/health'),
 
-  // Note: no `mode` parameter. Audit F-16 — the standard/enhanced switch is a
+  // Note: no `mode` parameter. Audit F-16 â€” the standard/enhanced switch is a
   // server-side evaluation concern and is deliberately not reachable from here.
   //
   // The token IS sent when a session exists: /api/chat uses optionalAuth, and
   // availability is withheld from anonymous callers (audit F-29). Omitting it
   // would silently downgrade every signed-in user to anonymous.
-  // `history` lets a follow-up mean something — "how do I get there from the
+  // `history` lets a follow-up mean something â€” "how do I get there from the
   // Oval" needs a "there". The server caps and sanitises it; the client's job
   // is only to send the recent turns, not to decide what is safe to replay.
   chat: (query, token, history) =>
@@ -56,7 +56,7 @@ export const api = {
 
   me: (token) => request('/me', { token }),
 
-  // Campus location management (admin / researcher only — enforced server-side
+  // Campus location management (admin / researcher only â€” enforced server-side
   // and by RLS, never by hiding the button).
   adminPois: (token) => request('/admin/pois', { token }),
   adminDepartments: (token) => request('/admin/departments', { token }),
@@ -120,5 +120,24 @@ export const api = {
   availabilityEvents: (token, status = 'published') =>
     request(`/availability-events?status=${encodeURIComponent(status)}`, { token }),
   availabilityEventWithdraw: (token, id) =>
-    request(`/availability-events/${encodeURIComponent(id)}/withdraw`, { method: 'POST', token }),
+    request(`/availability-events/${encodeURIComponent(id)}/withdraw`, { method: 'POST', token }),
+  // Rooms & Facilities
+  buildingRooms: (buildingId, token) =>
+    request(`/buildings/${encodeURIComponent(buildingId)}/rooms`, { token }),
+  roomsSearch: (q) =>
+    request(`/rooms/search?q=${encodeURIComponent(q)}`),
+  adminCreateRoom: (token, body) =>
+    request('/rooms', { method: 'POST', body, token }),
+  adminDeleteRoom: (token, id) =>
+    request(`/rooms/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+  buildingFaculty: (buildingId, token) =>
+    request(`/buildings/${encodeURIComponent(buildingId)}/faculty`, { token }),
+  adminCreateFaculty: (token, body) =>
+    request('/faculty', { method: 'POST', body, token }),
+  adminDeleteFaculty: (token, id) =>
+    request(`/faculty/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+  adminUpdateRoom: (token, id, body) =>
+    request(`/rooms/${encodeURIComponent(id)}`, { method: 'PATCH', body, token }),
+  adminUpdateFaculty: (token, id, body) =>
+    request(`/faculty/${encodeURIComponent(id)}`, { method: 'PATCH', body, token }),
 };
