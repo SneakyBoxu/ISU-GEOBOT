@@ -29,11 +29,11 @@ export const departments = [
 ];
 
 export const faculty = [
-  { id: 'f1', full_name: 'Demo Faculty A', honorific: 'Prof.', department_id: 'd1' },
-  { id: 'f2', full_name: 'Demo Faculty B', honorific: 'Dr.', department_id: 'd2' },
-  { id: 'f3', full_name: 'Demo Faculty C', honorific: 'Engr.', department_id: 'd3' },
-  { id: 'f4', full_name: 'Demo Faculty D', honorific: 'Prof.', department_id: 'd4' },
-  { id: 'f5', full_name: 'Demo Faculty E', honorific: 'Dr.', department_id: 'd2' },
+  { id: 'f1', full_name: 'Demo Faculty A', honorific: 'Prof.', department_id: 'd1', designation: 'Professor', office: 'Room 201' },
+  { id: 'f2', full_name: 'Demo Faculty B', honorific: 'Dr.', department_id: 'd2', designation: 'Associate Professor', office: 'Room 304' },
+  { id: 'f3', full_name: 'Demo Faculty C', honorific: 'Engr.', department_id: 'd3', designation: 'Department Chair', office: 'Room 102' },
+  { id: 'f4', full_name: 'Demo Faculty D', honorific: 'Prof.', department_id: 'd4', designation: 'Assistant Professor', office: 'Room 205' },
+  { id: 'f5', full_name: 'Demo Faculty E', honorific: 'Dr.', department_id: 'd2', designation: 'Instructor', office: 'Room 108' },
 ].map((f) => ({
   ...f,
   // Audit F-32 / C11: in a real deployment this is a hard gate on the
@@ -351,6 +351,53 @@ export const poiAudit = [];
 export const facultyVisibilityEvent = [];
 export const availabilityEvent = [];
 export const availabilityEventFaculty = [];
+
+export const campusRooms = [
+  {
+    id: 'room-001',
+    building_id: 'p09', // CCSICT
+    room_name: 'Research and Innovation Center',
+    room_code: 'RIC-101',
+    floor_level: 'Ground Floor',
+    department: 'Department of Computer Science',
+    description: 'Center for research, prototyping, software engineering, and thesis projects.',
+    aliases: ['IRC', 'Innovation Room', 'Research Lab', 'Research Innovation Room'],
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'room-002',
+    building_id: 'p09', // CCSICT
+    room_name: "Dean's Office",
+    room_code: 'CCSICT-DO',
+    floor_level: '2nd Floor',
+    department: 'College of Computing, Information and Communication Technology',
+    description: 'Office of the College Dean and administrative staff.',
+    aliases: ['Deans Office', 'Dean'],
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'room-003',
+    building_id: 'p01', // Admin Building
+    room_name: 'Office of the University President',
+    room_code: 'OP-201',
+    floor_level: '2nd Floor',
+    department: 'University Administration',
+    description: 'Executive suite of the University President.',
+    aliases: ['Presidents Office', 'President Office', 'OP'],
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'room-004',
+    building_id: 'p09', // CCSICT
+    room_name: 'Multimedia Laboratory',
+    room_code: 'ML-204',
+    floor_level: '2nd Floor',
+    department: 'Department of Information Technology',
+    description: 'Computer laboratory equipped for graphics, animation, and UI/UX design.',
+    aliases: ['Multimedia Lab', 'Comp Lab 4'],
+    created_at: new Date().toISOString(),
+  },
+];
 
 /** Empty on purpose. Audit R6/R7: no seeded metrics, ever. */
 export const evalRun = [];

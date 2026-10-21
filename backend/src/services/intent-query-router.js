@@ -1,21 +1,21 @@
 /**
- * Deterministic query router (audit B5 / §5.3).
+ * Deterministic query router (audit B5 / Â§5.3).
  *
- * The thesis names three query categories (§3.5.4 step 2) but never specifies
+ * The thesis names three query categories (Â§3.5.4 step 2) but never specifies
  * the mechanism. The previous implementation report recommended an LLM
  * classification call. This is a deliberate departure, for three reasons:
  *
  *   1. An LLM routing call spends 150-300ms of the Response Time budget that
- *      §1.2 Objective 2 requires you to REPORT, on a decision a database
+ *      Â§1.2 Objective 2 requires you to REPORT, on a decision a database
  *      lookup answers in ~2ms.
  *   2. It is non-deterministic. The same query can route differently on two
- *      runs, so a RAGAS run is not reproducible — and "would I get the same
+ *      runs, so a RAGAS run is not reproducible â€” and "would I get the same
  *      numbers if I re-ran this?" deserves "yes".
  *   3. The faculty roster is a known, closed, small list already in the
  *      database. Detecting "does this query name a faculty member?" is a
  *      gazetteer lookup, not an open-ended NLU problem.
  *
- * KEY SIMPLIFICATION. §3.5.4 step 4 says retrieval happens "simultaneously",
+ * KEY SIMPLIFICATION. Â§3.5.4 step 4 says retrieval happens "simultaneously",
  * so retrieval is NOT conditional on the route. Routing therefore reduces to
  * one binary question: does this query need a faculty availability status?
  * Everything else is retrieved regardless. Much smaller, much more testable.
@@ -63,6 +63,8 @@ const NAVIGATION_INTENT = [
   // an availability intent as well, so it is still answered.
   'where', 'where can i find', 'how do i get', 'directions', 'located',
   'location of', 'find the', 'take me to', 'nasaan', 'saan',
+  // Room-level navigation
+  'room', 'office', 'floor', 'lab room', 'classroom', 'conference room',
 ];
 
 const TITLES = /\b(prof(?:essor)?|dr|doc|engr|atty|sir|ma'?am|mr|mrs|ms)\.?\s+/gi;
@@ -141,7 +143,7 @@ function normalise(q) {
  *
  * Never auto-selects a nearest match. Resolving "Prof. Santoso" to
  * "Prof. Santos" would disclose one person's status in answer to a query about
- * another — a privacy incident, not a UX rough edge. Multiple candidates
+ * another â€” a privacy incident, not a UX rough edge. Multiple candidates
  * produce a clarifying question; zero produce an honest "I don't have that".
  */
 function matchFaculty(normalised, roster) {
@@ -183,7 +185,7 @@ export async function routeQuery(query) {
 
   // A bare name ("Prof. Santos?") reads as an availability question in
   // practice. A named query with an explicit navigation intent and no
-  // availability words does not — "where is Prof. Santos's office" is asking
+  // availability words does not â€” "where is Prof. Santos's office" is asking
   // about a place, and audit C6 says static office location is directory
   // information, not live whereabouts.
   const bareName = candidates.length > 0 && !availabilityIntent && !navigationIntent;

@@ -21,6 +21,7 @@ import { assertNoLeak, toChatDto } from '../middleware/privacy-masking-middlewar
 import { logChat, runPipeline, labelFor } from '../services/knowledge-search-service.js';
 import { getAvailability, resolvePresence, preloadOfflineSnapshot, getMemorySnapshot } from '../services/faculty-presence-service.js';
 import { admin } from './admin-routes.js';
+import { rooms } from './rooms-routes.js';
 import {
   extractAvailabilityPreview,
   findAvailabilityFacultyCandidates,
@@ -766,6 +767,7 @@ api.post('/availability-events/:id/withdraw', ...availabilityManagers, async (re
 });
 
 api.use('/admin', admin);
+api.use('', rooms);
 
 /**
  * Who am I and what may I do. The frontend renders navigation from this rather

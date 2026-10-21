@@ -1,5 +1,5 @@
-/**
- * The Admin Dashboard — every write surface in the system, behind one sign-in.
+﻿/**
+ * The Admin Dashboard â€” every write surface in the system, behind one sign-in.
  *
  * This used to be three separate pages: a campus-location portal, a faculty
  * validation portal, and a schedule importer. They were folded into one because
@@ -14,7 +14,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Building2, ClipboardCheck, FileSpreadsheet, LayoutDashboard, LogOut, Megaphone,
+  Building2, ClipboardCheck, DoorOpen, FileSpreadsheet, LayoutDashboard, LogOut, Megaphone,
   ShieldCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -23,11 +23,12 @@ import PortalLogin from '../shared-components/UserRoleLoginModal.jsx';
 import TopNavigationBar from '../shared-components/TopNavigationBar.jsx';
 import DemoModeNotificationBanner from '../shared-components/DemoModeNotificationBanner.jsx';
 
-// Lazy-loaded panel content — same components the standalone portals use, but
+// Lazy-loaded panel content â€” same components the standalone portals use, but
 // wired to accept a session prop so the admin only signs in once.
 import CampusLocationsPanel from './AdminCampusLocationsPanel.jsx';
 import FacultyValidationPanel from './AdminFacultyValidationPanel.jsx';
 import ScheduleUploadPanel from './AdminScheduleUploadPanel.jsx';
+import AdminRoomsPanel from './AdminRoomsPanel.jsx';
 // RA 10173 right-to-object control. It lived on the separate validation portal that
 // was folded into this dashboard; the control itself must not disappear with the page
 // that happened to host it. It self-hides when the signed-in account is not a lecturer,
@@ -43,6 +44,15 @@ const TABS = [
     color: 'text-blue-400',
     activeBg: 'bg-blue-500/10 border-blue-500/40',
     activeText: 'text-blue-300',
+  },
+  {
+    id: 'rooms',
+    label: 'Rooms & Facilities',
+    icon: DoorOpen,
+    description: 'Manage internal rooms, departments, and offices linked to buildings.',
+    color: 'text-teal-400',
+    activeBg: 'bg-teal-500/10 border-teal-500/40',
+    activeText: 'text-teal-300',
   },
   {
     id: 'validation',
@@ -77,9 +87,9 @@ export default function AdminDashboard() {
 
   // Session has THREE states, and this line is why the login form does not
   // flash on every page load:
-  //   undefined  still asking Supabase — draw nothing yet
-  //   null       asked, and nobody is signed in — draw the login
-  //   object     signed in — draw the dashboard
+  //   undefined  still asking Supabase â€” draw nothing yet
+  //   null       asked, and nobody is signed in â€” draw the login
+  //   object     signed in â€” draw the dashboard
   // Collapse undefined into null and a signed-in admin sees the sign-in form
   // for a moment on every refresh, which looks like a broken session.
   if (session === undefined) return null;
@@ -97,7 +107,7 @@ export default function AdminDashboard() {
   }
 
   // Fall back to the first tab rather than rendering nothing if activeTab ever
-  // names a tab that no longer exists — which is what happens when a tab is
+  // names a tab that no longer exists â€” which is what happens when a tab is
   // removed from TABS but the id survives somewhere.
   const currentTab = TABS.find((t) => t.id === activeTab) ?? TABS[0];
   const Icon = currentTab.icon;
@@ -108,7 +118,7 @@ export default function AdminDashboard() {
       <DemoModeNotificationBanner />
 
       <div className="flex min-h-[calc(100vh-3.75rem)]">
-        {/* ── Sidebar ── */}
+        {/* â”€â”€ Sidebar â”€â”€ */}
         <aside
           className="sticky top-[3.75rem] flex h-[calc(100vh-3.75rem)] w-64 shrink-0 flex-col border-r border-line bg-surface"
           style={{ backgroundImage: 'linear-gradient(180deg, var(--color-surface) 0%, var(--color-bg-sunken) 100%)' }}
@@ -186,7 +196,7 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        {/* ── Main content ── */}
+        {/* â”€â”€ Main content â”€â”€ */}
         <main className="min-w-0 flex-1 overflow-y-auto">
           {/* Content area header */}
           <header className="border-b border-line bg-surface px-8 py-6">
@@ -204,6 +214,7 @@ export default function AdminDashboard() {
           {/* Tab panels */}
           <div className="px-8 py-8">
             {activeTab === 'locations' && <CampusLocationsPanel session={session} />}
+            {activeTab === 'rooms' && <AdminRoomsPanel session={session} />}
             {activeTab === 'validation' && (
               <>
                 <FacultyValidationPanel session={session} />

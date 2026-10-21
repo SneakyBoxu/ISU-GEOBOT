@@ -170,6 +170,26 @@ export async function demoGenerate(messages) {
   // Route-shaped phrasings are how people ask once they already know the name.
   const navigational = /\b(where|location|locate|find|show|get to|getting to|way to|route|directions?|take me|walk to|how do i get|nasaan|saan|papunta)\b/i
     .test(query);
+
+  const facultyDirMatch = prompt.match(/FACULTY DIRECTORY[^\n]*:\n([\s\S]*?)\nFACULTY DIRECTORY RULES:/);
+  if (facultyDirMatch) {
+    const lines = facultyDirMatch[1].trim().split('\n');
+    for (const line of lines) {
+      const m = line.match(/^-\s*([^:]+)(?::\s*affiliated with\s*(.+?)\.?)?$/i);
+      if (m) {
+        const fName = m[1].trim();
+        const fDept = m[2]?.trim() || 'their academic department';
+        const cleanName = fName.toLowerCase();
+        const cleanQ = query.toLowerCase();
+        const tokens = cleanName.replace(/\b(prof|dr|doc|engr|sir|ma'am|mr|mrs|ms)\b/gi, '').trim().split(/\s+/).filter(Boolean);
+        const matchesPerson = cleanQ.includes(cleanName) || tokens.some((t) => t.length >= 3 && cleanQ.includes(t));
+        if (matchesPerson) {
+          return `${fName} is affiliated with ${fDept}. For faculty privacy and security, specific room assignments and current live whereabouts are not disclosed. You may coordinate directly with the department office.`;
+        }
+      }
+    }
+  }
+
   // When a pronoun was resolved from history, THAT is the place being asked
   // about. "How do I get there from the Oval" names two locations and means the
   // first one; scoring the whole sentence would pick the Oval, which is where

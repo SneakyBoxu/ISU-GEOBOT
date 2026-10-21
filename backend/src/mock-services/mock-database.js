@@ -40,6 +40,7 @@ const TABLES = {
   faculty_visibility_event: D.facultyVisibilityEvent,
   availability_event: D.availabilityEvent,
   availability_event_faculty: D.availabilityEventFaculty,
+  campus_rooms: D.campusRooms ?? [],
   // Registered late — see the assignment after documentChunks is built.
   document: null,
   document_chunk: null,
@@ -139,13 +140,11 @@ TABLES.document_chunk = documentChunks;
 // ---------------------------------------------------------------------------
 
 function resolveNested(row, select) {
-  // Supports the one nested form the services use:
-  //   'department:department_id (name)'
   const out = { ...row };
-  for (const part of select.split(',').map((s) => s.trim())) {
-    const m = part.match(/^(\w+):(\w+)\s*\(([^)]+)\)$/);
-    if (!m) continue;
-    const [, alias, fk, cols] = m;
+  const nestedRegex = /(\w+):(\w+)\s*\(([^)]+)\)/g;
+  let match;
+  while ((match = nestedRegex.exec(select)) !== null) {
+    const [, alias, fk, cols] = match;
     const target = fk.replace(/_id$/, '');
     const table = TABLES[target] ?? TABLES[`${target}s`] ?? [];
     const hit = table.find((r) => r.id === row[fk]);
@@ -178,6 +177,16 @@ class Query {
     });
     return this;
   }
+  ilike(col, pattern) {
+    const p = String(pattern ?? '').toLowerCase();
+    this.rows = this.rows.filter((r) => {
+      const v = String(r[col] ?? '').toLowerCase();
+      if (p.startsWith('%') && p.endsWith('%')) return v.includes(p.slice(1, -1));
+      if (p.endsWith('%')) return v.startsWith(p.slice(0, -1));
+      return v === p;
+    });
+    return this;
+  }
   gte(col, val) { this.rows = this.rows.filter((r) => r[col] >= val); return this; }
   lte(col, val) { this.rows = this.rows.filter((r) => r[col] <= val); return this; }
   order(col, { ascending = true } = {}) {
@@ -189,6 +198,39 @@ class Query {
     return this;
   }
   limit(n) { this.rows = this.rows.slice(0, n); return this; }
+  textSearch(col, query) {
+    const q = String(query ?? '').toLowerCase().trim();
+    if (!q) return this;
+    this.rows = this.rows.filter((r) => {
+      const val = String(r[col] ?? '').toLowerCase();
+      return val.includes(q);
+    });
+    return this;
+  }
+  or(expr) {
+    const conditions = String(expr ?? '').split(',').map((cond) => {
+      const [col, op, ...patternParts] = cond.trim().split('.');
+      const pattern = patternParts.join('.').replace(/^%|%$/g, '').toLowerCase();
+      return { col, op, pattern };
+    });
+    this.rows = this.rows.filter((r) => {
+      return conditions.some(({ col, pattern }) => {
+        const val = String(r[col] ?? '').toLowerCase();
+        return val.includes(pattern);
+      });
+    });
+    return this;
+  }
+  filter(col, op, val) {
+    if (op === 'cs') {
+      const inner = String(val ?? '').replace(/^\{"|"\}$/g, '').toLowerCase();
+      this.rows = this.rows.filter((r) => {
+        const arr = Array.isArray(r[col]) ? r[col] : [];
+        return arr.some((x) => String(x).toLowerCase().includes(inner));
+      });
+    }
+    return this;
+  }
 
   #project() {
     if (this.select_ === '*' || !this.select_) return this.rows;
@@ -435,6 +477,32 @@ const RPC = {
 
 export const demoDb = {
   from(table) {
+    if (table === 'campus_rooms_with_building') {
+      const rooms = TABLES.campus_rooms ?? [];
+      const pois = TABLES.poi ?? [];
+      const poiMap = new Map(pois.map((p) => [p.id, p]));
+      const joined = rooms.map((r) => {
+        const p = poiMap.get(r.building_id) ?? {};
+        return {
+          id: r.id,
+          building_id: r.building_id,
+          room_name: r.room_name,
+          room_code: r.room_code ?? null,
+          floor_level: r.floor_level ?? null,
+          department: r.department ?? null,
+          description: r.description ?? null,
+          aliases: r.aliases ?? [],
+          created_at: r.created_at ?? new Date().toISOString(),
+          building_name: p.name ?? null,
+          category: p.poi_type ?? null,
+          lat: p.lat ?? null,
+          lng: p.lng ?? null,
+          image_url: p.image_url ?? null,
+          image_alt: p.image_alt ?? null,
+        };
+      });
+      return new Query(joined, table);
+    }
     if (!TABLES[table]) TABLES[table] = [];
     return new Query(TABLES[table], table);
   },

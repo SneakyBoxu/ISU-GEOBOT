@@ -74,6 +74,19 @@ function renderLocations(locations) {
     + locations.map((l) => `- ${l.slug} — ${l.name}`).join('\n');
 }
 
+function renderFacultyDirectory(directory) {
+  if (!directory?.length) return null;
+  const items = directory
+    .map((f) => `- ${f.fullName}: affiliated with ${f.department ? f.department : 'their academic department'}.`)
+    .join('\n');
+  return `FACULTY DIRECTORY (reference data):\n${items}\n`
+    + `FACULTY DIRECTORY RULES:\n`
+    + `- When asked about a faculty member or teacher (e.g. where they are, who they are, or their office), state what department or college they belong to.\n`
+    + `- You must NEVER state, guess, or infer their exact current room, floor number, or live physical whereabouts.\n`
+    + `- Clarify that specific room numbers and real-time physical locations are not disclosed for faculty privacy, and advise contacting their department office.\n`
+    + `- Never claim that you do not have that information if the faculty member is listed in the FACULTY DIRECTORY above; always state their department affiliation.`;
+}
+
 function renderContext(chunks) {
   if (!chunks?.length) {
     return 'RETRIEVED CONTEXT:\n(no relevant institutional documents were retrieved)';
@@ -128,7 +141,7 @@ Guidance:
  *                                 filtered and capped by the caller
  * @returns {{messages: Array, fusedPrompt: string, contextsForRagas: string[]}}
  */
-export function buildPrompt({ mode, query, chunks, availability, locations, history = [] }) {
+export function buildPrompt({ mode, query, chunks, availability, locations, facultyDirectory = [], history = [] }) {
   const sections = [renderContext(chunks)];
 
   // The gazetteer is reference data, not retrieved evidence, so it is NOT
@@ -137,6 +150,9 @@ export function buildPrompt({ mode, query, chunks, availability, locations, hist
   // the comparison the thesis is built on.
   const gazetteer = renderLocations(locations);
   if (gazetteer) sections.push(gazetteer);
+
+  const directorySection = renderFacultyDirectory(facultyDirectory);
+  if (directorySection) sections.push(directorySection);
 
   // Audit F-04 / C3: the masked status is passed to RAGAS as a distinct
   // `contexts` item, not merely embedded in the prompt string. Without this,

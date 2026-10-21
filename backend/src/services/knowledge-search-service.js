@@ -304,9 +304,7 @@ export async function runPipeline({
       // they made about their own data, and could invite exactly the social
       // pressure the right exists to protect them from. Pausing and simply not
       // participating are made indistinguishable from the outside.
-      : 'I do not have availability information for that faculty member. You '
-        + 'can contact their department office directly, and I can help you '
-        + 'find the building on the campus map.';
+      : (faculty?.department ? `${faculty.fullName || 'That faculty member'} is affiliated with the ${faculty.department}. Exact room numbers and real-time physical whereabouts are withheld for faculty privacy, but you can contact their department office directly.` : 'I do not have availability information for that faculty member. You can contact their department office directly, and I can help you find the building on the campus map.');
     return {
       answer, route, sources: retrieval.chunks, masked: null, mode, timings,
       contextsForRagas: retrieval.chunks.map((c) => c.content),
@@ -369,12 +367,18 @@ export async function runPipeline({
     };
   }
 
+  const facultyDirectory = (route.facultyCandidates ?? []).map((c) => ({
+    fullName: c.fullName,
+    department: c.department,
+  }));
+
   const { messages, fusedPrompt, contextsForRagas } = buildPrompt({
     mode,
     query,
     chunks: retrieval.chunks,
     availability: availabilityBlock,
     locations,
+    facultyDirectory,
     history: sanitiseHistory(history),
   });
 

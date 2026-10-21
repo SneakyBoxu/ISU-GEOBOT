@@ -211,6 +211,7 @@ export default function Workspace() {
             focusId={focusId}
             navDestinationId={navDestination?.id}
             onSelect={select}
+            onClear={clearFocus}
             onAsk={ask}
             onDirections={handleStartDirections}
             open={panelOpen}

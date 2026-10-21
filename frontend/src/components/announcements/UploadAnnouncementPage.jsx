@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import {
-  AlertCircle, CalendarClock, Camera, CheckCircle2, ChevronDown, Crop,
-  FileText, History, Loader2, LogOut, RefreshCw, RotateCcw, Save,
+  AlertCircle, AlignLeft, CalendarClock, Camera, CheckCircle2, ChevronDown, Crop,
+  FileText, History, Loader2, LogOut, PenLine, RefreshCw, RotateCcw, Save,
   Trash2, Upload, UserCheck, Users, X,
 } from 'lucide-react';
 import { currentSession, signOut } from '../../frontend-utilities/supabaseClient.js';
@@ -728,6 +728,7 @@ function PublishedEventCard({ event, withdrawing, onWithdraw }) {
 export default function UploadAnnouncementPage() {
   const [session, setSession] = useState(undefined);
   const [view, setView] = useState('ingest');
+  const [inputMode, setInputMode] = useState('upload'); // 'upload' | 'text'
   const [imageDataURL, setImageDataURL] = useState(null);
   const [sourceFile, setSourceFile] = useState(null);
   const [sourceError, setSourceError] = useState(null);
@@ -1093,8 +1094,71 @@ export default function UploadAnnouncementPage() {
             <div className="grid items-start gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
               <div className="flex flex-col gap-4 lg:sticky lg:top-20">
                 <div className="rounded-2xl border border-line bg-surface p-5">
-                  <p className="mb-3 text-label font-semibold text-fg">1. Load source document</p>
-                  {imageDataURL ? (
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-label font-semibold text-fg">1. Load source document</p>
+                    {!imageDataURL && !sourceFile && (
+                      <div className="flex overflow-hidden rounded-lg border border-line bg-bg-sunken p-0.5" role="group" aria-label="Input mode">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInputMode('upload');
+                            if (inputMode === 'text') {
+                              setOcrText('');
+                              setOcrState('idle');
+                              clearExtraction();
+                            }
+                          }}
+                          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-label transition-colors ${
+                            inputMode === 'upload' ? 'bg-surface font-medium text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
+                          }`}
+                        >
+                          <Upload className="h-3 w-3" /> File / Camera
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInputMode('text');
+                            if (ocrText.trim()) setOcrState('done');
+                          }}
+                          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-label transition-colors ${
+                            inputMode === 'text' ? 'bg-surface font-medium text-fg shadow-sm' : 'text-fg-muted hover:text-fg'
+                          }`}
+                        >
+                          <PenLine className="h-3 w-3" /> Type / Paste
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {inputMode === 'text' && !imageDataURL && !sourceFile ? (
+                    <div className="space-y-2.5">
+                      <textarea
+                        rows={9}
+                        value={ocrText}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setOcrText(val);
+                          setOcrState(val.trim() ? 'done' : 'idle');
+                          clearExtraction();
+                        }}
+                        placeholder="Paste or type announcement, memo, or circular text here...&#10;&#10;Example:&#10;ANNOUNCEMENT: CS 413 (Networks & Communications)&#10;To: BSCS 4 Students&#10;From: Sir Dante Romero&#10;Date: September 3, 2026&#10;Subject: Class Suspension for System Defense Preparation&#10;Please be informed that our scheduled session today is officially suspended..."
+                        className={`${inputCls} resize-y font-mono text-meta`}
+                        aria-label="Manual announcement text"
+                      />
+                      <div className="flex items-center justify-between text-meta text-fg-muted">
+                        <span>{ocrText.trim() ? `${ocrText.trim().split(/\s+/).length} words entered` : 'Paste announcement text from email, memo, or social media'}</span>
+                        {ocrText && (
+                          <button
+                            type="button"
+                            onClick={() => { setOcrText(''); setOcrState('idle'); clearExtraction(); }}
+                            className="text-label text-fg-subtle hover:text-fg transition-colors"
+                          >
+                            Clear text
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : imageDataURL ? (
                     <div className="relative"><img src={imageDataURL} alt="Selected availability notice" className="max-h-72 w-full rounded-xl border border-line object-contain" /><div className="absolute right-2 top-2 flex gap-1.5"><button type="button" onClick={() => setCropSrc(imageDataURL)} className="rounded-lg border border-line bg-surface/90 p-1.5 text-fg-muted backdrop-blur-sm hover:text-fg" aria-label="Crop this image" title="Crop this image"><Crop className="h-3.5 w-3.5" /></button><button type="button" onClick={resetAll} className="rounded-lg border border-line bg-surface/90 p-1.5 text-fg-muted backdrop-blur-sm hover:text-fg" aria-label="Remove source image"><X className="h-3.5 w-3.5" /></button></div></div>
                   ) : sourceFile ? (
                     <div className="flex items-start justify-between gap-3 rounded-xl border border-line bg-bg-sunken p-4">
@@ -1110,7 +1174,7 @@ export default function UploadAnnouncementPage() {
                   )}
                 </div>
 
-                {(imageDataURL || sourceFile) && (
+                {inputMode === 'upload' && (imageDataURL || sourceFile) && (
                   <div className="rounded-2xl border border-line bg-surface p-5">
                     <div className="mb-3 flex items-center justify-between"><p className="text-label font-semibold text-fg">2. Read source text</p>{ocrState === 'done' && <span className="flex items-center gap-1 text-meta text-brand-400"><CheckCircle2 className="h-3.5 w-3.5" />Done</span>}</div>
                     {ocrState === 'running' && <div className="mb-3"><div className="mb-1 flex justify-between text-meta text-fg-muted"><span>Recognizing text...</span><span>{ocrProgress}%</span></div><div className="h-1.5 overflow-hidden rounded-full bg-bg-sunken"><div className="h-full rounded-full bg-accent transition-all duration-300" style={{ width: `${ocrProgress}%` }} /></div></div>}
@@ -1120,9 +1184,12 @@ export default function UploadAnnouncementPage() {
                   </div>
                 )}
 
-                {ocrState === 'done' && ocrText.trim() && (
+                {ocrText.trim() && (
                   <div className="rounded-2xl border border-line bg-surface p-5">
-                    <p className="text-label font-semibold text-fg">3. Extract availability events</p><p className="my-3 text-meta text-fg-muted">Identifies one or more event windows and resolves named faculty for review.</p>
+                    <p className="text-label font-semibold text-fg">
+                      {inputMode === 'text' ? '2. Extract availability events' : '3. Extract availability events'}
+                    </p>
+                    <p className="my-3 text-meta text-fg-muted">Identifies one or more event windows and resolves named faculty for review.</p>
                     {extractError && <div className="mb-3 flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-meta text-amber-300"><AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{extractError}</div>}
                     <button type="button" onClick={extractFields} disabled={extractState === 'running' || extractRetrySeconds > 0} className="flex w-full items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-label font-medium text-white hover:opacity-90 disabled:opacity-60">{extractState === 'running' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}{extractState === 'running' ? 'Extracting...' : extractRetrySeconds > 0 ? `Retry in ${extractRetrySeconds}s` : extractState === 'done' ? 'Re-extract events' : 'Extract events'}</button>
                   </div>
