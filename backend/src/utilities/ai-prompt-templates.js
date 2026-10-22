@@ -74,17 +74,42 @@ function renderLocations(locations) {
     + locations.map((l) => `- ${l.slug} — ${l.name}`).join('\n');
 }
 
+function renderRooms(rooms) {
+  if (!rooms?.length) return null;
+  const items = rooms.map((r) => {
+    const code = r.roomCode ? ` (Code: ${r.roomCode})` : '';
+    const floor = r.floorLevel ? `, Floor: ${r.floorLevel}` : '';
+    const bldg = r.buildingName ? `, Located in: ${r.buildingName}` : '';
+    const dept = r.department ? `, Department: ${r.department}` : '';
+    const tag = r.buildingSlug ? ` [LOCATION: ${r.buildingSlug}]` : '';
+    const desc = r.description ? ` — Details: ${r.description}` : '';
+    return `- ${r.roomName}${code}${floor}${bldg}${dept}${desc}${tag}`;
+  }).join('\n');
+
+  return `CAMPUS ROOMS & FACILITIES (authoritative data from admin dashboard):\n${items}\n`
+    + `ROOM NAVIGATION INSTRUCTIONS:\n`
+    + `- When asked where a room, laboratory, or office is located, state its floor level and parent building plainly from the authoritative data above.\n`
+    + `- End your reply with the parent building's location tag (e.g. [LOCATION: <slug>]) so the campus map highlights the correct building for the student.`;
+}
+
 function renderFacultyDirectory(directory) {
   if (!directory?.length) return null;
   const items = directory
-    .map((f) => `- ${f.fullName}: affiliated with ${f.department ? f.department : 'their academic department'}.`)
+    .map((f) => {
+      const desig = f.designation ? ` (${f.designation})` : '';
+      const dept = f.department ? `Affiliated with ${f.department}.` : 'Faculty member.';
+      const off = f.office ? ` Consultation Office: ${f.office}.` : '';
+      const em = f.email ? ` Official Email: ${f.email}.` : '';
+      const ph = f.phone ? ` Campus Contact: ${f.phone}.` : '';
+      return `- ${f.fullName}${desig}: ${dept}${off}${em}${ph}`;
+    })
     .join('\n');
-  return `FACULTY DIRECTORY (reference data):\n${items}\n`
+  return `FACULTY DIRECTORY (reference data from admin dashboard):\n${items}\n`
     + `FACULTY DIRECTORY RULES:\n`
-    + `- When asked about a faculty member or teacher (e.g. where they are, who they are, or their office), state what department or college they belong to.\n`
-    + `- You must NEVER state, guess, or infer their exact current room, floor number, or live physical whereabouts.\n`
-    + `- Clarify that specific room numbers and real-time physical locations are not disclosed for faculty privacy, and advise contacting their department office.\n`
-    + `- Never claim that you do not have that information if the faculty member is listed in the FACULTY DIRECTORY above; always state their department affiliation.`;
+    + `- When asked about a faculty member or instructor (e.g. who they are, their department, official email, campus phone, or consultation office), answer directly and politely from the directory data above.\n`
+    + `- For privacy compliance under RA 10173, static consultation office information is directory data and may be stated when asked, but you must NEVER guess or claim they are physically inside that room right now without an AVAILABILITY block.\n`
+    + `- When an AVAILABILITY block is provided below, incorporate their live consultation availability estimate (e.g. whether they are available for consultation right now).\n`
+    + `- Never claim that you do not have that information if the faculty member is listed in the FACULTY DIRECTORY above.`;
 }
 
 function renderContext(chunks) {
@@ -137,11 +162,13 @@ Guidance:
  * @param {Array}  args.chunks   retrieved document chunks
  * @param {object|null} args.availability  {facultyName, statusLabel, asOf}
  * @param {Array}  [args.locations]  campus gazetteer, {slug, name}
+ * @param {Array}  [args.facultyDirectory] faculty directory items
+ * @param {Array}  [args.matchedRooms] matched campus rooms
  * @param {Array}  [args.history]  prior turns, [{role, content}], already
  *                                 filtered and capped by the caller
  * @returns {{messages: Array, fusedPrompt: string, contextsForRagas: string[]}}
  */
-export function buildPrompt({ mode, query, chunks, availability, locations, facultyDirectory = [], history = [] }) {
+export function buildPrompt({ mode, query, chunks, availability, locations, facultyDirectory = [], matchedRooms = [], history = [] }) {
   const sections = [renderContext(chunks)];
 
   // The gazetteer is reference data, not retrieved evidence, so it is NOT
@@ -150,6 +177,9 @@ export function buildPrompt({ mode, query, chunks, availability, locations, facu
   // the comparison the thesis is built on.
   const gazetteer = renderLocations(locations);
   if (gazetteer) sections.push(gazetteer);
+
+  const roomsSection = renderRooms(matchedRooms);
+  if (roomsSection) sections.push(roomsSection);
 
   const directorySection = renderFacultyDirectory(facultyDirectory);
   if (directorySection) sections.push(directorySection);

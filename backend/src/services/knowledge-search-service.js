@@ -57,6 +57,122 @@ export function clearGazetteerCache() {
   gazetteer = { at: 0, rows: [] };
 }
 
+let roomGazetteer = { at: 0, rows: [] };
+const ROOM_GAZETTEER_TTL_MS = 60_000;
+
+export async function loadRoomGazetteer() {
+  if (Date.now() - roomGazetteer.at < ROOM_GAZETTEER_TTL_MS) return roomGazetteer.rows;
+  try {
+    let rows = [];
+    const { data: viewData, error: viewErr } = await db
+      .from('campus_rooms_with_building')
+      .select('id, room_name, room_code, floor_level, department, description, aliases, building_id, building_name, slug, building_slug, category, lat, lng');
+
+    if (!viewErr && viewData?.length) {
+      rows = viewData;
+    } else {
+      const { data: baseRooms } = await db
+        .from('campus_rooms')
+        .select('id, room_name, room_code, floor_level, department, description, aliases, building_id');
+      rows = baseRooms ?? [];
+    }
+
+    const { data: pois } = await db.from('poi').select('id, slug, name');
+    const poiMap = new Map((pois ?? []).map((p) => [p.id, p]));
+
+    const enriched = rows.map((r) => {
+      const p = poiMap.get(r.building_id) || {};
+      const resolvedSlug = r.building_slug || r.slug || p.slug || null;
+      return {
+        id: r.id,
+        roomName: r.room_name,
+        roomCode: r.room_code || null,
+        floorLevel: r.floor_level || null,
+        department: r.department || null,
+        description: r.description || null,
+        aliases: Array.isArray(r.aliases) ? r.aliases : (r.aliases ? [r.aliases] : []),
+        buildingId: r.building_id,
+        buildingName: r.building_name || p.name || 'Campus Building',
+        buildingSlug: resolvedSlug,
+      };
+    });
+
+    roomGazetteer = { at: Date.now(), rows: enriched };
+    return roomGazetteer.rows;
+  } catch (err) {
+    log.warn({ err: err.message }, 'could not load room gazetteer');
+    return [];
+  }
+}
+
+export function clearRoomGazetteerCache() {
+  roomGazetteer = { at: 0, rows: [] };
+}
+
+export function matchRooms(query, rooms) {
+  if (!query || !rooms?.length) return [];
+  const clean = query.toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+  const qStr = clean.trim();
+  const queryNoSpace = qStr.replace(/[^a-z0-9]/g, '');
+
+  const hits = [];
+
+  for (const r of rooms) {
+    let matched = false;
+    let score = 0;
+
+    // 1. Room code match (e.g. "ICT-01", "RIC-101", "ML-204")
+    if (r.roomCode) {
+      const cleanCode = r.roomCode.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleanCode.length >= 2 && queryNoSpace.includes(cleanCode)) {
+        matched = true;
+        score += 100;
+      }
+    }
+
+    // 2. Exact or high-overlap room name match (e.g. "Multimedia Laboratory", "Test Room")
+    const cleanName = (r.roomName || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+    if (cleanName && clean.includes(cleanName)) {
+      matched = true;
+      score += 80;
+    } else if (cleanName) {
+      const nameWords = cleanName.split(/\s+/).filter((w) => w.length >= 3 && !['room', 'the', 'and', 'for', 'lab'].includes(w));
+      if (nameWords.length > 0) {
+        const overlap = nameWords.filter((w) => clean.includes(w)).length;
+        if (overlap >= Math.min(2, nameWords.length)) {
+          matched = true;
+          score += 40 + overlap * 10;
+        }
+      }
+    }
+
+    // 3. Aliases match (e.g. "RIC", "ComLab 4", "Test Room", "Innovation Room")
+    for (const a of r.aliases) {
+      const cleanA = (a || '').toLowerCase().trim();
+      if (!cleanA) continue;
+      if (cleanA.length <= 4) {
+        const re = new RegExp(`\\b${cleanA}\\b`, 'i');
+        if (re.test(query)) {
+          matched = true;
+          score += 70;
+          break;
+        }
+      } else if (clean.includes(cleanA)) {
+        matched = true;
+        score += 60;
+        break;
+      }
+    }
+
+    if (matched) {
+      hits.push({ room: r, score });
+    }
+  }
+
+  hits.sort((a, b) => b.score - a.score);
+  return hits.slice(0, 5).map((h) => h.room);
+}
+
 /**
  * Pull the [LOCATION: id] tag out of a generated answer.
  *
@@ -243,6 +359,7 @@ export async function runPipeline({
   // 2-3. Retrieval runs unconditionally, in BOTH arms (§3.5.4 step 4) ------
   const retrievalPromise = retrieve(query, { includeSynthetic });
   const locationsPromise = loadGazetteer();
+  const roomsPromise = loadRoomGazetteer();
 
   // 4. Availability — enhanced arm only. This is the ONLY divergence. ------
   //
@@ -279,11 +396,13 @@ export async function runPipeline({
     }
   }
 
-  const [retrieval, availability, locations] = await Promise.all([
+  const [retrieval, availability, locations, allRooms] = await Promise.all([
     retrievalPromise,
     availabilityPromise,
     locationsPromise,
+    roomsPromise,
   ]);
+  const matchedRooms = matchRooms(query, allRooms);
   timings.embed = retrieval.timings.embed;
   timings.retrieve = retrieval.timings.retrieve;
   if (availability?.timings) {
@@ -370,6 +489,10 @@ export async function runPipeline({
   const facultyDirectory = (route.facultyCandidates ?? []).map((c) => ({
     fullName: c.fullName,
     department: c.department,
+    designation: c.designation ?? null,
+    office: c.office ?? null,
+    email: c.email ?? null,
+    phone: c.phone ?? null,
   }));
 
   const { messages, fusedPrompt, contextsForRagas } = buildPrompt({
@@ -379,6 +502,7 @@ export async function runPipeline({
     availability: availabilityBlock,
     locations,
     facultyDirectory,
+    matchedRooms,
     history: sanitiseHistory(history),
   });
 
@@ -487,7 +611,11 @@ export async function runPipeline({
           ...(chunkPoi.image_url ? { imageUrl: chunkPoi.image_url } : {}),
           ...(chunkPoi.image_alt ? { imageAlt: chunkPoi.image_alt } : {}),
         }
-      : null)),
+      : (matchedRooms[0]?.buildingSlug ? {
+          poiId: matchedRooms[0].buildingId,
+          slug: matchedRooms[0].buildingSlug,
+          name: matchedRooms[0].buildingName,
+        } : null))),
     availabilityWithheld: false,
     timings,
   };

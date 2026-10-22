@@ -1,4 +1,4 @@
-﻿/**
+/**
  * The Admin Dashboard â€” every write surface in the system, behind one sign-in.
  *
  * This used to be three separate pages: a campus-location portal, a faculty
@@ -113,18 +113,20 @@ export default function AdminDashboard() {
   const Icon = currentTab.icon;
 
   return (
-    <div className="min-h-screen bg-bg" style={{ fontFamily: 'inherit' }}>
-      <TopNavigationBar />
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg" style={{ fontFamily: 'inherit' }}>
+      <div className="shrink-0">
+        <TopNavigationBar />
+      </div>
       <DemoModeNotificationBanner />
 
-      <div className="flex min-h-[calc(100vh-3.75rem)]">
-        {/* â”€â”€ Sidebar â”€â”€ */}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {/* ── Sidebar ── */}
         <aside
-          className="sticky top-[3.75rem] flex h-[calc(100vh-3.75rem)] w-64 shrink-0 flex-col border-r border-line bg-surface"
+          className="flex h-full w-64 shrink-0 flex-col border-r border-line bg-surface"
           style={{ backgroundImage: 'linear-gradient(180deg, var(--color-surface) 0%, var(--color-bg-sunken) 100%)' }}
         >
           {/* Sidebar header */}
-          <div className="border-b border-line px-5 py-5">
+          <div className="shrink-0 border-b border-line px-5 py-5">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15">
                 <LayoutDashboard className="h-4 w-4 text-accent" strokeWidth={1.75} aria-hidden />
@@ -184,7 +186,7 @@ export default function AdminDashboard() {
           </nav>
 
           {/* Sign out */}
-          <div className="border-t border-line px-3 py-4">
+          <div className="shrink-0 border-t border-line px-3 py-4">
             <button
               type="button"
               onClick={handleSignOut}
@@ -196,10 +198,10 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        {/* â”€â”€ Main content â”€â”€ */}
-        <main className="min-w-0 flex-1 overflow-y-auto">
+        {/* ── Main content ── */}
+        <main className="flex min-w-0 flex-1 flex-col h-full overflow-hidden">
           {/* Content area header */}
-          <header className="border-b border-line bg-surface px-8 py-6">
+          <header className="shrink-0 border-b border-line bg-surface px-8 py-5">
             <div className="flex items-center gap-3">
               <div className={`flex h-9 w-9 items-center justify-center rounded-lg border ${currentTab.activeBg}`}>
                 <Icon className={`h-5 w-5 ${currentTab.activeText}`} strokeWidth={1.75} aria-hidden />
@@ -212,7 +214,7 @@ export default function AdminDashboard() {
           </header>
 
           {/* Tab panels */}
-          <div className="px-8 py-8">
+          <div className={`flex-1 min-h-0 ${activeTab === 'rooms' ? 'p-4 sm:p-6 flex flex-col overflow-hidden' : 'overflow-y-auto p-6 sm:p-8'}`}>
             {activeTab === 'locations' && <CampusLocationsPanel session={session} />}
             {activeTab === 'rooms' && <AdminRoomsPanel session={session} />}
             {activeTab === 'validation' && (

@@ -494,6 +494,8 @@ export const demoDb = {
           aliases: r.aliases ?? [],
           created_at: r.created_at ?? new Date().toISOString(),
           building_name: p.name ?? null,
+          slug: p.slug ?? null,
+          building_slug: p.slug ?? null,
           category: p.poi_type ?? null,
           lat: p.lat ?? null,
           lng: p.lng ?? null,

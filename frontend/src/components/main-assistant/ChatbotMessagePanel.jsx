@@ -2,18 +2,62 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
-  Check, Compass, Copy, CornerUpRight, FileText, Footprints, RotateCcw, Send,
-  User, X, Loader2, Sparkles, AlertCircle, Maximize2, Image as ImageIcon,
+  AlertCircle,
+  Check,
+  Compass,
+  Copy,
+  CornerUpRight,
+  FileText,
+  Footprints,
+  Image as ImageIcon,
+  Loader2,
+  Maximize2,
+  Mic,
+  MicOff,
+  RefreshCw,
+  RotateCcw,
+  Send,
+  Sparkles,
+  User,
+  Volume2,
+  VolumeX,
+  X,
 } from 'lucide-react';
 import { api } from '../../frontend-utilities/backendApiClient.js';
 import { currentSession } from '../../frontend-utilities/supabaseClient.js';
 import { Alert, Button, StatusIndicator } from '../ui-primitives/index.js';
 
-const SUGGESTIONS = [
-  'Where is the College of Computing Studies?',
-  'Where is the Registrar’s Office?',
-  'What are the enrollment requirements?',
-  'When does the semester end?',
+const SUGGESTION_CATEGORIES = [
+  {
+    id: 'locations',
+    label: 'Locations',
+    icon: Compass,
+    prompts: [
+      'Where is the College of Computing Studies?',
+      'Where is the Registrar’s Office?',
+      'Where is the University Library?',
+    ],
+  },
+  {
+    id: 'faculty',
+    label: 'Faculty',
+    icon: Sparkles,
+    prompts: [
+      'Who is the dean of Computing Studies?',
+      'Is there a consultation schedule for instructors?',
+      'Where can I find faculty offices?',
+    ],
+  },
+  {
+    id: 'academics',
+    label: 'Academics',
+    icon: FileText,
+    prompts: [
+      'What are the enrollment requirements?',
+      'When does the semester end?',
+      'How to request official transcript of records?',
+    ],
+  },
 ];
 
 const GREETING = {
@@ -250,11 +294,34 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
   const [stage, setStage] = useState(0);
   const [serviceStatus, setServiceStatus] = useState('checking'); // 'checking' | 'ready' | 'ml_loading' | 'offline'
   const [lightboxPhoto, setLightboxPhoto] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('locations');
+  const [isListening, setIsListening] = useState(false);
+  const [speakingIndex, setSpeakingIndex] = useState(null);
   const endRef = useRef(null);
   const inputRef = useRef(null);
+  const recognitionRef = useRef(null);
   const [token, setToken] = useState(null);
 
+  // Safe browser detection for SpeechRecognition
+  const SpeechRecognition = typeof window !== 'undefined'
+    ? (window.SpeechRecognition || window.webkitSpeechRecognition)
+    : null;
+
   useEffect(() => { currentSession().then((s) => setToken(s?.access_token ?? null)); }, []);
+
+  // Cleanup speech synthesis & recognition on unmount
+  useEffect(() => {
+    return () => {
+      try {
+        if (recognitionRef.current) recognitionRef.current.abort();
+      } catch { /* ignore */ }
+      try {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+      } catch { /* ignore */ }
+    };
+  }, []);
 
   // Poll backend health to verify Python ML microservice readiness
   useEffect(() => {
@@ -302,9 +369,132 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
     el.setSelectionRange(draft.text.length, draft.text.length);
   }, [draft?.nonce]);
 
+  // Microphone toggle handler
+  const toggleListening = () => {
+    if (!SpeechRecognition) return;
+
+    if (isListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch { /* ignore */ }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript) {
+          setInput(transcript);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.warn('Speech recognition status:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn('Speech recognition failed to start:', err);
+      setIsListening(false);
+    }
+  };
+
+  // Text-to-Speech (Read Aloud) toggle handler
+  const toggleSpeak = (text, index) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    if (speakingIndex === index) {
+      window.speechSynthesis.cancel();
+      setSpeakingIndex(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    // Clean text for speech: strip markdown symbols, URLs, citation brackets
+    const cleanText = text
+      .replace(/[*#_`~]/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/https?:\/\/\S+/g, '')
+      .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'en-US';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    utterance.onend = () => {
+      setSpeakingIndex(null);
+    };
+
+    utterance.onerror = () => {
+      setSpeakingIndex(null);
+    };
+
+    setSpeakingIndex(index);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Regenerate last response handler
+  const regenerate = (assistantIndex) => {
+    if (busy || serviceStatus !== 'ready') return;
+    for (let j = assistantIndex - 1; j >= 0; j--) {
+      if (messages[j]?.role === 'user' && messages[j]?.answer) {
+        send(messages[j].answer);
+        break;
+      }
+    }
+  };
+
+  // Start fresh conversation session
+  const handleNewChat = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingIndex(null);
+    if (isListening && recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch { /* ignore */ }
+      setIsListening(false);
+    }
+    setMessages([GREETING]);
+    setInput('');
+  };
+
   async function send(text) {
     const query = (text ?? input).trim();
     if (!query || busy || serviceStatus !== 'ready') return;
+
+    // Stop listening or speaking if active
+    if (isListening && recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch { /* ignore */ }
+      setIsListening(false);
+    }
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingIndex(null);
+    }
+
     setMessages((m) => [...m, { role: 'user', answer: query }]);
     setInput('');
     setBusy(true);
@@ -360,6 +550,8 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
   }
 
   const isReady = serviceStatus === 'ready';
+  const currentCategoryPrompts =
+    SUGGESTION_CATEGORIES.find((c) => c.id === activeCategory)?.prompts ?? [];
 
   return (
     <div className="flex h-full flex-col bg-bg">
@@ -399,17 +591,18 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-1">
           {messages.length > 1 && (
-            <Button
-              variant="text"
-              size="sm"
-              icon={RotateCcw}
-              onClick={() => setMessages([GREETING])}
-              aria-label="Clear the conversation"
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-label text-fg-muted hover:bg-bg-sunken hover:text-fg transition-colors"
+              title="Start a new chat (clear conversation)"
+              aria-label="New chat session"
             >
-              {compact ? '' : 'Clear'}
-            </Button>
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+              <span className="text-[11px] font-medium hidden sm:inline">New Chat</span>
+            </button>
           )}
           {onClose && (
             <button
@@ -498,14 +691,47 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
                   )}
 
                   {!m.intro && (
-                    <button
-                      type="button" onClick={() => copy(m.answer, i)}
-                      className="mt-3 inline-flex items-center gap-1.5 text-label text-fg-subtle transition-colors duration-state hover:text-fg"
-                    >
-                      {copied === i
-                        ? <><Check className="h-3 w-3" aria-hidden /> Copied</>
-                        : <><Copy className="h-3 w-3" aria-hidden /> Copy answer</>}
-                    </button>
+                    <div className="mt-3 flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => copy(m.answer, i)}
+                        className="inline-flex items-center gap-1.5 text-label text-fg-subtle transition-colors duration-state hover:text-fg"
+                      >
+                        {copied === i ? (
+                          <><Check className="h-3 w-3 text-emerald-500" aria-hidden /> Copied</>
+                        ) : (
+                          <><Copy className="h-3 w-3" aria-hidden /> Copy</>
+                        )}
+                      </button>
+
+                      {typeof window !== 'undefined' && 'speechSynthesis' in window && (
+                        <button
+                          type="button"
+                          onClick={() => toggleSpeak(m.answer, i)}
+                          className={`inline-flex items-center gap-1.5 text-label transition-colors duration-state ${
+                            speakingIndex === i ? 'text-accent font-medium' : 'text-fg-subtle hover:text-fg'
+                          }`}
+                          title={speakingIndex === i ? 'Stop listening' : 'Read answer aloud'}
+                        >
+                          {speakingIndex === i ? (
+                            <><VolumeX className="h-3 w-3 text-accent animate-pulse" aria-hidden /> Stop</>
+                          ) : (
+                            <><Volume2 className="h-3 w-3" aria-hidden /> Read aloud</>
+                          )}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        disabled={busy || !isReady}
+                        onClick={() => regenerate(i)}
+                        className="inline-flex items-center gap-1.5 text-label text-fg-subtle transition-colors duration-state hover:text-fg disabled:opacity-40"
+                        title="Regenerate this response"
+                      >
+                        <RefreshCw className="h-3 w-3" aria-hidden />
+                        <span>Retry</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -535,15 +761,42 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
       </div>
 
       {messages.length <= 1 && isReady && (
-        <div className={`shrink-0 border-t border-line pt-3 ${compact ? 'px-3' : 'px-4 sm:px-6'}`}>
-          <p className="eyebrow">Try</p>
-          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 pb-1">
-            {SUGGESTIONS.map((s) => (
+        <div className={`shrink-0 border-t border-line pt-3 ${compact ? 'px-3 pb-2' : 'px-4 sm:px-6 pb-3'}`}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="eyebrow">Try Asking</p>
+            <div className="flex items-center gap-1">
+              {SUGGESTION_CATEGORIES.map((cat) => {
+                const IconComp = cat.icon;
+                const isActive = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium transition-all ${
+                      isActive
+                        ? 'bg-accent/15 text-accent border border-accent/30'
+                        : 'bg-bg-sunken text-fg-subtle border border-line/60 hover:text-fg'
+                    }`}
+                  >
+                    <IconComp className="h-2.5 w-2.5" />
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            {currentCategoryPrompts.map((s) => (
               <button
-                key={s} type="button" onClick={() => send(s)}
-                className="text-meta text-fg-muted underline-offset-[6px] transition-colors duration-state hover:text-fg hover:underline hover:decoration-accent"
+                key={s}
+                type="button"
+                onClick={() => send(s)}
+                className="group flex items-center justify-between rounded-lg border border-line/70 bg-surface/60 px-2.5 py-1.5 text-left text-[0.75rem] text-fg-muted transition-all hover:border-accent/40 hover:bg-bg-sunken hover:text-fg active:scale-[0.99]"
               >
-                {s}
+                <span className="truncate">{s}</span>
+                <CornerUpRight className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 text-accent" />
               </button>
             ))}
           </div>
@@ -579,25 +832,72 @@ export default function ChatInterface({ onPoiFocus, onDirections, draft, compact
       )}
 
       <div className={`shrink-0 border-t border-line bg-surface ${compact ? 'p-3' : 'p-4 sm:px-6'}`}>
-        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex items-end gap-2">
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={!isReady || busy}
-            placeholder={
-              serviceStatus === 'ml_loading'
-                ? 'Initializing ML embeddings model...'
-                : serviceStatus === 'offline'
-                ? 'Connecting to server...'
-                : 'Ask about a building, an office, or a faculty member…'
-            }
-            aria-label="Ask ISU-GeoBot"
-            maxLength={500}
-            className="input flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          <Button type="submit" variant="primary" disabled={!isReady || busy || !input.trim()}
-                  aria-label="Send question" className="!px-3">
+        {isListening && (
+          <div className="mb-2 flex items-center justify-between rounded-lg bg-accent/10 border border-accent/20 px-3 py-1.5 text-xs text-accent animate-enter">
+            <span className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-accent animate-ping" />
+              <span className="font-medium">Listening… speak your question now</span>
+            </span>
+            <button
+              type="button"
+              onClick={toggleListening}
+              className="text-[11px] font-semibold uppercase tracking-wider text-accent underline underline-offset-2 hover:opacity-80"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={!isReady || busy}
+              placeholder={
+                isListening
+                  ? 'Listening… speak now'
+                  : serviceStatus === 'ml_loading'
+                  ? 'Initializing ML embeddings model...'
+                  : serviceStatus === 'offline'
+                  ? 'Connecting to server...'
+                  : 'Ask about a building, an office, or a faculty member…'
+              }
+              aria-label="Ask ISU-GeoBot"
+              maxLength={500}
+              className={`input w-full pr-9 ${isListening ? 'ring-2 ring-accent border-accent' : ''} disabled:opacity-50 disabled:cursor-not-allowed`}
+            />
+
+            {Boolean(SpeechRecognition) && (
+              <button
+                type="button"
+                onClick={toggleListening}
+                disabled={!isReady || busy}
+                title={isListening ? 'Stop listening' : 'Voice input (Dictate with microphone)'}
+                aria-label={isListening ? 'Stop microphone' : 'Use microphone'}
+                className={`absolute right-1.5 top-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-md transition-colors ${
+                  isListening
+                    ? 'bg-rose-500 text-white animate-pulse'
+                    : 'text-fg-subtle hover:bg-bg-sunken hover:text-fg'
+                }`}
+              >
+                {isListening ? (
+                  <MicOff className="h-3.5 w-3.5" aria-hidden />
+                ) : (
+                  <Mic className="h-3.5 w-3.5" aria-hidden />
+                )}
+              </button>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={!isReady || busy || !input.trim()}
+            aria-label="Send question"
+            className="!px-3 !h-[2.375rem] shrink-0"
+          >
             <Send className="h-4 w-4" aria-hidden />
           </Button>
         </form>

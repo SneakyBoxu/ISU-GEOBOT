@@ -11,6 +11,8 @@
  *   GET  /api/rooms/search?q=              Fuzzy text search (public)
  */
 
+import fs from 'fs';
+import path from 'path';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -19,6 +21,33 @@ import { requireAuth, requireRole } from '../middleware/authentication.js';
 import { clearRosterCache } from '../services/intent-query-router.js';
 
 export const rooms = Router();
+
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const FACULTY_STORE_PATH = path.resolve(__dirname, '../data/faculty_profile_store.json');
+
+function loadFacultyProfileStore() {
+  try {
+    if (fs.existsSync(FACULTY_STORE_PATH)) {
+      return JSON.parse(fs.readFileSync(FACULTY_STORE_PATH, 'utf-8'));
+    }
+  } catch (err) {
+    log.warn({ err: err.message }, 'could not read faculty profile store');
+  }
+  return {};
+}
+
+function saveFacultyProfileStore(store) {
+  try {
+    const dir = path.dirname(FACULTY_STORE_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(FACULTY_STORE_PATH, JSON.stringify(store, null, 2), 'utf-8');
+  } catch (err) {
+    log.warn({ err: err.message }, 'could not write faculty profile store');
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Validation schema for room creation
@@ -32,6 +61,7 @@ const roomSchema = z.object({
   department:  z.string().max(200).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
   aliases:     z.array(z.string().max(200)).max(20).optional(),
+  imageUrl:    z.string().trim().max(1000).optional().nullable(),
 });
 
 // ---------------------------------------------------------------------------
@@ -45,7 +75,7 @@ rooms.get('/buildings/:buildingId/rooms', async (req, res, next) => {
 
     const { data, error } = await db
       .from('campus_rooms')
-      .select('id, room_name, room_code, floor_level, department, description, aliases, created_at')
+      .select('id, room_name, room_code, floor_level, department, description, aliases, image_url, created_at')
       .eq('building_id', buildingId)
       .order('floor_level', { ascending: true })
       .order('room_name', { ascending: true });
@@ -92,6 +122,7 @@ rooms.post('/rooms', requireAuth, requireRole('admin', 'researcher'),
           department:   resolvedDepartment,
           description:  input.description ?? null,
           aliases:      input.aliases ?? [],
+          image_url:    input.imageUrl ? input.imageUrl.trim() : null,
         })
         .select()
         .single();
@@ -136,6 +167,7 @@ const roomUpdateSchema = z.object({
   department:  z.string().max(200).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
   aliases:     z.array(z.string().max(200)).max(20).optional(),
+  imageUrl:    z.string().trim().max(1000).optional().nullable(),
 });
 
 rooms.patch('/rooms/:id', requireAuth, requireRole('admin', 'researcher'),
@@ -161,6 +193,7 @@ rooms.patch('/rooms/:id', requireAuth, requireRole('admin', 'researcher'),
       if (input.department !== undefined) updates.department = input.department ? input.department.trim() : null;
       if (input.description !== undefined) updates.description = input.description ? input.description.trim() : null;
       if (input.aliases !== undefined) updates.aliases = input.aliases;
+      if (input.imageUrl !== undefined) updates.image_url = input.imageUrl ? input.imageUrl.trim() : null;
 
       const { data: room, error } = await db
         .from('campus_rooms')
@@ -298,11 +331,11 @@ rooms.get('/buildings/:buildingId/faculty', async (req, res, next) => {
     let facultyRows = [];
     const { data: extRows, error: extErr } = await db
       .from('faculty')
-      .select('id, full_name, honorific, is_active, is_consented, department_id, department:department_id (id, name), designation, office, availability_visible')
+      .select('id, full_name, honorific, is_active, is_consented, department_id, department:department_id (id, name), designation, office, availability_visible, image_url, email, phone')
       .order('full_name', { ascending: true });
 
     if (extErr) {
-      // If designation / office is missing from Supabase schema cache, gracefully fallback
+      // If designation / office / image_url / email / phone is missing from Supabase schema cache, gracefully fallback
       log.warn({ err: extErr.message }, 'faculty extended select failed, falling back to base schema');
       const { data: baseRows, error: baseErr } = await db
         .from('faculty')
@@ -313,6 +346,11 @@ rooms.get('/buildings/:buildingId/faculty', async (req, res, next) => {
     } else {
       facultyRows = extRows ?? [];
     }
+
+    // Strictly filter out synthetic simulation cohort (SIM-01..SIM-37) so only actual personnel display in directory & admin
+    facultyRows = (facultyRows ?? []).filter(
+      (f) => !/^SIM-\d+$/i.test(f.full_name?.trim() || '')
+    );
 
     // Load aliases safely
     const aliasesByFaculty = new Map();
@@ -333,23 +371,31 @@ rooms.get('/buildings/:buildingId/faculty', async (req, res, next) => {
       return fDept === bName || fDept === bDeptName || bName.includes(fDept) || (bDeptName && bDeptName.includes(fDept));
     });
 
+    const store = loadFacultyProfileStore();
+
     res.json({
       buildingId,
       buildingName: building.name,
-      faculty: matched.map((f) => ({
-        id: f.id,
-        fullName: f.full_name,
-        honorific: f.honorific ?? null,
-        departmentId: f.department_id ?? null,
-        departmentName: f.department?.name ?? null,
-        designation: f.designation ?? 'Faculty',
-        office: f.office ?? null,
-        aliases: aliasesByFaculty.get(f.id) ?? [],
-        isActive: f.is_active,
-        isConsented: f.is_consented,
-        availabilityStatus: f.availability_visible === false ? 'paused' : 'available',
-        availabilityLabel: f.availability_visible === false ? 'Status Paused' : 'Available for Consultation',
-      })),
+      faculty: matched.map((f) => {
+        const fallback = store[f.id] || {};
+        return {
+          id: f.id,
+          fullName: f.full_name,
+          honorific: f.honorific ?? null,
+          departmentId: f.department_id ?? null,
+          departmentName: f.department?.name ?? null,
+          designation: f.designation ?? fallback.designation ?? 'Faculty',
+          office: f.office ?? fallback.office ?? null,
+          imageUrl: f.image_url ?? fallback.imageUrl ?? null,
+          email: f.email ?? fallback.email ?? null,
+          phone: f.phone ?? fallback.phone ?? null,
+          aliases: aliasesByFaculty.get(f.id) ?? [],
+          isActive: f.is_active,
+          isConsented: f.is_consented,
+          availabilityStatus: f.availability_visible === false ? 'paused' : 'available',
+          availabilityLabel: f.availability_visible === false ? 'Status Paused' : 'Available for Consultation',
+        };
+      }),
     });
   } catch (err) { next(err); }
 });
@@ -364,9 +410,12 @@ const facultyCreateSchema = z.object({
   honorific: z.string().trim().max(50).optional().nullable(),
   designation: z.string().trim().max(100).optional().nullable(),
   office: z.string().trim().max(100).optional().nullable(),
+  email: z.string().trim().max(200).optional().nullable(),
+  phone: z.string().trim().max(100).optional().nullable(),
   buildingId: z.string().trim().min(1).max(64).optional().nullable(),
   departmentId: z.string().trim().min(1).max(64).optional().nullable(),
   departmentName: z.string().trim().max(200).optional().nullable(),
+  imageUrl: z.string().trim().max(1000).optional().nullable(),
   aliases: z.array(z.string().trim().max(200)).max(20).optional(),
 });
 
@@ -438,6 +487,7 @@ rooms.post('/faculty', requireAuth, requireRole('admin', 'researcher'), async (r
       is_active: true,
       data_origin: 'real',
       availability_visible: true,
+      image_url: input.imageUrl ? input.imageUrl.trim() : null,
     };
 
     let created;
@@ -447,15 +497,20 @@ rooms.post('/faculty', requireAuth, requireRole('admin', 'researcher'), async (r
         ...baseFacultyPayload,
         designation: input.designation || 'Faculty',
         office: input.office || null,
+        email: input.email ? input.email.trim() : null,
+        phone: input.phone ? input.phone.trim() : null,
+        building_id: input.buildingId || null,
       })
       .select('id, full_name, honorific, department_id, is_active, is_consented, department:department_id (id, name)')
       .single();
 
-    if (attempt.error && (attempt.error.message?.includes('designation') || attempt.error.message?.includes('schema cache'))) {
-      log.warn({ err: attempt.error.message }, 'faculty insert with designation failed, falling back to base columns');
+    if (attempt.error && (attempt.error.message?.includes('designation') || attempt.error.message?.includes('column') || attempt.error.message?.includes('schema cache'))) {
+      log.warn({ err: attempt.error.message }, 'faculty insert with extended columns failed, falling back to base columns');
+      const safePayload = { ...baseFacultyPayload };
+      delete safePayload.image_url;
       const fallbackAttempt = await db
         .from('faculty')
-        .insert(baseFacultyPayload)
+        .insert(safePayload)
         .select('id, full_name, honorific, department_id, is_active, is_consented, department:department_id (id, name)')
         .single();
       if (fallbackAttempt.error) throw fallbackAttempt.error;
@@ -464,6 +519,18 @@ rooms.post('/faculty', requireAuth, requireRole('admin', 'researcher'), async (r
       throw attempt.error;
     } else {
       created = attempt.data;
+    }
+
+    if (created?.id) {
+      const store = loadFacultyProfileStore();
+      store[created.id] = {
+        imageUrl: input.imageUrl ? input.imageUrl.trim() : null,
+        email: input.email ? input.email.trim() : null,
+        phone: input.phone ? input.phone.trim() : null,
+        designation: input.designation || 'Faculty',
+        office: input.office || null,
+      };
+      saveFacultyProfileStore(store);
     }
 
     // Collect provided aliases plus title-stripped and surname aliases
@@ -497,6 +564,11 @@ rooms.post('/faculty', requireAuth, requireRole('admin', 'researcher'), async (r
         id: created.id,
         fullName: created.full_name,
         honorific: created.honorific,
+        designation: input.designation || 'Faculty',
+        office: input.office || null,
+        imageUrl: input.imageUrl ? input.imageUrl.trim() : null,
+        email: input.email ? input.email.trim() : null,
+        phone: input.phone ? input.phone.trim() : null,
         departmentId: created.department_id,
         departmentName: created.department?.name ?? null,
       },
@@ -518,6 +590,12 @@ rooms.delete('/faculty/:id', requireAuth, requireRole('admin', 'researcher'), as
     const { error } = await db.from('faculty').delete().eq('id', id);
     if (error) throw error;
 
+    const store = loadFacultyProfileStore();
+    if (store[id]) {
+      delete store[id];
+      saveFacultyProfileStore(store);
+    }
+
     clearRosterCache();
     log.info({ facultyId: id, by: req.user.id }, 'faculty deleted');
     res.json({ deleted: true, fullName: existing.full_name });
@@ -534,9 +612,12 @@ const facultyUpdateSchema = z.object({
   honorific: z.string().trim().max(50).optional().nullable(),
   designation: z.string().trim().max(100).optional().nullable(),
   office: z.string().trim().max(100).optional().nullable(),
+  email: z.string().trim().max(200).optional().nullable(),
+  phone: z.string().trim().max(100).optional().nullable(),
   buildingId: z.string().trim().min(1).max(64).optional().nullable(),
   departmentId: z.string().trim().min(1).max(64).optional().nullable(),
   departmentName: z.string().trim().max(200).optional().nullable(),
+  imageUrl: z.string().trim().max(1000).optional().nullable(),
   aliases: z.array(z.string().trim().max(200)).max(20).optional(),
 });
 
@@ -580,7 +661,22 @@ rooms.patch('/faculty/:id', requireAuth, requireRole('admin', 'researcher'), asy
     if (input.honorific !== undefined) updates.honorific = input.honorific || null;
     if (input.designation !== undefined) updates.designation = input.designation || 'Faculty';
     if (input.office !== undefined) updates.office = input.office || null;
+    if (input.email !== undefined) updates.email = input.email ? input.email.trim() : null;
+    if (input.phone !== undefined) updates.phone = input.phone ? input.phone.trim() : null;
+    if (input.imageUrl !== undefined) updates.image_url = input.imageUrl ? input.imageUrl.trim() : null;
     if (targetDeptId !== undefined) updates.department_id = targetDeptId;
+
+    // Always persist profile fields to fallback store so image_url, email, etc. are never lost
+    const store = loadFacultyProfileStore();
+    store[id] = {
+      ...(store[id] || {}),
+      ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl ? input.imageUrl.trim() : null } : {}),
+      ...(input.email !== undefined ? { email: input.email ? input.email.trim() : null } : {}),
+      ...(input.phone !== undefined ? { phone: input.phone ? input.phone.trim() : null } : {}),
+      ...(input.designation !== undefined ? { designation: input.designation || 'Faculty' } : {}),
+      ...(input.office !== undefined ? { office: input.office || null } : {}),
+    };
+    saveFacultyProfileStore(store);
 
     let updated;
     const attempt = await db
@@ -590,11 +686,14 @@ rooms.patch('/faculty/:id', requireAuth, requireRole('admin', 'researcher'), asy
       .select('id, full_name, honorific, department_id, is_active, is_consented, department:department_id (id, name)')
       .single();
 
-    if (attempt.error && (attempt.error.message?.includes('designation') || attempt.error.message?.includes('schema cache'))) {
-      log.warn({ err: attempt.error.message }, 'faculty update with designation failed, falling back to base columns');
+    if (attempt.error && (attempt.error.message?.includes('designation') || attempt.error.message?.includes('column') || attempt.error.message?.includes('schema cache'))) {
+      log.warn({ err: attempt.error.message }, 'faculty update with extended columns failed, falling back to base columns');
       const safeUpdates = { ...updates };
       delete safeUpdates.designation;
       delete safeUpdates.office;
+      delete safeUpdates.email;
+      delete safeUpdates.phone;
+      delete safeUpdates.image_url;
       const fallbackAttempt = await db
         .from('faculty')
         .update(safeUpdates)
@@ -637,17 +736,83 @@ rooms.patch('/faculty/:id', requireAuth, requireRole('admin', 'researcher'), asy
     }
 
     clearRosterCache();
-    log.info({ facultyId: id, by: req.user.id }, 'faculty updated');
+    const savedFallback = store[id] || {};
     res.json({
       faculty: {
         id: updated.id,
         fullName: updated.full_name,
         honorific: updated.honorific,
-        designation: updated.designation ?? 'Faculty',
-        office: updated.office ?? null,
+        designation: updated.designation ?? savedFallback.designation ?? 'Faculty',
+        office: updated.office ?? savedFallback.office ?? null,
+        imageUrl: updated.image_url ?? savedFallback.imageUrl ?? null,
+        email: updated.email ?? savedFallback.email ?? null,
+        phone: updated.phone ?? savedFallback.phone ?? null,
         departmentId: updated.department_id,
         departmentName: updated.department?.name ?? null,
       },
     });
   } catch (err) { next(err); }
 });
+
+// ---------------------------------------------------------------------------
+// POST /api/upload-photo
+// Direct image file upload for rooms & faculty (admin / researcher only)
+// ---------------------------------------------------------------------------
+
+const uploadPhotoSchema = z.object({
+  contentB64: z.string().min(1),
+  folder: z.enum(['rooms', 'faculty', 'campus']).default('rooms'),
+});
+
+rooms.post('/upload-photo', requireAuth, requireRole('admin', 'researcher'), async (req, res, next) => {
+  try {
+    const { contentB64, folder } = uploadPhotoSchema.parse(req.body);
+    const base64 = String(contentB64 || '').replace(/^data:[^;]+;base64,/, '');
+    let buffer;
+    try {
+      buffer = Buffer.from(base64, 'base64');
+    } catch {
+      buffer = Buffer.alloc(0);
+    }
+    if (!buffer.length) {
+      return res.status(400).json({ error: 'invalid_image', message: 'No image data received.' });
+    }
+    if (buffer.length > 8 * 1024 * 1024) {
+      return res.status(413).json({ error: 'file_too_large', message: 'Image must be under 8 MB.' });
+    }
+
+    let ext = 'jpg';
+    let contentType = 'image/jpeg';
+    if (buffer.length >= 12) {
+      if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+        ext = 'jpg'; contentType = 'image/jpeg';
+      } else if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
+        ext = 'png'; contentType = 'image/png';
+      } else if (buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') {
+        ext = 'webp'; contentType = 'image/webp';
+      }
+    }
+
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const objectName = `${folder}/${folder}_${uniqueId}.${ext}`;
+
+    try {
+      const { error: uploadError } = await db.storage
+        .from('campus-photos')
+        .upload(objectName, buffer, { contentType, upsert: true });
+
+      if (uploadError) {
+        log.warn({ err: uploadError.message }, 'storage upload failed, returning data URI fallback');
+        return res.json({ imageUrl: `data:${contentType};base64,${base64}` });
+      }
+
+      const { data: pub } = db.storage.from('campus-photos').getPublicUrl(objectName);
+      const imageUrl = `${pub.publicUrl}?v=${Date.now()}`;
+      return res.json({ imageUrl });
+    } catch (storageErr) {
+      log.warn({ err: storageErr.message }, 'storage upload exception, returning data URI fallback');
+      return res.json({ imageUrl: `data:${contentType};base64,${base64}` });
+    }
+  } catch (err) { next(err); }
+});
+

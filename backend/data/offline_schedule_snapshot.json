@@ -1,14 +1,8 @@
 {
-  "cachedAt": "2026-10-20T03:43:20.267Z",
+  "cachedAt": "2026-10-21T08:13:16.214Z",
   "campus": "echague",
   "timezone": "Asia/Manila",
   "faculty": [
-    {
-      "id": "895c7a8c-5e2a-4347-922a-4c926296e346",
-      "full_name": "SIM-01",
-      "department": "College of Computing, Information and Communication Technology",
-      "is_consented": true
-    },
     {
       "id": "edbe326e-6c84-4b91-80b6-7277f056e80d",
       "full_name": "SIM-02",
@@ -220,6 +214,12 @@
       "is_consented": true
     },
     {
+      "id": "895c7a8c-5e2a-4347-922a-4c926296e346",
+      "full_name": "SIM-01",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
       "id": "d91da9c2-78a0-4c2a-a41d-6dfa7ddf286c",
       "full_name": "AQUINO, RUSSEL N.",
       "department": "College of Computing, Information and Communication Technology",
@@ -228,12 +228,6 @@
     {
       "id": "855a83be-a489-44cd-9fe8-f9bdca8f3a93",
       "full_name": "IBASCO, FREDERICK VON A.",
-      "department": "College of Computing, Information and Communication Technology",
-      "is_consented": true
-    },
-    {
-      "id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
-      "full_name": "VINLUAN, ALBERT A.",
       "department": "College of Computing, Information and Communication Technology",
       "is_consented": true
     },
@@ -334,12 +328,6 @@
       "is_consented": true
     },
     {
-      "id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
-      "full_name": "YAMAT, BENEDICK V.",
-      "department": "College of Computing, Information and Communication Technology",
-      "is_consented": true
-    },
-    {
       "id": "f951b9ef-7180-4e78-a120-5a08b2fcf1bd",
       "full_name": "BERMUSA, JENEFER P.",
       "department": "College of Computing, Information and Communication Technology",
@@ -420,6 +408,18 @@
     {
       "id": "e52de54c-4666-4849-8e50-1ad7de7dca8a",
       "full_name": "SIM-37",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "510263af-76cd-4fa3-a1a0-ef2a218d78be",
+      "full_name": "VINLUAN, ALBERT A.",
+      "department": "College of Computing, Information and Communication Technology",
+      "is_consented": true
+    },
+    {
+      "id": "4cc162bd-ea7d-46b0-add8-38ce5923ed74",
+      "full_name": "YAMAT, BENEDICK V.",
       "department": "College of Computing, Information and Communication Technology",
       "is_consented": true
     },

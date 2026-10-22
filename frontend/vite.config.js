@@ -7,7 +7,17 @@ export default defineConfig({
     port: 5173,
     // Audit W6/W2: the browser never talks to Groq or Supabase's service role.
     // Everything goes through the Express API.
-    proxy: { '/api': { target: 'http://127.0.0.1:4000', changeOrigin: true } },
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:4000',
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.warn('[vite-proxy] proxy error:', err.message);
+          });
+        },
+      },
+    },
   },
   build: {
     rollupOptions: {

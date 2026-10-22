@@ -140,4 +140,7 @@ export const api = {
     request(`/rooms/${encodeURIComponent(id)}`, { method: 'PATCH', body, token }),
   adminUpdateFaculty: (token, id, body) =>
     request(`/faculty/${encodeURIComponent(id)}`, { method: 'PATCH', body, token }),
+  uploadPhoto: (token, body) =>
+    request('/upload-photo', { method: 'POST', body, token }),
 };
+

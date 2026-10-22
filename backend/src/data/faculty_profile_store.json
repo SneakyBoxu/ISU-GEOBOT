@@ -1,0 +1,22 @@
+{
+  "895c7a8c-5e2a-4347-922a-4c926296e346": {
+    "imageUrl": "https://lnyqbjtigekvokwgtadz.supabase.co/storage/v1/object/public/campus-photos/faculty/faculty_1792561187634_hy475o.jpg?v=1792561187925",
+    "email": null,
+    "phone": null,
+    "designation": "Faculty",
+    "office": null
+  },
+  "4cc162bd-ea7d-46b0-add8-38ce5923ed74": {
+    "imageUrl": "https://lnyqbjtigekvokwgtadz.supabase.co/storage/v1/object/public/campus-photos/faculty/faculty_1792572084136_1jijby.jpg?v=1792572084624",
+    "email": "yamatvbendick@isu.edu.ph",
+    "phone": "09214768928",
+    "designation": "Faculty",
+    "office": null
+  },
+  "cde2175b-e3e1-4e2f-9514-e65de70e9612": {
+    "office": "CCSICT Faculty Room, 2nd Floor",
+    "email": "salum.dante@isu.edu.ph",
+    "phone": "Campus Line local 204",
+    "designation": "Faculty"
+  }
+}

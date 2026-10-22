@@ -73,18 +73,51 @@ const TITLES = /\b(prof(?:essor)?|dr|doc|engr|atty|sir|ma'?am|mr|mrs|ms)\.?\s+/g
 let rosterCache = { at: 0, entries: [] };
 const ROSTER_TTL_MS = 60_000;
 
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const FACULTY_STORE_PATH = path.resolve(__dirname, '../data/faculty_profile_store.json');
+
+function loadFacultyProfileStore() {
+  try {
+    if (fs.existsSync(FACULTY_STORE_PATH)) {
+      return JSON.parse(fs.readFileSync(FACULTY_STORE_PATH, 'utf-8'));
+    }
+  } catch {}
+  return {};
+}
+
 async function loadRoster() {
   if (Date.now() - rosterCache.at < ROSTER_TTL_MS) return rosterCache.entries;
 
   // Audit F-32 / C11: CONSENTED roster only. Faculty whose schedules were
   // ingested but who never gave written consent are data subjects; the system
   // must not answer questions about them.
-  const { data: faculty, error } = await db
-    .from('faculty')
-    .select('id, full_name, availability_visible, department:department_id (name)')
-    .eq('is_active', true)
-    .eq('is_consented', true);
-  if (error) throw error;
+  let faculty = [];
+  try {
+    const { data, error } = await db
+      .from('faculty')
+      .select('id, full_name, availability_visible, designation, office, email, phone, image_url, department:department_id (name)')
+      .eq('is_active', true)
+      .eq('is_consented', true);
+    if (!error && data) faculty = data;
+    else throw error;
+  } catch {
+    const { data: baseData } = await db
+      .from('faculty')
+      .select('id, full_name, availability_visible, department:department_id (name)')
+      .eq('is_active', true)
+      .eq('is_consented', true);
+    faculty = baseData ?? [];
+  }
+
+  // Filter out synthetic SIM cohort so simulated subjects never appear in answers
+  faculty = (faculty ?? []).filter((f) => !/^SIM-\d+$/i.test(f.full_name?.trim() || ''));
+
+  const profileStore = loadFacultyProfileStore();
 
   const { data: aliases } = await db
     .from('faculty_alias')
@@ -92,6 +125,13 @@ async function loadRoster() {
 
   const byId = new Map(
     (faculty ?? []).map((f) => {
+      const extra = profileStore[f.id] || {};
+      const designation = f.designation || extra.designation || 'Faculty';
+      const office = f.office || extra.office || null;
+      const email = f.email || extra.email || null;
+      const phone = f.phone || extra.phone || null;
+      const imageUrl = f.image_url || extra.imageUrl || null;
+
       const needles = new Set([f.full_name.toLowerCase()]);
       const parts = f.full_name.split(/[,.]+/).map((s) => s.trim());
       if (parts.length >= 2) {
@@ -117,6 +157,11 @@ async function loadRoster() {
           facultyId: f.id,
           fullName: f.full_name,
           department: f.department?.name ?? null,
+          designation,
+          office,
+          email,
+          phone,
+          imageUrl,
           needles,
         },
       ];
@@ -204,6 +249,10 @@ export async function routeQuery(query) {
       facultyId: c.facultyId,
       fullName: c.fullName,
       department: c.department,
+      designation: c.designation ?? null,
+      office: c.office ?? null,
+      email: c.email ?? null,
+      phone: c.phone ?? null,
     })),
     ambiguous: candidates.length > 1,
     hasAvailabilityIntent: availabilityIntent,
