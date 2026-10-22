@@ -142,5 +142,9 @@ export const api = {
     request(`/faculty/${encodeURIComponent(id)}`, { method: 'PATCH', body, token }),
   uploadPhoto: (token, body) =>
     request('/upload-photo', { method: 'POST', body, token }),
+  adminModelMetrics: (token) =>
+    request('/admin/model-metrics', { token }),
+  adminModelTree: (token, { tree = 0, depth = 3 } = {}) =>
+    request(`/admin/model-tree?tree=${encodeURIComponent(tree)}&depth=${encodeURIComponent(depth)}`, { token }),
 };
 

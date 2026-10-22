@@ -110,6 +110,56 @@ def _embed(texts: list[str]) -> np.ndarray:
         show_progress_bar=False,
     )
 
+@app.get("/model/tree")
+def model_tree():
+    """Export the decision rules of one estimator in the forest."""
+    bundle = _get_rf_bundle()
+    if bundle is None:
+        return jsonify(error="No trained model available"), 404
+
+    forest = bundle.get("model")
+    if forest is None or not hasattr(forest, "estimators_"):
+        return jsonify(error="Forest model not found in bundle"), 404
+
+    try:
+        tree_idx = int(request.args.get("tree", 0))
+        max_depth = int(request.args.get("depth", 3))
+    except (ValueError, TypeError):
+        return jsonify(error="Invalid tree or depth parameter"), 400
+
+    total_trees = len(forest.estimators_)
+    if not (0 <= tree_idx < total_trees):
+        return jsonify(error=f"tree must be between 0 and {total_trees - 1}"), 400
+
+    from sklearn.tree import export_text
+    estimator = forest.estimators_[tree_idx]
+    features = list(bundle.get("feature_list", []))
+
+    rules_text = export_text(
+        estimator,
+        feature_names=features if features else None,
+        max_depth=max_depth,
+        decimals=2,
+        show_weights=False,
+    )
+
+    used_features = [f for f in features if f in rules_text]
+    attendance_features = [f for f in used_features if f.startswith("hist_")]
+
+    return jsonify(
+        version=bundle.get("version"),
+        tree_index=tree_idx,
+        total_trees=total_trees,
+        max_depth=max_depth,
+        actual_depth=int(estimator.get_depth()),
+        leaf_count=int(estimator.get_n_leaves()),
+        node_count=int(estimator.tree_.node_count),
+        rules_text=rules_text,
+        features_used=used_features,
+        attendance_features=attendance_features,
+        classes=list(bundle.get("class_order", forest.classes_)),
+    )
+
 
 # ---------------------------------------------------------------------------
 # Health & provenance

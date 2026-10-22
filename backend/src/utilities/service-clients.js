@@ -76,6 +76,7 @@ export const ml = DEMO_MODE ? demoMl : {
   predict: (context) => mlFetch('/predict', { context }),
   modelInfo: () => mlFetch('/model/info'),
   health: () => mlFetch('/healthz'),
+  modelTree: ({ tree = 0, depth = 3 } = {}) => mlFetch(`/model/tree?tree=${encodeURIComponent(tree)}&depth=${encodeURIComponent(depth)}`),
 
   // Workbook parsing is measured in seconds, not the milliseconds an inference
   // call takes, so these get their own timeout rather than tripping the one

@@ -111,6 +111,33 @@ export const demoMl = {
   async health() {
     return { status: 'ok', demo: true, embedder: 'demo-lexical-hash', rf_ready: false };
   },
+
+  async modelTree({ tree = 0, depth = 3 } = {}) {
+    return {
+      version: 'rf-20260909-214609',
+      tree_index: tree,
+      total_trees: 300,
+      max_depth: depth,
+      actual_depth: 31,
+      leaf_count: 2741,
+      node_count: 5481,
+      rules_text:
+        '|--- campus_event_flag <= 0.50\n' +
+        '|   |--- hist_early_departure_rate <= 0.67\n' +
+        '|   |   |--- hist_presence_rate <= 0.22\n' +
+        '|   |   |   |--- is_scheduled_class <= 0.50\n' +
+        '|   |   |   |   |--- truncated branch of depth 26\n' +
+        '|   |   |   |--- is_scheduled_class >  0.50\n' +
+        '|   |   |   |   |--- truncated branch of depth 16\n' +
+        '|   |   |--- hist_presence_rate >  0.22\n' +
+        '|   |--- hist_early_departure_rate >  0.67\n' +
+        '|--- campus_event_flag >  0.50\n' +
+        '|   |--- class: unavailable_off_schedule',
+      features_used: ['campus_event_flag', 'hist_early_departure_rate', 'hist_presence_rate', 'is_scheduled_class'],
+      attendance_features: ['hist_presence_rate', 'hist_early_departure_rate'],
+      classes: ['available_consultation', 'in_scheduled_class', 'unavailable_off_schedule'],
+    };
+  },
 };
 
 /**

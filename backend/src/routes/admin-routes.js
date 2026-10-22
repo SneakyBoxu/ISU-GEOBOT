@@ -433,3 +433,86 @@ admin.post('/me/faculty/visibility', requireAuth, requireRole('faculty', 'valida
       });
     } catch (err) { next(err); }
   });
+
+// ---------------------------------------------------------------------------
+// Model diagnostics & evaluation metrics (Random Forest availability classifier)
+// ---------------------------------------------------------------------------
+
+admin.get('/model-metrics', requireAuth, requireRole('admin', 'researcher'),
+  async (_req, res, next) => {
+    try {
+      let activeInfo = null;
+      try {
+        activeInfo = await ml.modelInfo();
+      } catch (err) {
+        log.warn({ err: err.message }, 'ML service modelInfo lookup failed');
+      }
+
+      const { data: models, error } = await db
+        .from('rf_model_version')
+        .select('*')
+        .order('trained_at', { ascending: false })
+        .limit(10);
+
+      if (error && error.code !== 'PGRST116') {
+        log.warn({ err: error.message }, 'Failed to query rf_model_version');
+      }
+
+      const rows = models ?? [];
+      let activeModel = null;
+
+      if (activeInfo?.version) {
+        activeModel = rows.find((r) => r.version === activeInfo.version) ?? null;
+      }
+      if (!activeModel && rows.length > 0) {
+        activeModel = rows[0];
+      }
+
+      const parseJson = (val) => {
+        if (!val) return null;
+        if (typeof val === 'object') return val;
+        try { return JSON.parse(val); } catch { return null; }
+      };
+
+      const formatModelRow = (row) => {
+        if (!row) return null;
+        return {
+          id: row.id,
+          version: row.version,
+          algorithm: row.algorithm || 'RandomForestClassifier (Gini)',
+          sklearnVersion: row.sklearn_version,
+          trainedAt: row.trained_at,
+          trainingRowCount: row.training_row_count,
+          splitStrategy: row.split_strategy,
+          labelSource: row.label_source,
+          cvFolds: row.cv_folds,
+          metrics: parseJson(row.metrics),
+          featureImportance: parseJson(row.feature_importance),
+          featureList: parseJson(row.feature_list) || row.feature_list,
+          classOrder: parseJson(row.class_order) || row.class_order,
+          dataOrigin: row.data_origin,
+          notes: row.notes,
+          isActive: Boolean(activeModel && row.version === activeModel.version),
+        };
+      };
+
+      res.json({
+        activeInfo: activeInfo ?? null,
+        activeModel: formatModelRow(activeModel),
+        history: rows.map(formatModelRow),
+      });
+    } catch (err) { next(err); }
+  });
+
+admin.get('/model-tree', requireAuth, requireRole('admin', 'researcher'),
+  async (req, res, next) => {
+    try {
+      const tree = parseInt(req.query.tree ?? '0', 10);
+      const depth = parseInt(req.query.depth ?? '3', 10);
+      const data = await ml.modelTree({ tree, depth });
+      res.json(data);
+    } catch (err) {
+      next(err);
+    }
+  });
+

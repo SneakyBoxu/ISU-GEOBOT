@@ -14,7 +14,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Building2, ClipboardCheck, DoorOpen, FileSpreadsheet, LayoutDashboard, LogOut, Megaphone,
+  BrainCircuit, Building2, ClipboardCheck, DoorOpen, FileSpreadsheet, LayoutDashboard, LogOut, Megaphone,
   ShieldCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -29,6 +29,7 @@ import CampusLocationsPanel from './AdminCampusLocationsPanel.jsx';
 import FacultyValidationPanel from './AdminFacultyValidationPanel.jsx';
 import ScheduleUploadPanel from './AdminScheduleUploadPanel.jsx';
 import AdminRoomsPanel from './AdminRoomsPanel.jsx';
+import AdminModelMetricsPanel from './AdminModelMetricsPanel.jsx';
 // RA 10173 right-to-object control. It lived on the separate validation portal that
 // was folded into this dashboard; the control itself must not disappear with the page
 // that happened to host it. It self-hides when the signed-in account is not a lecturer,
@@ -71,6 +72,15 @@ const TABS = [
     color: 'text-emerald-400',
     activeBg: 'bg-emerald-500/10 border-emerald-500/40',
     activeText: 'text-emerald-300',
+  },
+  {
+    id: 'diagnostics',
+    label: 'Model Diagnostics',
+    icon: BrainCircuit,
+    description: 'Random Forest classifier performance metrics, confusion matrix, and feature importances.',
+    color: 'text-amber-400',
+    activeBg: 'bg-amber-500/10 border-amber-500/40',
+    activeText: 'text-amber-300',
   },
 ];
 
@@ -224,6 +234,7 @@ export default function AdminDashboard() {
               </>
             )}
             {activeTab === 'schedule' && <ScheduleUploadPanel session={session} />}
+            {activeTab === 'diagnostics' && <AdminModelMetricsPanel session={session} />}
           </div>
         </main>
       </div>

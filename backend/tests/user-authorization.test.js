@@ -280,3 +280,42 @@ describe('The assistant cannot modify map data', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+describe('Model diagnostics authorization', () => {
+  it('requires authentication for /admin/model-metrics', async () => {
+    const res = await call('GET', '/admin/model-metrics');
+    assert.equal(res.status, 401);
+  });
+
+  it('denies students access to /admin/model-metrics', async () => {
+    const res = await call('GET', '/admin/model-metrics', { token: AS_STUDENT });
+    assert.equal(res.status, 403);
+  });
+
+  it('denies guards access to /admin/model-metrics', async () => {
+    const res = await call('GET', '/admin/model-metrics', { token: AS_GUARD });
+    assert.equal(res.status, 403);
+  });
+
+  it('allows administrators to view model metrics and history structure', async () => {
+    const res = await call('GET', '/admin/model-metrics', { token: AS_ADMIN });
+    assert.equal(res.status, 200);
+    assert.ok('activeInfo' in res.body);
+    assert.ok('activeModel' in res.body);
+    assert.ok(Array.isArray(res.body.history));
+  });
+
+  it('requires authentication for /admin/model-tree', async () => {
+    const res = await call('GET', '/admin/model-tree');
+    assert.equal(res.status, 401);
+  });
+
+  it('allows administrators to view model decision tree rules', async () => {
+    const res = await call('GET', '/admin/model-tree?tree=0&depth=2', { token: AS_ADMIN });
+    assert.equal(res.status, 200);
+    assert.ok('rules_text' in res.body);
+    assert.equal(res.body.tree_index, 0);
+  });
+});
+
